@@ -84,8 +84,10 @@ class Admin_Page {
 				'restUrl'   => rest_url( 'system-report/v1/report' ),
 				'restNonce' => wp_create_nonce( 'wp_rest' ),
 				'i18n'      => array(
-					'copied'     => __( 'Copied!', 'system-report' ),
-					'copyFailed' => __( 'Copying to clipboard failed. Please press Ctrl/Cmd+C to copy.', 'system-report' ),
+					'copied'      => __( 'Copied!', 'system-report' ),
+					'copyFailed'  => __( 'Copying to clipboard failed. Please press Ctrl/Cmd+C to copy.', 'system-report' ),
+					'generating'  => __( 'Generating...', 'system-report' ),
+					'downloadAi'  => __( 'Download for AI analysis', 'system-report' ),
 				),
 			)
 		);
