@@ -37,11 +37,9 @@ class Plugin {
 	private \SystemReport\REST_Controller $rest_controller;
 
 	/**
-	 * Get the singleton instance.
-	 *
-	 * @return Plugin
-	 */
-	public static function get_instance() {
+ * Get the singleton instance.
+ */
+	public static function get_instance(): \SystemReport\Plugin {
 		if ( null === self::$instance ) {
 			self::$instance = new self();
 		}
@@ -122,11 +120,9 @@ class Plugin {
 	}
 
 	/**
-	 * Get the report generator.
-	 *
-	 * @return Report_Generator
-	 */
-	public function get_report_generator() {
+ * Get the report generator.
+ */
+	public function get_report_generator(): \SystemReport\Report_Generator {
 		return $this->report_generator;
 	}
 

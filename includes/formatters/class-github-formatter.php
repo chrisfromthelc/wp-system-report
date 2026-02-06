@@ -58,7 +58,7 @@ class GitHub_Formatter implements Formatter {
 	 * @param string $report Raw report text.
 	 * @return string Redacted report text.
 	 */
-	private function apply_redactions( $report ) {
+	private function apply_redactions( string $report ) {
 		$redactions = array(
 			array(
 				'pattern'     => '/(Home URL:)[^\n]*/',
