@@ -1,0 +1,123 @@
+<?php
+/**
+ * Report generator.
+ *
+ * @package SystemReport
+ */
+
+namespace SystemReport;
+
+use SystemReport\Collectors\Collector;
+
+defined( 'ABSPATH' ) || exit;
+
+/**
+ * Orchestrates data collection from all registered collectors.
+ */
+class Report_Generator {
+
+	/**
+	 * Registered collectors.
+	 *
+	 * @var Collector[]
+	 */
+	private $collectors = array();
+
+	/**
+	 * Register a collector.
+	 *
+	 * @param Collector $collector Collector instance.
+	 */
+	public function register_collector( Collector $collector ) {
+		$this->collectors[ $collector->get_id() ] = $collector;
+	}
+
+	/**
+	 * Get all registered collectors, sorted by priority.
+	 *
+	 * Applies the 'system_report_collectors' filter to allow third-party
+	 * plugins to add, remove, or reorder collectors.
+	 *
+	 * @return Collector[] Sorted array of collectors.
+	 */
+	public function get_collectors() {
+		/**
+		 * Filter the registered collectors.
+		 *
+		 * @param Collector[] $collectors Associative array of collector ID => Collector instance.
+		 */
+		$collectors = apply_filters( 'system_report_collectors', $this->collectors );
+
+		// Sort by priority.
+		uasort(
+			$collectors,
+			function ( Collector $a, Collector $b ) {
+				return $a->get_priority() - $b->get_priority();
+			}
+		);
+
+		return $collectors;
+	}
+
+	/**
+	 * Generate the full report from all collectors.
+	 *
+	 * @return array Report data keyed by collector ID, each containing:
+	 *               - 'id'          (string) Collector ID.
+	 *               - 'label'       (string) Section label.
+	 *               - 'description' (string) Section description for AI.
+	 *               - 'fields'      (array)  Collected field data.
+	 */
+	public function generate() {
+		$report     = array();
+		$collectors = $this->get_collectors();
+
+		foreach ( $collectors as $id => $collector ) {
+			$fields = $collector->collect();
+
+			/**
+			 * Filter the fields for a specific collector.
+			 *
+			 * @param array     $fields    Collected field data.
+			 * @param Collector $collector The collector instance.
+			 */
+			$fields = apply_filters( "system_report_fields_{$id}", $fields, $collector );
+
+			$report[ $id ] = array(
+				'id'          => $id,
+				'label'       => $collector->get_label(),
+				'description' => $collector->get_description(),
+				'fields'      => $fields,
+			);
+		}
+
+		return $report;
+	}
+
+	/**
+	 * Generate data for a single collector section.
+	 *
+	 * @param string $id Collector ID.
+	 * @return array|null Section data array, or null if collector not found.
+	 */
+	public function generate_section( $id ) {
+		$collectors = $this->get_collectors();
+
+		if ( ! isset( $collectors[ $id ] ) ) {
+			return null;
+		}
+
+		$collector = $collectors[ $id ];
+		$fields    = $collector->collect();
+
+		/** This filter is documented in includes/class-report-generator.php */
+		$fields = apply_filters( "system_report_fields_{$id}", $fields, $collector );
+
+		return array(
+			'id'          => $id,
+			'label'       => $collector->get_label(),
+			'description' => $collector->get_description(),
+			'fields'      => $fields,
+		);
+	}
+}
