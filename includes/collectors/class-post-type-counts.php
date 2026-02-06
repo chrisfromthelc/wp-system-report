@@ -56,6 +56,44 @@ class Post_Type_Counts extends Abstract_Collector {
 	 * @return array
 	 */
 	public function collect() {
-		return array();
+		global $wpdb;
+
+		$data = array();
+
+		// Query post type counts.
+		$query = "SELECT post_type, COUNT(1) as count FROM {$wpdb->posts} GROUP BY post_type ORDER BY count DESC";
+
+		$results = $wpdb->get_results( $query );
+
+		if ( $results ) {
+			foreach ( $results as $row ) {
+				$post_type       = $row->post_type;
+				$count           = $row->count;
+				$post_type_label = $this->get_post_type_label( $post_type );
+
+				$data[] = $this->make_field(
+					$post_type_label,
+					number_format_i18n( $count )
+				);
+			}
+		}
+
+		return $data;
+	}
+
+	/**
+	 * Get a human-readable label for a post type.
+	 *
+	 * @param string $post_type The post type name.
+	 * @return string The post type label.
+	 */
+	private function get_post_type_label( $post_type ) {
+		$post_type_object = get_post_type_object( $post_type );
+
+		if ( $post_type_object && isset( $post_type_object->labels->name ) ) {
+			return $post_type_object->labels->name;
+		}
+
+		return ucfirst( $post_type );
 	}
 }
