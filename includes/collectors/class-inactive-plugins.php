@@ -51,6 +51,15 @@ class Inactive_Plugins extends Abstract_Collector {
 	}
 
 	/**
+	 * Get the transient cache key.
+	 *
+	 * @return string
+	 */
+	protected function get_cache_key() {
+		return 'sr_inactive_plugins';
+	}
+
+	/**
 	 * Collect the data.
 	 *
 	 * @return array

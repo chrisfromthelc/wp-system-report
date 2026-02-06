@@ -101,6 +101,7 @@ class Plugin {
 	 * Register WordPress hooks.
 	 */
 	private function register_hooks() {
+		add_action( 'init', array( $this, 'load_textdomain' ) );
 		add_action( 'admin_menu', array( $this->admin_page, 'register_menu' ) );
 		add_action( 'rest_api_init', array( $this->rest_controller, 'register_routes' ) );
 		add_action( 'admin_enqueue_scripts', array( $this->admin_page, 'enqueue_assets' ) );
@@ -118,6 +119,17 @@ class Plugin {
 	}
 
 	/**
+	 * Load the plugin text domain.
+	 */
+	public function load_textdomain() {
+		load_plugin_textdomain(
+			'system-report',
+			false,
+			dirname( plugin_basename( SYSTEM_REPORT_FILE ) ) . '/languages'
+		);
+	}
+
+	/**
 	 * Get the report generator.
 	 *
 	 * @return Report_Generator
@@ -131,6 +143,7 @@ class Plugin {
 	 */
 	public function clear_theme_cache() {
 		delete_transient( 'sr_theme_info' );
+		delete_transient( 'sr_site_health' );
 	}
 
 	/**
@@ -140,6 +153,7 @@ class Plugin {
 		delete_transient( 'sr_active_plugins' );
 		delete_transient( 'sr_inactive_plugins' );
 		delete_transient( 'sr_dropins_mu_plugins' );
+		delete_transient( 'sr_site_health' );
 	}
 
 	/**

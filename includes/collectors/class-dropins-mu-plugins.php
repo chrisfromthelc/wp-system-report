@@ -51,6 +51,15 @@ class Dropins_MU_Plugins extends Abstract_Collector {
 	}
 
 	/**
+	 * Get the transient cache key.
+	 *
+	 * @return string
+	 */
+	protected function get_cache_key() {
+		return 'sr_dropins_mu_plugins';
+	}
+
+	/**
 	 * Collect the data.
 	 *
 	 * @return array

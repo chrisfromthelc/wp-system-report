@@ -15,6 +15,50 @@ defined( 'ABSPATH' ) || exit;
 abstract class Abstract_Collector implements Collector {
 
 	/**
+	 * Get the transient cache key for this collector.
+	 *
+	 * Override in subclasses to enable caching for expensive operations.
+	 *
+	 * @return string|null Cache key, or null to disable caching.
+	 */
+	protected function get_cache_key() {
+		return null;
+	}
+
+	/**
+	 * Get cached or fresh data from this collector.
+	 *
+	 * If the collector defines a cache key, results are stored in a transient.
+	 *
+	 * @return array Collected field data.
+	 */
+	public function get_cached_data() {
+		$cache_key = $this->get_cache_key();
+
+		if ( null !== $cache_key ) {
+			$cached = get_transient( $cache_key );
+			if ( false !== $cached ) {
+				return $cached;
+			}
+		}
+
+		$data = $this->collect();
+
+		if ( null !== $cache_key ) {
+			/**
+			 * Filter the transient cache TTL for system report collectors.
+			 *
+			 * @param int    $ttl       Cache TTL in seconds. Default 3600 (1 hour).
+			 * @param string $cache_key The transient cache key.
+			 */
+			$ttl = apply_filters( 'system_report_cache_ttl', HOUR_IN_SECONDS, $cache_key );
+			set_transient( $cache_key, $data, $ttl );
+		}
+
+		return $data;
+	}
+
+	/**
 	 * Build a field array with sensible defaults.
 	 *
 	 * @param string $label   Display label.

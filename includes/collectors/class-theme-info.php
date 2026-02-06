@@ -51,6 +51,15 @@ class Theme_Info extends Abstract_Collector {
 	}
 
 	/**
+	 * Get the transient cache key.
+	 *
+	 * @return string
+	 */
+	protected function get_cache_key() {
+		return 'sr_theme_info';
+	}
+
+	/**
 	 * Collect the data.
 	 *
 	 * @return array

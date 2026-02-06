@@ -73,7 +73,12 @@ class Report_Generator {
 		$collectors = $this->get_collectors();
 
 		foreach ( $collectors as $id => $collector ) {
-			$fields = $collector->collect();
+			// Use cached data for collectors that extend Abstract_Collector.
+			if ( $collector instanceof Collectors\Abstract_Collector ) {
+				$fields = $collector->get_cached_data();
+			} else {
+				$fields = $collector->collect();
+			}
 
 			/**
 			 * Filter the fields for a specific collector.
@@ -108,7 +113,12 @@ class Report_Generator {
 		}
 
 		$collector = $collectors[ $id ];
-		$fields    = $collector->collect();
+
+		if ( $collector instanceof Collectors\Abstract_Collector ) {
+			$fields = $collector->get_cached_data();
+		} else {
+			$fields = $collector->collect();
+		}
 
 		/** This filter is documented in includes/class-report-generator.php */
 		$fields = apply_filters( "system_report_fields_{$id}", $fields, $collector );
