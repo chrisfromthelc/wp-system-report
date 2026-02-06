@@ -56,6 +56,36 @@ class REST_API_Info extends Abstract_Collector {
 	 * @return array
 	 */
 	public function collect() {
-		return array();
+		$fields = array();
+
+		// REST API URL.
+		$fields[] = $this->make_field(
+			__( 'REST API URL', 'system-report' ),
+			rest_url()
+		);
+
+		// REST Prefix.
+		$fields[] = $this->make_field(
+			__( 'REST Prefix', 'system-report' ),
+			rest_get_url_prefix()
+		);
+
+		// Get registered namespaces.
+		$rest_server = rest_get_server();
+		$namespaces  = $rest_server ? $rest_server->get_namespaces() : array();
+
+		// Registered Namespaces (comma-separated list).
+		$fields[] = $this->make_field(
+			__( 'Registered Namespaces', 'system-report' ),
+			! empty( $namespaces ) ? implode( ', ', $namespaces ) : __( 'None', 'system-report' )
+		);
+
+		// Total Namespaces count.
+		$fields[] = $this->make_field(
+			__( 'Total Namespaces', 'system-report' ),
+			count( $namespaces )
+		);
+
+		return $fields;
 	}
 }
