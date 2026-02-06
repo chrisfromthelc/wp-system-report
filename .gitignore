@@ -1,0 +1,52 @@
+# Dependencies
+/vendor/
+/node_modules/
+
+# Composer
+composer.lock
+
+# IDE and editor files
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+.project
+.settings/
+.buildpath
+nbproject/
+
+# OS files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+Desktop.ini
+
+# PHPStan
+phpstan-baseline.neon
+
+# Rector
+/rector-cache/
+
+# PHPCS
+.phpcs-cache
+
+# PHPUnit
+.phpunit.result.cache
+/phpunit.xml
+
+# Build artifacts
+/build/
+/dist/
+
+# Environment
+.env
+.env.local
+
+# Debug
+debug.log
+error_log

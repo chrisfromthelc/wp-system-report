@@ -1,0 +1,18 @@
+parameters:
+    level: 5
+    paths:
+        - system-report.php
+        - includes/
+    excludePaths:
+        - vendor/
+        - tests/
+    scanDirectories:
+        - vendor/szepeviktor/phpstan-wordpress/
+    bootstrapFiles:
+        - vendor/php-stubs/wordpress-stubs/wordpress-stubs.php
+    ignoreErrors:
+        # WordPress dynamic properties on global objects
+        - '#Access to an undefined property [a-zA-Z\\]+::\$[a-zA-Z_]+#'
+
+includes:
+    - vendor/szepeviktor/phpstan-wordpress/extension.neon
