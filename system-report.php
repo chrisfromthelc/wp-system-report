@@ -30,7 +30,7 @@ define( 'SYSTEM_REPORT_URL', plugin_dir_url( __FILE__ ) );
  *
  * @param string $class_name The fully qualified class name.
  */
-function system_report_autoloader( $class_name ) {
+function system_report_autoloader( $class_name ): void {
 	$namespace = 'SystemReport\\';
 
 	if ( 0 !== strpos( $class_name, $namespace ) ) {

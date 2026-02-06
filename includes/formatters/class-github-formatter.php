@@ -23,7 +23,7 @@ class GitHub_Formatter implements Formatter {
 	 * @param array $report_data Full report data.
 	 * @return string Formatted GitHub report.
 	 */
-	public function format( array $report_data ) {
+	public function format( array $report_data ): string {
 		$plain_formatter = new Plain_Text_Formatter();
 		$report          = $plain_formatter->format( $report_data );
 
@@ -37,20 +37,16 @@ class GitHub_Formatter implements Formatter {
 	}
 
 	/**
-	 * Get the content type.
-	 *
-	 * @return string
-	 */
-	public function get_content_type() {
+ * Get the content type.
+ */
+	public function get_content_type(): string {
 		return 'text/plain; charset=utf-8';
 	}
 
 	/**
-	 * Get the file extension.
-	 *
-	 * @return string
-	 */
-	public function get_file_extension() {
+ * Get the file extension.
+ */
+	public function get_file_extension(): string {
 		return 'txt';
 	}
 

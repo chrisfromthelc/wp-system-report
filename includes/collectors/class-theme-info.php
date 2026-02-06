@@ -15,11 +15,9 @@ defined( 'ABSPATH' ) || exit;
 class Theme_Info extends Abstract_Collector {
 
 	/**
-	 * Get the collector ID.
-	 *
-	 * @return string
-	 */
-	public function get_id() {
+ * Get the collector ID.
+ */
+	public function get_id(): string {
 		return 'theme_info';
 	}
 
@@ -42,29 +40,23 @@ class Theme_Info extends Abstract_Collector {
 	}
 
 	/**
-	 * Get the collector priority.
-	 *
-	 * @return int
-	 */
-	public function get_priority() {
+ * Get the collector priority.
+ */
+	public function get_priority(): int {
 		return 90;
 	}
 
 	/**
-	 * Get the transient cache key.
-	 *
-	 * @return string
-	 */
-	protected function get_cache_key() {
+ * Get the transient cache key.
+ */
+	protected function get_cache_key(): string {
 		return 'sr_theme_info';
 	}
 
 	/**
-	 * Collect the data.
-	 *
-	 * @return array
-	 */
-	public function collect() {
+ * Collect the data.
+ */
+	public function collect(): array {
 		// Require update functions if not available.
 		if ( ! function_exists( 'get_theme_updates' ) ) {
 			require_once ABSPATH . 'wp-admin/includes/update.php';

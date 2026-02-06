@@ -24,29 +24,24 @@ class AI_Formatter implements Formatter {
 	 * @param array $report_data Full report data.
 	 * @return string Formatted markdown report.
 	 */
-	public function format( array $report_data ) {
+	public function format( array $report_data ): string {
 		$output  = $this->build_header();
 		$output .= $this->build_issues_summary( $report_data );
-		$output .= $this->build_sections( $report_data );
 
-		return $output;
+		return $output . $this->build_sections( $report_data );
 	}
 
 	/**
-	 * Get the content type.
-	 *
-	 * @return string
-	 */
-	public function get_content_type() {
+ * Get the content type.
+ */
+	public function get_content_type(): string {
 		return 'text/markdown; charset=utf-8';
 	}
 
 	/**
-	 * Get the file extension.
-	 *
-	 * @return string
-	 */
-	public function get_file_extension() {
+ * Get the file extension.
+ */
+	public function get_file_extension(): string {
 		return 'md';
 	}
 
@@ -87,7 +82,7 @@ class AI_Formatter implements Formatter {
 	 * @param array $report_data Full report data.
 	 * @return string Issues summary markdown.
 	 */
-	private function build_issues_summary( array $report_data ) {
+	private function build_issues_summary( array $report_data ): string {
 		$issues = $this->detect_issues( $report_data );
 
 		/**
@@ -107,7 +102,7 @@ class AI_Formatter implements Formatter {
 		// Sort by severity: critical first, then warning.
 		usort(
 			$issues,
-			function ( $a, $b ) {
+			function ( array $a, array $b ): int {
 				$order   = array(
 					'critical' => 0,
 					'warning'  => 1,
@@ -126,9 +121,7 @@ class AI_Formatter implements Formatter {
 			++$i;
 		}
 
-		$output .= "\n---\n\n";
-
-		return $output;
+		return $output . "\n---\n\n";
 	}
 
 	/**
@@ -137,7 +130,7 @@ class AI_Formatter implements Formatter {
 	 * @param array $report_data Full report data.
 	 * @return string Sections markdown.
 	 */
-	private function build_sections( array $report_data ) {
+	private function build_sections( array $report_data ): string {
 		$output = '';
 
 		foreach ( $report_data as $section ) {
@@ -203,7 +196,7 @@ class AI_Formatter implements Formatter {
 	 * @param array $field Field data.
 	 * @return string Status indicator.
 	 */
-	private function format_status( $field ) {
+	private function format_status( $field ): string {
 		$status = ! empty( $field['status'] ) ? $field['status'] : 'info';
 
 		switch ( $status ) {
@@ -241,7 +234,7 @@ class AI_Formatter implements Formatter {
 	 * @param array $report_data Full report data.
 	 * @return array Array of issue arrays with 'severity', 'title', 'description' keys.
 	 */
-	private function detect_issues( array $report_data ) {
+	private function detect_issues( array $report_data ): array {
 		$issues = array();
 
 		// Scan for fields with warning/critical status.
@@ -251,10 +244,15 @@ class AI_Formatter implements Formatter {
 			}
 
 			foreach ( $section['fields'] as $field ) {
-				if ( empty( $field['status'] ) || 'info' === $field['status'] || 'good' === $field['status'] ) {
+				if ( empty( $field['status'] ) ) {
 					continue;
 				}
-
+				if ( 'info' === $field['status'] ) {
+					continue;
+				}
+				if ( 'good' === $field['status'] ) {
+					continue;
+				}
 				if ( ! empty( $field['private'] ) ) {
 					continue;
 				}
@@ -279,7 +277,7 @@ class AI_Formatter implements Formatter {
 	 * @param array $field Field data.
 	 * @return string Issue description.
 	 */
-	private function build_issue_description( $field ) {
+	private function build_issue_description( $field ): string {
 		$desc = 'Current value: ' . $field['value'] . '.';
 
 		if ( ! empty( $field['recommended'] ) ) {
@@ -299,7 +297,7 @@ class AI_Formatter implements Formatter {
 	 * @param array $report_data Full report data.
 	 * @return array Additional issues found.
 	 */
-	private function run_heuristic_checks( array $report_data ) {
+	private function run_heuristic_checks( array $report_data ): array {
 		$issues = array();
 
 		// Check PHP version EOL.

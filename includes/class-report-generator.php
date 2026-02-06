@@ -21,14 +21,14 @@ class Report_Generator {
 	 *
 	 * @var Collector[]
 	 */
-	private $collectors = array();
+	private array $collectors = array();
 
 	/**
 	 * Register a collector.
 	 *
 	 * @param Collector $collector Collector instance.
 	 */
-	public function register_collector( Collector $collector ) {
+	public function register_collector( Collector $collector ): void {
 		$this->collectors[ $collector->get_id() ] = $collector;
 	}
 
@@ -68,7 +68,7 @@ class Report_Generator {
 	 *               - 'description' (string) Section description for AI.
 	 *               - 'fields'      (array)  Collected field data.
 	 */
-	public function generate() {
+	public function generate(): array {
 		$report     = array();
 		$collectors = $this->get_collectors();
 
@@ -105,7 +105,7 @@ class Report_Generator {
 	 * @param string $id Collector ID.
 	 * @return array|null Section data array, or null if collector not found.
 	 */
-	public function generate_section( $id ) {
+	public function generate_section( $id ): ?array {
 		$collectors = $this->get_collectors();
 
 		if ( ! isset( $collectors[ $id ] ) ) {

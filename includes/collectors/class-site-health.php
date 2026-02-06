@@ -15,11 +15,9 @@ defined( 'ABSPATH' ) || exit;
 class Site_Health extends Abstract_Collector {
 
 	/**
-	 * Get the collector ID.
-	 *
-	 * @return string
-	 */
-	public function get_id() {
+ * Get the collector ID.
+ */
+	public function get_id(): string {
 		return 'site_health';
 	}
 
@@ -42,29 +40,23 @@ class Site_Health extends Abstract_Collector {
 	}
 
 	/**
-	 * Get the collector priority.
-	 *
-	 * @return int
-	 */
-	public function get_priority() {
+ * Get the collector priority.
+ */
+	public function get_priority(): int {
 		return 120;
 	}
 
 	/**
-	 * Get the transient cache key.
-	 *
-	 * @return string
-	 */
-	protected function get_cache_key() {
+ * Get the transient cache key.
+ */
+	protected function get_cache_key(): string {
 		return 'sr_site_health';
 	}
 
 	/**
-	 * Collect the data.
-	 *
-	 * @return array
-	 */
-	public function collect() {
+ * Collect the data.
+ */
+	public function collect(): array {
 		// Load required WordPress files.
 		if ( ! class_exists( 'WP_Site_Health' ) ) {
 			require_once ABSPATH . 'wp-admin/includes/class-wp-site-health.php';
@@ -103,9 +95,11 @@ class Site_Health extends Abstract_Collector {
 						if ( is_callable( $test_config['test'] ) ) {
 							$test_result = call_user_func( $test_config['test'] );
 						}
-
 						// Skip if test failed or returned invalid result.
-						if ( ! is_array( $test_result ) || empty( $test_result['status'] ) ) {
+						if ( ! is_array( $test_result ) ) {
+							continue;
+						}
+						if ( empty( $test_result['status'] ) ) {
 							continue;
 						}
 

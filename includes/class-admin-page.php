@@ -22,11 +22,9 @@ class Admin_Page {
 	const MENU_SLUG = 'system-report';
 
 	/**
-	 * Report generator instance.
-	 *
-	 * @var Report_Generator
-	 */
-	private $report_generator;
+ * Report generator instance.
+ */
+	private \SystemReport\Report_Generator $report_generator;
 
 	/**
 	 * Constructor.
@@ -40,7 +38,7 @@ class Admin_Page {
 	/**
 	 * Register the admin menu page under Tools.
 	 */
-	public function register_menu() {
+	public function register_menu(): void {
 		$capability = $this->get_capability();
 
 		add_management_page(
@@ -57,7 +55,7 @@ class Admin_Page {
 	 *
 	 * @param string $hook_suffix The current admin page hook suffix.
 	 */
-	public function enqueue_assets( $hook_suffix ) {
+	public function enqueue_assets( $hook_suffix ): void {
 		if ( 'tools_page_' . self::MENU_SLUG !== $hook_suffix ) {
 			return;
 		}
@@ -96,7 +94,7 @@ class Admin_Page {
 	/**
 	 * Render the admin page.
 	 */
-	public function render_page() {
+	public function render_page(): void {
 		if ( ! current_user_can( $this->get_capability() ) ) {
 			wp_die( esc_html__( 'You do not have sufficient permissions to access this page.', 'system-report' ) );
 		}

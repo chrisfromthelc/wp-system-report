@@ -29,11 +29,9 @@ class REST_Controller extends \WP_REST_Controller {
 	protected $rest_base = 'report';
 
 	/**
-	 * Report generator instance.
-	 *
-	 * @var Report_Generator
-	 */
-	private $report_generator;
+ * Report generator instance.
+ */
+	private \SystemReport\Report_Generator $report_generator;
 
 	/**
 	 * Constructor.
@@ -47,7 +45,7 @@ class REST_Controller extends \WP_REST_Controller {
 	/**
 	 * Register the REST routes.
 	 */
-	public function register_routes() {
+	public function register_routes(): void {
 		register_rest_route(
 			$this->namespace,
 			'/' . $this->rest_base,

@@ -15,11 +15,9 @@ defined( 'ABSPATH' ) || exit;
 class WordPress_Constants extends Abstract_Collector {
 
 	/**
-	 * Get the collector ID.
-	 *
-	 * @return string
-	 */
-	public function get_id() {
+ * Get the collector ID.
+ */
+	public function get_id(): string {
 		return 'wordpress_constants';
 	}
 
@@ -42,20 +40,16 @@ class WordPress_Constants extends Abstract_Collector {
 	}
 
 	/**
-	 * Get the collector priority.
-	 *
-	 * @return int
-	 */
-	public function get_priority() {
+ * Get the collector priority.
+ */
+	public function get_priority(): int {
 		return 100;
 	}
 
 	/**
-	 * Collect the data.
-	 *
-	 * @return array
-	 */
-	public function collect() {
+ * Collect the data.
+ */
+	public function collect(): array {
 		$constants_to_check = array(
 			'ABSPATH'             => array(
 				'label'   => __( 'ABSPATH', 'system-report' ),

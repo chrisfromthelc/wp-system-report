@@ -15,11 +15,9 @@ defined( 'ABSPATH' ) || exit;
 class Active_Plugins extends Abstract_Collector {
 
 	/**
-	 * Get the collector ID.
-	 *
-	 * @return string
-	 */
-	public function get_id() {
+ * Get the collector ID.
+ */
+	public function get_id(): string {
 		return 'active_plugins';
 	}
 
@@ -42,29 +40,23 @@ class Active_Plugins extends Abstract_Collector {
 	}
 
 	/**
-	 * Get the collector priority.
-	 *
-	 * @return int
-	 */
-	public function get_priority() {
+ * Get the collector priority.
+ */
+	public function get_priority(): int {
 		return 60;
 	}
 
 	/**
-	 * Get the transient cache key.
-	 *
-	 * @return string
-	 */
-	protected function get_cache_key() {
+ * Get the transient cache key.
+ */
+	protected function get_cache_key(): string {
 		return 'sr_active_plugins';
 	}
 
 	/**
-	 * Collect the data.
-	 *
-	 * @return array
-	 */
-	public function collect() {
+ * Collect the data.
+ */
+	public function collect(): array {
 		// Require plugin functions if not available.
 		if ( ! function_exists( 'get_plugins' ) ) {
 			require_once ABSPATH . 'wp-admin/includes/plugin.php';
@@ -101,7 +93,7 @@ class Active_Plugins extends Abstract_Collector {
 		}
 		uasort(
 			$active_plugin_data,
-			function ( $a, $b ) {
+			function ( array $a, array $b ): int {
 				return strcmp( $a['Name'], $b['Name'] );
 			}
 		);

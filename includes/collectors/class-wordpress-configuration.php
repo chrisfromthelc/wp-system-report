@@ -15,11 +15,9 @@ defined( 'ABSPATH' ) || exit;
 class WordPress_Configuration extends Abstract_Collector {
 
 	/**
-	 * Get the collector ID.
-	 *
-	 * @return string
-	 */
-	public function get_id() {
+ * Get the collector ID.
+ */
+	public function get_id(): string {
 		return 'wordpress_configuration';
 	}
 
@@ -42,20 +40,16 @@ class WordPress_Configuration extends Abstract_Collector {
 	}
 
 	/**
-	 * Get the collector priority.
-	 *
-	 * @return int
-	 */
-	public function get_priority() {
+ * Get the collector priority.
+ */
+	public function get_priority(): int {
 		return 160;
 	}
 
 	/**
-	 * Collect the data.
-	 *
-	 * @return array
-	 */
-	public function collect() {
+ * Collect the data.
+ */
+	public function collect(): array {
 		$fields = array();
 
 		// Permalink Structure.
@@ -140,7 +134,7 @@ class WordPress_Configuration extends Abstract_Collector {
 			$timezone_value = $timezone_string;
 		} elseif ( $gmt_offset ) {
 			$timezone_value = sprintf(
-				/* translators: %s: GMT offset */
+			/* translators: %s: GMT offset */
 				__( 'UTC%s', 'system-report' ),
 				( $gmt_offset >= 0 ? '+' : '' ) . $gmt_offset
 			);

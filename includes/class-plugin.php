@@ -17,32 +17,24 @@ defined( 'ABSPATH' ) || exit;
 class Plugin {
 
 	/**
-	 * Singleton instance.
-	 *
-	 * @var Plugin|null
-	 */
-	private static $instance = null;
+ * Singleton instance.
+ */
+	private static ?\SystemReport\Plugin $instance = null;
 
 	/**
-	 * Report generator instance.
-	 *
-	 * @var Report_Generator
-	 */
-	private $report_generator;
+ * Report generator instance.
+ */
+	private \SystemReport\Report_Generator $report_generator;
 
 	/**
-	 * Admin page instance.
-	 *
-	 * @var Admin_Page
-	 */
-	private $admin_page;
+ * Admin page instance.
+ */
+	private \SystemReport\Admin_Page $admin_page;
 
 	/**
-	 * REST controller instance.
-	 *
-	 * @var REST_Controller
-	 */
-	private $rest_controller;
+ * REST controller instance.
+ */
+	private \SystemReport\REST_Controller $rest_controller;
 
 	/**
 	 * Get the singleton instance.
@@ -71,7 +63,7 @@ class Plugin {
 	/**
 	 * Register all default collectors.
 	 */
-	private function register_default_collectors() {
+	private function register_default_collectors(): void {
 		$collectors = array(
 			new Collectors\WordPress_Environment(),
 			new Collectors\Server_Environment(),
@@ -100,7 +92,7 @@ class Plugin {
 	/**
 	 * Register WordPress hooks.
 	 */
-	private function register_hooks() {
+	private function register_hooks(): void {
 		add_action( 'init', array( $this, 'load_textdomain' ) );
 		add_action( 'admin_menu', array( $this->admin_page, 'register_menu' ) );
 		add_action( 'rest_api_init', array( $this->rest_controller, 'register_routes' ) );
@@ -121,7 +113,7 @@ class Plugin {
 	/**
 	 * Load the plugin text domain.
 	 */
-	public function load_textdomain() {
+	public function load_textdomain(): void {
 		load_plugin_textdomain(
 			'system-report',
 			false,
@@ -141,7 +133,7 @@ class Plugin {
 	/**
 	 * Clear theme-related caches.
 	 */
-	public function clear_theme_cache() {
+	public function clear_theme_cache(): void {
 		delete_transient( 'sr_theme_info' );
 		delete_transient( 'sr_site_health' );
 	}
@@ -149,7 +141,7 @@ class Plugin {
 	/**
 	 * Clear plugin-related caches.
 	 */
-	public function clear_plugin_cache() {
+	public function clear_plugin_cache(): void {
 		delete_transient( 'sr_active_plugins' );
 		delete_transient( 'sr_inactive_plugins' );
 		delete_transient( 'sr_dropins_mu_plugins' );
@@ -162,7 +154,7 @@ class Plugin {
 	 * @param \WP_Upgrader $upgrader Upgrader instance.
 	 * @param array        $extra    Extra data about the upgrade.
 	 */
-	public function clear_upgrade_cache( $upgrader, $extra ) {
+	public function clear_upgrade_cache( $upgrader, $extra ): void {
 		if ( empty( $extra ) || empty( $extra['type'] ) ) {
 			return;
 		}
