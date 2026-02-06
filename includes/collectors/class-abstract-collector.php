@@ -93,10 +93,10 @@ abstract class Abstract_Collector implements Collector {
 			return size_format( $bytes );
 		}
 
-		$units = array( 'B', 'KB', 'MB', 'GB', 'TB' );
-		$bytes = max( $bytes, 0 );
-		$pow   = floor( ( $bytes ? log( $bytes ) : 0 ) / log( 1024 ) );
-		$pow   = min( $pow, count( $units ) - 1 );
+		$units  = array( 'B', 'KB', 'MB', 'GB', 'TB' );
+		$bytes  = max( $bytes, 0 );
+		$pow    = floor( ( $bytes ? log( $bytes ) : 0 ) / log( 1024 ) );
+		$pow    = min( $pow, count( $units ) - 1 );
 		$bytes /= pow( 1024, $pow );
 
 		return round( $bytes, 2 ) . ' ' . $units[ $pow ];
@@ -115,12 +115,12 @@ abstract class Abstract_Collector implements Collector {
 	/**
 	 * Safely get a PHP constant's value.
 	 *
-	 * @param string $name    Constant name.
-	 * @param mixed  $default Default value if constant is not defined.
-	 * @return mixed Constant value or default.
+	 * @param string $name     Constant name.
+	 * @param mixed  $fallback Fallback value if constant is not defined.
+	 * @return mixed Constant value or fallback.
 	 */
-	protected function get_constant_value( $name, $default = null ) {
-		return defined( $name ) ? constant( $name ) : $default;
+	protected function get_constant_value( $name, $fallback = null ) {
+		return defined( $name ) ? constant( $name ) : $fallback;
 	}
 
 	/**

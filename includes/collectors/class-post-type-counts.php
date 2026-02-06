@@ -60,10 +60,9 @@ class Post_Type_Counts extends Abstract_Collector {
 
 		$data = array();
 
-		// Query post type counts.
-		$query = "SELECT post_type, COUNT(1) as count FROM {$wpdb->posts} GROUP BY post_type ORDER BY count DESC";
-
-		$results = $wpdb->get_results( $query );
+		// Query post type counts. Table name is from $wpdb->posts (safe).
+		// phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared -- No user input; table name from $wpdb->posts.
+		$results = $wpdb->get_results( "SELECT post_type, COUNT(1) as count FROM {$wpdb->posts} GROUP BY post_type ORDER BY count DESC" );
 
 		if ( $results ) {
 			foreach ( $results as $row ) {

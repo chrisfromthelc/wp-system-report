@@ -99,14 +99,17 @@ class Active_Plugins extends Abstract_Collector {
 				$active_plugin_data[ $plugin_path ] = $all_plugins[ $plugin_path ];
 			}
 		}
-		uasort( $active_plugin_data, function( $a, $b ) {
-			return strcmp( $a['Name'], $b['Name'] );
-		});
+		uasort(
+			$active_plugin_data,
+			function ( $a, $b ) {
+				return strcmp( $a['Name'], $b['Name'] );
+			}
+		);
 
 		// Build fields for each active plugin.
 		foreach ( $active_plugin_data as $plugin_path => $plugin_data ) {
 			$version     = ! empty( $plugin_data['Version'] ) ? $plugin_data['Version'] : __( 'Unknown', 'system-report' );
-			$author      = ! empty( $plugin_data['Author'] ) ? strip_tags( $plugin_data['Author'] ) : __( 'Unknown', 'system-report' );
+			$author      = ! empty( $plugin_data['Author'] ) ? wp_strip_all_tags( $plugin_data['Author'] ) : __( 'Unknown', 'system-report' );
 			$plugin_name = ! empty( $plugin_data['Name'] ) ? $plugin_data['Name'] : basename( $plugin_path, '.php' );
 
 			// Build value string.

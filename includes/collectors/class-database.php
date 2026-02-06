@@ -94,15 +94,16 @@ class Database extends Abstract_Collector {
 			$max_allowed_packet ? $this->format_size( $max_allowed_packet ) : __( 'Unknown', 'system-report' )
 		);
 
-		// Get all tables from information_schema.
+		// Get all tables from information_schema using lowercase aliases for PHPCS compliance.
 		$database_name = $this->get_constant_value( 'DB_NAME' );
 		$tables_query  = $wpdb->prepare(
-			'SELECT TABLE_NAME, ENGINE, TABLE_ROWS, DATA_LENGTH, INDEX_LENGTH
+			'SELECT TABLE_NAME AS table_name, ENGINE AS engine, TABLE_ROWS AS table_rows, DATA_LENGTH AS data_length, INDEX_LENGTH AS index_length
 			FROM information_schema.TABLES
 			WHERE TABLE_SCHEMA = %s',
 			$database_name
 		);
 
+		// phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared -- Query is prepared above.
 		$tables = $wpdb->get_results( $tables_query );
 
 		// Core WordPress tables.
@@ -127,23 +128,23 @@ class Database extends Abstract_Collector {
 
 		if ( $tables ) {
 			foreach ( $tables as $table ) {
-				$table_size  = $table->DATA_LENGTH + $table->INDEX_LENGTH;
+				$table_size  = $table->data_length + $table->index_length;
 				$total_size += $table_size;
 
 				// Check if this is a core WordPress table.
-				$table_without_prefix = str_replace( $wpdb->prefix, '', $table->TABLE_NAME );
+				$table_without_prefix = str_replace( $wpdb->prefix, '', $table->table_name );
 				if ( in_array( $table_without_prefix, $core_tables, true ) ) {
 					$wp_core_tables[] = array(
-						'name'   => $table->TABLE_NAME,
-						'engine' => $table->ENGINE,
-						'rows'   => $table->TABLE_ROWS,
+						'name'   => $table->table_name,
+						'engine' => $table->engine,
+						'rows'   => $table->table_rows,
 						'size'   => $table_size,
 					);
 				} else {
 					$other_tables[] = array(
-						'name'   => $table->TABLE_NAME,
-						'engine' => $table->ENGINE,
-						'rows'   => $table->TABLE_ROWS,
+						'name'   => $table->table_name,
+						'engine' => $table->engine,
+						'rows'   => $table->table_rows,
 						'size'   => $table_size,
 					);
 				}

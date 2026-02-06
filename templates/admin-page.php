@@ -8,6 +8,9 @@
  */
 
 defined( 'ABSPATH' ) || exit;
+
+// Template variables are scoped to the including method, not truly global.
+// phpcs:disable WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedVariableFound
 ?>
 <div class="wrap system-report-wrap">
 	<h1><?php esc_html_e( 'System Report', 'system-report' ); ?></h1>
@@ -44,55 +47,55 @@ defined( 'ABSPATH' ) || exit;
 	</div>
 
 	<?php
-	foreach ( $report as $section_id => $section ) :
-		$fields = $section['fields'];
-		if ( empty( $fields ) ) {
+	foreach ( $report as $sr_section_id => $sr_section ) :
+		$sr_fields = $sr_section['fields'];
+		if ( empty( $sr_fields ) ) {
 			continue;
 		}
 		?>
 		<table class="sr_status_table widefat" cellspacing="0">
 			<thead>
 				<tr>
-					<th colspan="3" data-export-label="<?php echo esc_attr( $section['label'] ); ?>">
-						<h2><?php echo esc_html( $section['label'] ); ?></h2>
+					<th colspan="3" data-export-label="<?php echo esc_attr( $sr_section['label'] ); ?>">
+						<h2><?php echo esc_html( $sr_section['label'] ); ?></h2>
 					</th>
 				</tr>
 			</thead>
 			<tbody>
-				<?php foreach ( $fields as $field ) : ?>
+				<?php foreach ( $sr_fields as $sr_field ) : ?>
 					<?php
-					if ( ! empty( $field['private'] ) ) {
+					if ( ! empty( $sr_field['private'] ) ) {
 						continue;
 					}
 
-					$status_class = '';
-					if ( ! empty( $field['status'] ) ) {
-						$status_class = 'status-' . sanitize_html_class( $field['status'] );
+					$sr_status_class = '';
+					if ( ! empty( $sr_field['status'] ) ) {
+						$sr_status_class = 'status-' . sanitize_html_class( $sr_field['status'] );
 					}
 
-					$export_label = ! empty( $field['export_label'] ) ? $field['export_label'] : $field['label'];
+					$sr_export_label = ! empty( $sr_field['export_label'] ) ? $sr_field['export_label'] : $sr_field['label'];
 					?>
 					<tr>
-						<td data-export-label="<?php echo esc_attr( $export_label ); ?>">
-							<?php echo esc_html( $field['label'] ); ?>:
+						<td data-export-label="<?php echo esc_attr( $sr_export_label ); ?>">
+							<?php echo esc_html( $sr_field['label'] ); ?>:
 						</td>
 						<td class="help">
-							<?php if ( ! empty( $field['description'] ) ) : ?>
-								<span class="dashicons dashicons-editor-help" title="<?php echo esc_attr( $field['description'] ); ?>"></span>
+							<?php if ( ! empty( $sr_field['description'] ) ) : ?>
+								<span class="dashicons dashicons-editor-help" title="<?php echo esc_attr( $sr_field['description'] ); ?>"></span>
 							<?php endif; ?>
 						</td>
-						<td class="<?php echo esc_attr( $status_class ); ?>">
+						<td class="<?php echo esc_attr( $sr_status_class ); ?>">
 							<?php
-							$value = $field['value'];
+							$sr_value = $sr_field['value'];
 
-							if ( 'good' === $field['status'] ) {
-								echo '<mark class="yes"><span class="dashicons dashicons-yes"></span> ' . esc_html( $value ) . '</mark>';
-							} elseif ( 'critical' === $field['status'] ) {
-								echo '<mark class="error"><span class="dashicons dashicons-warning"></span> ' . esc_html( $value ) . '</mark>';
-							} elseif ( 'warning' === $field['status'] ) {
-								echo '<mark class="warning"><span class="dashicons dashicons-warning"></span> ' . esc_html( $value ) . '</mark>';
+							if ( 'good' === $sr_field['status'] ) {
+								echo '<mark class="yes"><span class="dashicons dashicons-yes"></span> ' . esc_html( $sr_value ) . '</mark>';
+							} elseif ( 'critical' === $sr_field['status'] ) {
+								echo '<mark class="error"><span class="dashicons dashicons-warning"></span> ' . esc_html( $sr_value ) . '</mark>';
+							} elseif ( 'warning' === $sr_field['status'] ) {
+								echo '<mark class="warning"><span class="dashicons dashicons-warning"></span> ' . esc_html( $sr_value ) . '</mark>';
 							} else {
-								echo esc_html( $value );
+								echo esc_html( $sr_value );
 							}
 							?>
 						</td>

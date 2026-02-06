@@ -90,14 +90,17 @@ class Inactive_Plugins extends Abstract_Collector {
 		$inactive_plugins = array_diff_key( $all_plugins, array_flip( $active_plugins ) );
 
 		// Sort inactive plugins alphabetically by name.
-		uasort( $inactive_plugins, function( $a, $b ) {
-			return strcmp( $a['Name'], $b['Name'] );
-		});
+		uasort(
+			$inactive_plugins,
+			function ( $a, $b ) {
+				return strcmp( $a['Name'], $b['Name'] );
+			}
+		);
 
 		// Build fields for each inactive plugin.
 		foreach ( $inactive_plugins as $plugin_path => $plugin_data ) {
 			$version     = ! empty( $plugin_data['Version'] ) ? $plugin_data['Version'] : __( 'Unknown', 'system-report' );
-			$author      = ! empty( $plugin_data['Author'] ) ? strip_tags( $plugin_data['Author'] ) : __( 'Unknown', 'system-report' );
+			$author      = ! empty( $plugin_data['Author'] ) ? wp_strip_all_tags( $plugin_data['Author'] ) : __( 'Unknown', 'system-report' );
 			$plugin_name = ! empty( $plugin_data['Name'] ) ? $plugin_data['Name'] : basename( $plugin_path, '.php' );
 
 			// Build value string.

@@ -102,14 +102,17 @@ class Dropins_MU_Plugins extends Abstract_Collector {
 		$mu_plugins = get_mu_plugins();
 		if ( ! empty( $mu_plugins ) ) {
 			// Sort MU plugins by name.
-			uasort( $mu_plugins, function( $a, $b ) {
-				return strcmp( $a['Name'], $b['Name'] );
-			});
+			uasort(
+				$mu_plugins,
+				function ( $a, $b ) {
+					return strcmp( $a['Name'], $b['Name'] );
+				}
+			);
 
 			foreach ( $mu_plugins as $mu_plugin_path => $mu_plugin_data ) {
 				$plugin_name = ! empty( $mu_plugin_data['Name'] ) ? $mu_plugin_data['Name'] : basename( $mu_plugin_path, '.php' );
 				$version     = ! empty( $mu_plugin_data['Version'] ) ? $mu_plugin_data['Version'] : __( 'Unknown', 'system-report' );
-				$author      = ! empty( $mu_plugin_data['Author'] ) ? strip_tags( $mu_plugin_data['Author'] ) : __( 'Unknown', 'system-report' );
+				$author      = ! empty( $mu_plugin_data['Author'] ) ? wp_strip_all_tags( $mu_plugin_data['Author'] ) : __( 'Unknown', 'system-report' );
 
 				// Build value string.
 				$value = sprintf(

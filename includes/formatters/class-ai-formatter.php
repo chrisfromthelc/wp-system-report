@@ -71,7 +71,7 @@ class AI_Formatter implements Formatter {
 			'system_report_ai_header',
 			"# System Report for {$host}\n"
 			. "Generated: {$now} | WP {$wp_ver} | PHP {$php_ver}\n"
-			. "Report Version: " . SYSTEM_REPORT_VERSION . "\n\n"
+			. 'Report Version: ' . SYSTEM_REPORT_VERSION . "\n\n"
 			. "---\n\n"
 		);
 
@@ -108,7 +108,7 @@ class AI_Formatter implements Formatter {
 		usort(
 			$issues,
 			function ( $a, $b ) {
-				$order = array(
+				$order   = array(
 					'critical' => 0,
 					'warning'  => 1,
 					'info'     => 2,
@@ -121,7 +121,7 @@ class AI_Formatter implements Formatter {
 
 		$i = 1;
 		foreach ( $issues as $issue ) {
-			$icon = 'critical' === $issue['severity'] ? '🔴' : '🟡';
+			$icon    = 'critical' === $issue['severity'] ? '🔴' : '🟡';
 			$output .= "{$i}. {$icon} **{$issue['title']}** - {$issue['description']}\n";
 			++$i;
 		}

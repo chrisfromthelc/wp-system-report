@@ -188,7 +188,7 @@ class Cron_Health extends Abstract_Collector {
 				__( '%s ago (currently running)', 'system-report' ),
 				human_time_diff( $doing_cron, time() )
 			);
-			$fields[]         = $this->make_field(
+			$fields[] = $this->make_field(
 				__( 'Last Cron Run', 'system-report' ),
 				$last_run_display,
 				array(

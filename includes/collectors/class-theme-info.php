@@ -116,7 +116,7 @@ class Theme_Info extends Abstract_Collector {
 		);
 
 		// Theme Author.
-		$author = strip_tags( $theme->get( 'Author' ) );
+		$author   = wp_strip_all_tags( $theme->get( 'Author' ) );
 		$fields[] = $this->make_field(
 			__( 'Theme Author', 'system-report' ),
 			$author,
@@ -141,7 +141,7 @@ class Theme_Info extends Abstract_Collector {
 
 		// Is Child Theme.
 		$is_child_theme = $theme->parent() !== false;
-		$fields[] = $this->make_field(
+		$fields[]       = $this->make_field(
 			__( 'Is Child Theme', 'system-report' ),
 			$this->format_boolean( $is_child_theme ),
 			array(
@@ -152,7 +152,7 @@ class Theme_Info extends Abstract_Collector {
 
 		// Is Block Theme.
 		$is_block_theme = function_exists( 'wp_is_block_theme' ) && wp_is_block_theme();
-		$fields[] = $this->make_field(
+		$fields[]       = $this->make_field(
 			__( 'Is Block Theme', 'system-report' ),
 			$this->format_boolean( $is_block_theme ),
 			array(
@@ -186,8 +186,8 @@ class Theme_Info extends Abstract_Collector {
 			);
 
 			// Parent Theme Author.
-			$parent_author = strip_tags( $parent_theme->get( 'Author' ) );
-			$fields[] = $this->make_field(
+			$parent_author = wp_strip_all_tags( $parent_theme->get( 'Author' ) );
+			$fields[]      = $this->make_field(
 				__( 'Parent Theme Author', 'system-report' ),
 				$parent_author,
 				array(

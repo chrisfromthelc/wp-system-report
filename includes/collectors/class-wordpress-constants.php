@@ -57,91 +57,91 @@ class WordPress_Constants extends Abstract_Collector {
 	 */
 	public function collect() {
 		$constants_to_check = array(
-			'ABSPATH'                => array(
+			'ABSPATH'             => array(
 				'label'   => __( 'ABSPATH', 'system-report' ),
 				'private' => true,
 			),
-			'WP_HOME'                => array(
+			'WP_HOME'             => array(
 				'label'   => __( 'WP_HOME', 'system-report' ),
 				'private' => true,
 			),
-			'WP_SITEURL'             => array(
+			'WP_SITEURL'          => array(
 				'label'   => __( 'WP_SITEURL', 'system-report' ),
 				'private' => true,
 			),
-			'WP_CONTENT_DIR'         => array(
+			'WP_CONTENT_DIR'      => array(
 				'label' => __( 'WP_CONTENT_DIR', 'system-report' ),
 			),
-			'WP_PLUGIN_DIR'          => array(
+			'WP_PLUGIN_DIR'       => array(
 				'label' => __( 'WP_PLUGIN_DIR', 'system-report' ),
 			),
-			'WP_MEMORY_LIMIT'        => array(
+			'WP_MEMORY_LIMIT'     => array(
 				'label' => __( 'WP_MEMORY_LIMIT', 'system-report' ),
 			),
-			'WP_MAX_MEMORY_LIMIT'    => array(
+			'WP_MAX_MEMORY_LIMIT' => array(
 				'label' => __( 'WP_MAX_MEMORY_LIMIT', 'system-report' ),
 			),
-			'WP_DEBUG'               => array(
+			'WP_DEBUG'            => array(
 				'label'   => __( 'WP_DEBUG', 'system-report' ),
 				'boolean' => true,
 			),
-			'WP_DEBUG_DISPLAY'       => array(
+			'WP_DEBUG_DISPLAY'    => array(
 				'label'   => __( 'WP_DEBUG_DISPLAY', 'system-report' ),
 				'boolean' => true,
 			),
-			'WP_DEBUG_LOG'           => array(
+			'WP_DEBUG_LOG'        => array(
 				'label'   => __( 'WP_DEBUG_LOG', 'system-report' ),
 				'boolean' => true,
 			),
-			'SCRIPT_DEBUG'           => array(
+			'SCRIPT_DEBUG'        => array(
 				'label'   => __( 'SCRIPT_DEBUG', 'system-report' ),
 				'boolean' => true,
 			),
-			'WP_CACHE'               => array(
+			'WP_CACHE'            => array(
 				'label'   => __( 'WP_CACHE', 'system-report' ),
 				'boolean' => true,
 			),
-			'CONCATENATE_SCRIPTS'    => array(
+			'CONCATENATE_SCRIPTS' => array(
 				'label'   => __( 'CONCATENATE_SCRIPTS', 'system-report' ),
 				'boolean' => true,
 			),
-			'COMPRESS_SCRIPTS'       => array(
+			'COMPRESS_SCRIPTS'    => array(
 				'label'   => __( 'COMPRESS_SCRIPTS', 'system-report' ),
 				'boolean' => true,
 			),
-			'COMPRESS_CSS'           => array(
+			'COMPRESS_CSS'        => array(
 				'label'   => __( 'COMPRESS_CSS', 'system-report' ),
 				'boolean' => true,
 			),
-			'WP_ENVIRONMENT_TYPE'    => array(
+			'WP_ENVIRONMENT_TYPE' => array(
 				'label' => __( 'WP_ENVIRONMENT_TYPE', 'system-report' ),
 			),
-			'WP_DEVELOPMENT_MODE'    => array(
+			'WP_DEVELOPMENT_MODE' => array(
 				'label' => __( 'WP_DEVELOPMENT_MODE', 'system-report' ),
 			),
-			'DISALLOW_FILE_EDIT'     => array(
+			'DISALLOW_FILE_EDIT'  => array(
 				'label'   => __( 'DISALLOW_FILE_EDIT', 'system-report' ),
 				'boolean' => true,
 			),
-			'DISALLOW_FILE_MODS'     => array(
+			'DISALLOW_FILE_MODS'  => array(
 				'label'   => __( 'DISALLOW_FILE_MODS', 'system-report' ),
 				'boolean' => true,
 			),
-			'DISABLE_WP_CRON'        => array(
+			'DISABLE_WP_CRON'     => array(
 				'label'   => __( 'DISABLE_WP_CRON', 'system-report' ),
 				'boolean' => true,
 			),
-			'WP_AUTO_UPDATE_CORE'    => array(
+			'WP_AUTO_UPDATE_CORE' => array(
 				'label' => __( 'WP_AUTO_UPDATE_CORE', 'system-report' ),
 			),
-			'FORCE_SSL_ADMIN'        => array(
+			'FORCE_SSL_ADMIN'     => array(
 				'label'   => __( 'FORCE_SSL_ADMIN', 'system-report' ),
 				'boolean' => true,
 			),
-			'AUTOSAVE_INTERVAL'      => array(
+			'AUTOSAVE_INTERVAL'   => array(
 				'label' => __( 'AUTOSAVE_INTERVAL', 'system-report' ),
 			),
-			'WP_POST_REVISIONS'      => array(
+			'WP_POST_REVISIONS'   => array(
 				'label' => __( 'WP_POST_REVISIONS', 'system-report' ),
 			),
 		);
@@ -159,15 +159,12 @@ class WordPress_Constants extends Abstract_Collector {
 			if ( null === $value ) {
 				$display_value = __( 'Not defined', 'system-report' );
 				$debug_value   = null;
+			} elseif ( ! empty( $config['boolean'] ) ) {
+				$display_value = $this->format_boolean( $value );
+				$debug_value   = $value;
 			} else {
-				// Format boolean values.
-				if ( ! empty( $config['boolean'] ) ) {
-					$display_value = $this->format_boolean( $value );
-					$debug_value   = $value;
-				} else {
-					$display_value = $value;
-					$debug_value   = $value;
-				}
+				$display_value = $value;
+				$debug_value   = $value;
 			}
 
 			// Determine field status based on constant value and environment.
