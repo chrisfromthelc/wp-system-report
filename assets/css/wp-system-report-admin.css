@@ -1,0 +1,169 @@
+/**
+ * WP System Report - Admin Styles
+ *
+ * @package SystemReport
+ */
+
+/* Report wrap */
+.wp-system-report-wrap {
+	max-width: 1200px;
+}
+
+/* Action buttons area */
+.sr-report-actions {
+	margin-bottom: 20px;
+}
+
+.sr-report-actions .submit {
+	margin: 0;
+	padding: 10px 0 8.5px;
+}
+
+/* Debug report textarea */
+#sr-debug-report {
+	margin-top: 10px;
+}
+
+#sr-debug-report textarea {
+	width: 100%;
+	min-height: 200px;
+	font-family: monospace;
+	font-size: 12px;
+	background: #f6f7f7;
+	border: 1px solid #dcdcde;
+	padding: 10px;
+	resize: vertical;
+}
+
+#sr-debug-report .submit {
+	display: flex;
+	gap: 8px;
+	flex-wrap: wrap;
+	align-items: center;
+}
+
+/* Copy success tooltip */
+.sr-copy-success {
+	display: inline-block;
+	padding: 2px 8px;
+	margin-left: 8px;
+	background: #00a32a;
+	color: #fff;
+	border-radius: 3px;
+	font-size: 12px;
+	opacity: 0;
+	transition: opacity 0.3s ease;
+}
+
+.sr-copy-success.visible {
+	opacity: 1;
+}
+
+/* Status tables */
+.sr_status_table {
+	margin-bottom: 1em;
+	border: 1px solid #c3c4c7;
+}
+
+.sr_status_table thead th {
+	padding: 8px 10px;
+	background: #f6f7f7;
+	text-align: left;
+}
+
+.sr_status_table thead th h2 {
+	margin: 0;
+	font-size: 14px;
+	font-weight: 600;
+	color: #1d2327;
+}
+
+.sr_status_table tbody tr {
+	border-bottom: 1px solid #f0f0f1;
+}
+
+.sr_status_table tbody tr:last-child {
+	border-bottom: none;
+}
+
+.sr_status_table tbody td {
+	padding: 8px 10px;
+	vertical-align: top;
+	font-size: 13px;
+	line-height: 1.5;
+	word-wrap: break-word;
+}
+
+/* Column widths */
+.sr_status_table tbody td:first-child {
+	width: 250px;
+	font-weight: 500;
+	color: #50575e;
+}
+
+.sr_status_table tbody td.help {
+	width: 24px;
+	padding: 8px 4px;
+	text-align: center;
+}
+
+.sr_status_table tbody td.help .dashicons {
+	font-size: 16px;
+	width: 16px;
+	height: 16px;
+	color: #8c8f94;
+	cursor: help;
+}
+
+/* Status marks */
+.sr_status_table mark {
+	background: transparent;
+	padding: 0;
+}
+
+.sr_status_table mark.yes {
+	color: #00a32a;
+}
+
+.sr_status_table mark.error {
+	color: #d63638;
+}
+
+.sr_status_table mark.warning {
+	color: #dba617;
+}
+
+.sr_status_table mark .dashicons {
+	font-size: 16px;
+	width: 16px;
+	height: 16px;
+	vertical-align: text-bottom;
+}
+
+/* Responsive */
+@media screen and (max-width: 782px) {
+	.sr_status_table tbody td:first-child {
+		width: auto;
+		display: block;
+		font-weight: 600;
+		padding-bottom: 2px;
+	}
+
+	.sr_status_table tbody td.help {
+		display: none;
+	}
+
+	.sr_status_table tbody td:last-child {
+		display: block;
+		padding-top: 2px;
+	}
+
+	#sr-debug-report .submit {
+		flex-direction: column;
+		align-items: stretch;
+	}
+
+	#sr-debug-report .submit button {
+		width: 100%;
+	}
+}
