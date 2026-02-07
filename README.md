@@ -11,6 +11,7 @@ A comprehensive WordPress system status report plugin with AI-optimized export. 
 - **Extensible** - Filter hooks for adding custom collectors, modifying fields, and extending issue detection
 - **Zero Dependencies** - Works standalone without WooCommerce or any other plugin
 - **Cached** - Transient caching for expensive collectors with automatic invalidation
+- **Auto-Updates** - Checks GitHub Releases for new versions and serves updates through the WordPress dashboard
 
 ## Requirements
 
@@ -210,6 +211,7 @@ wp-system-report/
     class-admin-page.php         # Admin menu + rendering
     class-rest-controller.php    # WP_REST_Controller
     class-report-generator.php   # Collector registry
+    class-github-updater.php   # GitHub release update checker
     collectors/
       interface-collector.php    # Collector contract
       class-abstract-collector.php # Shared helpers + caching

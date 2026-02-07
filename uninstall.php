@@ -19,6 +19,7 @@ $wp_system_report_transients = array(
 	'sr_dropins_mu_plugins',
 	'sr_theme_info',
 	'sr_site_health',
+	'sr_github_update',
 );
 
 foreach ( $wp_system_report_transients as $wp_system_report_transient ) {

@@ -9,6 +9,7 @@ declare(strict_types=1);
 
 use Rector\Config\RectorConfig;
 use Rector\DeadCode\Rector\ClassMethod\RemoveUnusedPrivateMethodParameterRector;
+use Rector\DeadCode\Rector\Property\RemoveUnusedPrivatePropertyRector;
 use Rector\Set\ValueObject\SetList;
 
 return RectorConfig::configure()
@@ -24,6 +25,10 @@ return RectorConfig::configure()
 			__DIR__ . '/tests',
 			// Skip rules that conflict with WordPress coding standards.
 			RemoveUnusedPrivateMethodParameterRector::class,
+			// GitHub_Updater property is stored to prevent garbage collection.
+			RemoveUnusedPrivatePropertyRector::class => array(
+				__DIR__ . '/includes/class-plugin.php',
+			),
 		)
 	)
 	->withPhpVersion( Rector\ValueObject\PhpVersion::PHP_74 )

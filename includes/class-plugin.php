@@ -37,6 +37,15 @@ class Plugin {
 	private \SystemReport\REST_Controller $rest_controller;
 
 	/**
+	 * GitHub updater instance.
+	 *
+	 * Stored to prevent garbage collection; hooks are registered in the constructor.
+	 *
+	 * @phpstan-ignore property.onlyWritten
+	 */
+	private \SystemReport\GitHub_Updater $github_updater;
+
+	/**
  * Get the singleton instance.
  */
 	public static function get_instance(): \SystemReport\Plugin {
@@ -53,6 +62,7 @@ class Plugin {
 		$this->report_generator = new Report_Generator();
 		$this->admin_page       = new Admin_Page( $this->report_generator );
 		$this->rest_controller  = new REST_Controller( $this->report_generator );
+		$this->github_updater   = new GitHub_Updater( WP_SYSTEM_REPORT_FILE );
 
 		$this->register_default_collectors();
 		$this->register_hooks();

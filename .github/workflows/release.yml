@@ -1,0 +1,51 @@
+name: Release
+
+on:
+  release:
+    types: [ published ]
+
+permissions:
+  contents: write
+
+jobs:
+  build-and-upload:
+    name: Build release zip
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.2'
+          tools: composer
+          coverage: none
+
+      - name: Install production dependencies
+        run: composer install --no-dev --prefer-dist --optimize-autoloader --no-progress
+
+      - name: Build release zip
+        run: |
+          mkdir wp-system-report
+          rsync -a \
+            --exclude='.git' \
+            --exclude='.github' \
+            --exclude='tests' \
+            --exclude='phpunit.xml.dist' \
+            --exclude='phpstan.neon.dist' \
+            --exclude='phpstan-bootstrap.php' \
+            --exclude='phpcs.xml.dist' \
+            --exclude='rector.php' \
+            --exclude='composer.json' \
+            --exclude='composer.lock' \
+            --exclude='.gitignore' \
+            --exclude='node_modules' \
+            --exclude='vendor/bin' \
+            ./ wp-system-report/
+          zip -r wp-system-report.zip wp-system-report/
+
+      - name: Upload release asset
+        run: gh release upload "${{ github.event.release.tag_name }}" wp-system-report.zip --clobber
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}

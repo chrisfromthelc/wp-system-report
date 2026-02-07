@@ -11,6 +11,7 @@
  * Text Domain: wp-system-report
  * Requires at least: 6.2
  * Requires PHP: 7.4
+ * Update URI:  https://github.com/chrisfromthelc/wp-system-report
  *
  * @package SystemReport
  */

@@ -72,6 +72,10 @@ By default, `manage_options` (Administrator). You can change this with the `wp_s
 
 Yes. Expensive collectors (plugins, themes, site health) use transient caching with a 1-hour TTL. Caches are automatically invalidated when plugins are activated/deactivated or themes are switched.
 
+= Does the plugin auto-update? =
+
+Yes. WP System Report checks GitHub Releases for new versions and serves updates through the standard WordPress plugin update mechanism. When a new release is published on GitHub, you will see the update notice in your WordPress dashboard just like any other plugin.
+
 == Screenshots ==
 
 1. WP System Report admin page showing diagnostic tables
