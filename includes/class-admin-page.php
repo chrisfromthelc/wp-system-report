@@ -86,6 +86,7 @@ class Admin_Page {
 					'copyFailed' => __( 'Copying to clipboard failed. Please press Ctrl/Cmd+C to copy.', 'wp-system-report' ),
 					'generating' => __( 'Generating...', 'wp-system-report' ),
 					'downloadAi' => __( 'Download for AI analysis', 'wp-system-report' ),
+					'aiFailed'   => __( 'Failed to generate AI report. Please try again.', 'wp-system-report' ),
 				),
 			)
 		);
@@ -109,12 +110,18 @@ class Admin_Page {
 	 *
 	 * @return string WordPress capability.
 	 */
-	private function get_capability() {
+	private function get_capability(): string {
 		/**
 		 * Filter the required capability for viewing the WP System Report.
 		 *
 		 * @param string $capability WordPress capability. Default 'manage_options'.
 		 */
-		return apply_filters( 'wp_system_report_capability', 'manage_options' );
+		$capability = apply_filters( 'wp_system_report_capability', 'manage_options' );
+
+		if ( ! is_string( $capability ) || '' === $capability ) {
+			return 'manage_options';
+		}
+
+		return $capability;
 	}
 }

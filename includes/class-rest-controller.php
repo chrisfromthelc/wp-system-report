@@ -56,10 +56,11 @@ class REST_Controller extends \WP_REST_Controller {
 					'permission_callback' => array( $this, 'get_report_permissions_check' ),
 					'args'                => array(
 						'format' => array(
-							'description' => __( 'Output format.', 'wp-system-report' ),
-							'type'        => 'string',
-							'enum'        => array( 'json', 'plain', 'github', 'ai' ),
-							'default'     => 'json',
+							'description'       => __( 'Output format.', 'wp-system-report' ),
+							'type'              => 'string',
+							'enum'              => array( 'json', 'plain', 'github', 'ai' ),
+							'default'           => 'json',
+							'sanitize_callback' => 'sanitize_text_field',
 						),
 					),
 				),
@@ -81,6 +82,10 @@ class REST_Controller extends \WP_REST_Controller {
 		 * @param string $capability WordPress capability. Default 'manage_options'.
 		 */
 		$capability = apply_filters( 'wp_system_report_capability', 'manage_options' );
+
+		if ( ! is_string( $capability ) || '' === $capability ) {
+			$capability = 'manage_options';
+		}
 
 		if ( ! current_user_can( $capability ) ) {
 			return new \WP_Error(
@@ -117,11 +122,23 @@ class REST_Controller extends \WP_REST_Controller {
 			);
 		}
 
-		$output   = $formatter->format( $report );
-		$response = new \WP_REST_Response( $output );
-		$response->header( 'Content-Type', $formatter->get_content_type() );
+		$output       = $formatter->format( $report );
+		$content_type = $formatter->get_content_type();
 
-		return $response;
+		// Serve non-JSON formats as raw text to avoid JSON-encoding the string.
+		add_filter(
+			'rest_pre_serve_request',
+			// phpcs:ignore Generic.CodeAnalysis.UnusedFunctionParameter.Found -- Required by filter signature.
+			function ( $served ) use ( $output, $content_type ): bool {
+				if ( ! headers_sent() ) {
+					header( 'Content-Type: ' . $content_type );
+				}
+				echo $output; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Pre-escaped formatter output.
+				return true;
+			}
+		);
+
+		return new \WP_REST_Response( null, 200 );
 	}
 
 	/**

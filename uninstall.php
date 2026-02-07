@@ -20,8 +20,23 @@ $wp_system_report_transients = array(
 	'sr_theme_info',
 	'sr_site_health',
 	'sr_github_update',
+	'sr_github_update_failed',
+	'sr_database',
+	'sr_post_type_counts',
+	'sr_advanced_diagnostics',
 );
 
-foreach ( $wp_system_report_transients as $wp_system_report_transient ) {
-	delete_transient( $wp_system_report_transient );
+if ( is_multisite() ) {
+	$wp_system_report_sites = get_sites( array( 'fields' => 'ids' ) );
+	foreach ( $wp_system_report_sites as $wp_system_report_site_id ) {
+		switch_to_blog( $wp_system_report_site_id );
+		foreach ( $wp_system_report_transients as $wp_system_report_transient ) {
+			delete_transient( $wp_system_report_transient );
+		}
+		restore_current_blog();
+	}
+} else {
+	foreach ( $wp_system_report_transients as $wp_system_report_transient ) {
+		delete_transient( $wp_system_report_transient );
+	}
 }

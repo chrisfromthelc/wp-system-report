@@ -322,42 +322,38 @@ class AI_Formatter implements Formatter {
 			}
 		}
 
-		// Check autoloaded options size.
-		global $wpdb;
-		$autoload_size = $wpdb->get_var(
-			"SELECT SUM(LENGTH(option_value)) FROM {$wpdb->options} WHERE autoload IN ('yes', 'on')"
-		);
+		// Autoloaded options size is already reported by the collector with field-level
+		// status. The detect_issues() method captures it automatically — no duplicate needed.
 
-		if ( $autoload_size && $autoload_size > 1572864 ) { // 1.5 MB.
-			$issues[] = array(
-				'severity'    => 'critical',
-				'title'       => 'Autoloaded options exceed 1.5 MB (' . size_format( $autoload_size ) . ')',
-				'description' => 'Large autoloaded options significantly slow every page load. Review and clean up unused options.',
-			);
-		} elseif ( $autoload_size && $autoload_size > 819200 ) { // 800 KB.
-			$issues[] = array(
-				'severity'    => 'warning',
-				'title'       => 'Autoloaded options are ' . size_format( $autoload_size ),
-				'description' => 'Exceeds the recommended 800 KB threshold. Consider auditing autoloaded options.',
-			);
-		}
-
-		// Check for non-InnoDB tables.
-		$non_innodb = $wpdb->get_var(
-			$wpdb->prepare(
-				"SELECT COUNT(*) FROM information_schema.TABLES WHERE TABLE_SCHEMA = %s AND ENGINE != 'InnoDB' AND ENGINE IS NOT NULL",
-				DB_NAME
-			)
-		);
-
-		if ( $non_innodb > 0 ) {
-			$issues[] = array(
-				'severity'    => 'warning',
-				'title'       => $non_innodb . ' database table(s) not using InnoDB engine',
-				'description' => 'InnoDB is the recommended storage engine for WordPress. Non-InnoDB tables may have performance or reliability issues.',
-			);
+		// Check for non-InnoDB tables from existing report data (Database section).
+		$database_section = $this->find_section_by_id( $report_data, 'database' );
+		if ( $database_section ) {
+			$non_innodb_count = 0;
+			foreach ( $database_section['fields'] as $field ) {
+				if ( false !== strpos( $field['value'], 'Engine:' ) && false === strpos( $field['value'], 'InnoDB' ) ) {
+					++$non_innodb_count;
+				}
+			}
+			if ( $non_innodb_count > 0 ) {
+				$issues[] = array(
+					'severity'    => 'warning',
+					'title'       => $non_innodb_count . ' database table(s) not using InnoDB engine',
+					'description' => 'InnoDB is the recommended storage engine for WordPress. Non-InnoDB tables may have performance or reliability issues.',
+				);
+			}
 		}
 
 		return $issues;
+	}
+
+	/**
+	 * Find a section by ID.
+	 *
+	 * @param array  $report_data Full report data.
+	 * @param string $section_id  Section ID to find.
+	 * @return array|null Section data or null.
+	 */
+	private function find_section_by_id( array $report_data, string $section_id ) {
+		return $report_data[ $section_id ] ?? null;
 	}
 }

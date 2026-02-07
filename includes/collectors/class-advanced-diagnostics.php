@@ -15,8 +15,17 @@ defined( 'ABSPATH' ) || exit;
 class Advanced_Diagnostics extends Abstract_Collector {
 
 	/**
- * Get the collector ID.
- */
+	 * Get the transient cache key.
+	 *
+	 * @return string Cache key.
+	 */
+	protected function get_cache_key(): string {
+		return 'sr_advanced_diagnostics';
+	}
+
+	/**
+	 * Get the collector ID.
+	 */
 	public function get_id(): string {
 		return 'advanced_diagnostics';
 	}
@@ -167,14 +176,12 @@ class Advanced_Diagnostics extends Abstract_Collector {
 				$this->format_size( $error_log_size )
 			);
 
-			// Try to read last 5 lines if file has content.
+			// Read only the last ~4 KB of the log to avoid memory exhaustion on large files.
 			if ( $error_log_size > 0 ) {
-				// phpcs:ignore WordPress.WP.AlternativeFunctions.file_get_contents_file_get_contents
-				$lines = file( $error_log, FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES );
+				$last_lines = $this->read_last_lines( $error_log, 5, 4096 );
 
-				if ( is_array( $lines ) && ! empty( $lines ) ) {
-					$last_lines = array_slice( $lines, -5 );
-					$log_value  = sprintf(
+				if ( ! empty( $last_lines ) ) {
+					$log_value = sprintf(
 						/* translators: 1: file path, 2: file size, 3: last log lines */
 						__( '%1$s (%2$s) - Last entries: %3$s', 'wp-system-report' ),
 						$error_log,
@@ -186,7 +193,8 @@ class Advanced_Diagnostics extends Abstract_Collector {
 
 			$fields[] = $this->make_field(
 				__( 'PHP Error Log', 'wp-system-report' ),
-				$log_value
+				$log_value,
+				array( 'private' => true )
 			);
 		} else {
 			$fields[] = $this->make_field(
@@ -204,5 +212,39 @@ class Advanced_Diagnostics extends Abstract_Collector {
 		);
 
 		return $fields;
+	}
+
+	/**
+	 * Read the last N lines of a file without loading the entire file into memory.
+	 *
+	 * Uses fseek to read only the tail of the file, preventing memory exhaustion
+	 * on large error logs.
+	 *
+	 * @param string $file_path  Absolute path to the file.
+	 * @param int    $num_lines  Number of lines to read.
+	 * @param int    $chunk_size Number of bytes to read from the end.
+	 * @return array Array of lines, or empty array on failure.
+	 */
+	private function read_last_lines( string $file_path, int $num_lines = 5, int $chunk_size = 4096 ): array {
+		// phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_fopen
+		$handle = fopen( $file_path, 'r' );
+
+		if ( ! $handle ) {
+			return array();
+		}
+
+		fseek( $handle, -min( $chunk_size, filesize( $file_path ) ), SEEK_END );
+		// phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_fread
+		$chunk = fread( $handle, $chunk_size );
+		// phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_fclose
+		fclose( $handle );
+
+		if ( false === $chunk ) {
+			return array();
+		}
+
+		$lines = explode( "\n", trim( $chunk ) );
+
+		return array_slice( $lines, -$num_lines );
 	}
 }

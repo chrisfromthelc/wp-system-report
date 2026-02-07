@@ -161,7 +161,7 @@
 				replacement: '$1 [Redacted]',
 			},
 			{
-				regex: /(### Database ###\n)([\s\S]*?)(\n### )/,
+				regex: /(### Database ###\n)([\s\S]*?)(\n### |$)/,
 				replacement: '$1\n[REDACTED]\n$3',
 			},
 		];
@@ -285,13 +285,6 @@
 						return response.text();
 					} )
 					.then( function ( data ) {
-						// The response is JSON-encoded string, parse it.
-						var content = data;
-						try {
-							content = JSON.parse( data );
-						} catch ( e ) {
-							// Already plain text, use as-is.
-						}
 						downloadFile(
 							content,
 							buildFilename( 'WPSystemReport_AI', 'md' ),
@@ -303,7 +296,7 @@
 						console.error( 'WP System Report AI download failed:', error );
 						/* eslint-enable no-console */
 						/* eslint-disable no-alert */
-						alert( 'Failed to generate AI report. Please try again.' );
+						alert( systemReportAdmin.i18n.aiFailed || 'Failed to generate AI report. Please try again.' );
 						/* eslint-enable no-alert */
 					} )
 					.finally( function () {

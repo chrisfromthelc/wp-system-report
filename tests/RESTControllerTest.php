@@ -145,11 +145,16 @@ class RESTControllerTest extends WP_UnitTestCase {
 		$response = rest_get_server()->dispatch( $request );
 
 		$this->assertSame( 200, $response->get_status() );
-		$this->assertIsString( $response->get_data() );
-		$this->assertStringContainsString( '###', $response->get_data() );
 
-		$headers = $response->get_headers();
-		$this->assertSame( 'text/plain; charset=utf-8', $headers['Content-Type'] );
+		// Non-JSON formats use rest_pre_serve_request to output raw text.
+		// The filter signature is: ($served, $result, $request, $server).
+		ob_start();
+		$served = apply_filters( 'rest_pre_serve_request', false, $response, $request, rest_get_server() );
+		$output = ob_get_clean();
+
+		$this->assertTrue( $served );
+		$this->assertIsString( $output );
+		$this->assertStringContainsString( '###', $output );
 	}
 
 	/**
@@ -163,7 +168,14 @@ class RESTControllerTest extends WP_UnitTestCase {
 		$response = rest_get_server()->dispatch( $request );
 
 		$this->assertSame( 200, $response->get_status() );
-		$this->assertStringContainsString( '<details>', $response->get_data() );
+
+		// Non-JSON formats use rest_pre_serve_request to output raw text.
+		ob_start();
+		$served = apply_filters( 'rest_pre_serve_request', false, $response, $request, rest_get_server() );
+		$output = ob_get_clean();
+
+		$this->assertTrue( $served );
+		$this->assertStringContainsString( '<details>', $output );
 	}
 
 	/**
@@ -177,10 +189,14 @@ class RESTControllerTest extends WP_UnitTestCase {
 		$response = rest_get_server()->dispatch( $request );
 
 		$this->assertSame( 200, $response->get_status() );
-		$this->assertStringContainsString( '# WP System Report for', $response->get_data() );
 
-		$headers = $response->get_headers();
-		$this->assertSame( 'text/markdown; charset=utf-8', $headers['Content-Type'] );
+		// Non-JSON formats use rest_pre_serve_request to output raw text.
+		ob_start();
+		$served = apply_filters( 'rest_pre_serve_request', false, $response, $request, rest_get_server() );
+		$output = ob_get_clean();
+
+		$this->assertTrue( $served );
+		$this->assertStringContainsString( '# WP System Report for', $output );
 	}
 
 	/**

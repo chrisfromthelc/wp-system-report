@@ -130,7 +130,7 @@ class GitHub_Updater {
 		$info->author        = '<a href="https://github.com/chrisfromthelc">Christopher Smith</a>';
 		$info->homepage      = 'https://github.com/' . $this->repo;
 		$info->requires      = '6.2';
-		$info->tested        = '6.9';
+		$info->tested        = $release['tested_wp'] ?? get_bloginfo( 'version' );
 		$info->requires_php  = '7.4';
 		$info->download_link = $this->get_release_asset_url( $release );
 		$info->trunk         = $this->get_release_asset_url( $release );
@@ -149,6 +149,7 @@ class GitHub_Updater {
 	 */
 	public function clear_update_cache(): void {
 		delete_transient( $this->cache_key );
+		delete_transient( $this->cache_key . '_failed' );
 	}
 
 	/**
@@ -160,27 +161,42 @@ class GitHub_Updater {
 		$cached = get_transient( $this->cache_key );
 
 		if ( false !== $cached ) {
-			return $cached;
+			// Validate cached data structure before using it.
+			if ( is_array( $cached ) && ! empty( $cached['tag_name'] ) ) {
+				return $cached;
+			}
+			// Invalid cache structure — delete and re-fetch.
+			delete_transient( $this->cache_key );
+		}
+
+		// Skip API call if a recent failure is cached.
+		if ( false !== get_transient( $this->cache_key . '_failed' ) ) {
+			return false;
 		}
 
 		$response = wp_remote_get(
 			$this->api_url,
 			array(
-				'headers' => array(
+				'headers'             => array(
 					'Accept'     => 'application/vnd.github.v3+json',
 					'User-Agent' => 'wp-system-report/' . WP_SYSTEM_REPORT_VERSION,
 				),
-				'timeout' => 10,
+				'timeout'             => 10,
+				'limit_response_size' => 1048576, // 1 MB max.
 			)
 		);
 
 		if ( is_wp_error( $response ) ) {
+			// Cache failures briefly to avoid repeated requests.
+			set_transient( $this->cache_key . '_failed', 1, 30 * MINUTE_IN_SECONDS );
 			return false;
 		}
 
 		$code = wp_remote_retrieve_response_code( $response );
 
 		if ( 200 !== $code ) {
+			// Cache non-200 responses (e.g. rate-limit 403) to avoid repeated failed requests.
+			set_transient( $this->cache_key . '_failed', 1, 30 * MINUTE_IN_SECONDS );
 			return false;
 		}
 
@@ -210,6 +226,7 @@ class GitHub_Updater {
 			foreach ( $release['assets'] as $asset ) {
 				if ( ! empty( $asset['browser_download_url'] )
 					&& str_ends_with( $asset['name'] ?? '', '.zip' )
+					&& $this->is_valid_github_url( $asset['browser_download_url'] )
 				) {
 					return $asset['browser_download_url'];
 				}
@@ -217,7 +234,24 @@ class GitHub_Updater {
 		}
 
 		// Fallback to GitHub's auto-generated zipball.
-		return $release['zipball_url'] ?? '';
+		$zipball = $release['zipball_url'] ?? '';
+
+		if ( '' !== $zipball && ! $this->is_valid_github_url( $zipball ) ) {
+			return '';
+		}
+
+		return $zipball;
+	}
+
+	/**
+	 * Validate that a URL points to a known GitHub domain.
+	 *
+	 * @param string $url URL to validate.
+	 * @return bool True if the URL points to github.com or api.github.com.
+	 */
+	private function is_valid_github_url( string $url ): bool {
+		return str_starts_with( $url, 'https://github.com/' )
+			|| str_starts_with( $url, 'https://api.github.com/' );
 	}
 
 	/**

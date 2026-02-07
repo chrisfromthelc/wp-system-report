@@ -56,6 +56,20 @@ class Plugin {
 	}
 
 	/**
+	 * Prevent cloning of the singleton.
+	 */
+	private function __clone() {}
+
+	/**
+	 * Prevent unserialization of the singleton.
+	 *
+	 * @throws \RuntimeException Always.
+	 */
+	public function __wakeup() {
+		throw new \RuntimeException( 'Cannot unserialize singleton.' );
+	}
+
+	/**
 	 * Constructor.
 	 */
 	private function __construct() {

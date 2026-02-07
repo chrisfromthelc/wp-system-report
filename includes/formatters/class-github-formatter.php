@@ -31,7 +31,9 @@ class GitHub_Formatter implements Formatter {
 		$report = $this->apply_redactions( $report );
 
 		// Wrap in GitHub details tags.
-		return '<details><summary>System Status Report</summary>' . "\n\n"
+		$summary = __( 'System Status Report', 'wp-system-report' );
+
+		return '<details><summary>' . esc_html( $summary ) . '</summary>' . "\n\n"
 			. '```' . "\n" . $report . '```' . "\n"
 			. '</details>';
 	}
@@ -69,7 +71,7 @@ class GitHub_Formatter implements Formatter {
 				'replacement' => '$1 [Redacted]',
 			),
 			array(
-				'pattern'     => '/(### Database ###\n)([\s\S]*?)(\n### )/',
+				'pattern'     => '/(### Database ###\n)([\s\S]*?)(\n### |\z)/',
 				'replacement' => "$1\n[REDACTED]\n$3",
 			),
 		);

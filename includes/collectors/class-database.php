@@ -15,8 +15,17 @@ defined( 'ABSPATH' ) || exit;
 class Database extends Abstract_Collector {
 
 	/**
- * Get the collector ID.
- */
+	 * Get the transient cache key.
+	 *
+	 * @return string Cache key.
+	 */
+	protected function get_cache_key(): string {
+		return 'sr_database';
+	}
+
+	/**
+	 * Get the collector ID.
+	 */
 	public function get_id(): string {
 		return 'database';
 	}

@@ -8,6 +8,7 @@
 declare(strict_types=1);
 
 use Rector\Config\RectorConfig;
+use Rector\DeadCode\Rector\ClassMethod\RemoveEmptyClassMethodRector;
 use Rector\DeadCode\Rector\ClassMethod\RemoveUnusedPrivateMethodParameterRector;
 use Rector\DeadCode\Rector\Property\RemoveUnusedPrivatePropertyRector;
 use Rector\Set\ValueObject\SetList;
@@ -27,6 +28,10 @@ return RectorConfig::configure()
 			RemoveUnusedPrivateMethodParameterRector::class,
 			// GitHub_Updater property is stored to prevent garbage collection.
 			RemoveUnusedPrivatePropertyRector::class => array(
+				__DIR__ . '/includes/class-plugin.php',
+			),
+			// Singleton __clone() is intentionally empty to prevent cloning.
+			RemoveEmptyClassMethodRector::class => array(
 				__DIR__ . '/includes/class-plugin.php',
 			),
 		)
