@@ -286,7 +286,7 @@
 					} )
 					.then( function ( data ) {
 						downloadFile(
-							content,
+							data,
 							buildFilename( 'WPSystemReport_AI', 'md' ),
 							'text/markdown'
 						);
