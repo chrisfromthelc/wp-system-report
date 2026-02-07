@@ -148,12 +148,6 @@ class My_Custom_Collector extends Abstract_Collector {
 | `wp_system_report_redactions` | Add redaction patterns for GitHub export |
 | `wp_system_report_constants` | Add/remove constants to display |
 
-### Available Actions
-
-| Action | Description |
-|--------|-------------|
-| `wp_system_report_after_section_{id}` | Fires after each section renders |
-
 ## Development
 
 ### Prerequisites
@@ -226,7 +220,6 @@ wp-system-report/
     js/wp-system-report-admin.js    # Vanilla JS (no jQuery)
   templates/
     admin-page.php               # Admin page template
-    report-section.php           # Section template
   tests/                         # PHPUnit tests
 ```
 
