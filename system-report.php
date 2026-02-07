@@ -64,10 +64,8 @@ spl_autoload_register( 'system_report_autoloader' );
 
 /**
  * Get the main plugin instance.
- *
- * @return \SystemReport\Plugin
  */
-function system_report() {
+function system_report(): \SystemReport\Plugin {
 	return \SystemReport\Plugin::get_instance();
 }
 
