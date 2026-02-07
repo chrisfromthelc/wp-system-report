@@ -261,7 +261,7 @@ class FormattersTest extends WP_UnitTestCase {
 		$output    = $formatter->format( $this->sample_report );
 
 		// Should start with a header.
-		$this->assertStringContainsString( '# System Report for', $output );
+		$this->assertStringContainsString( '# WP System Report for', $output );
 	}
 
 	/**

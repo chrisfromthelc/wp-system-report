@@ -12,7 +12,7 @@ Comprehensive WordPress system status report with AI-optimized export. No WooCom
 
 == Description ==
 
-System Report provides a detailed overview of your WordPress installation, server environment, database, plugins, themes, and more. It is designed for developers, support teams, and site administrators who need quick access to diagnostic information.
+WP System Report provides a detailed overview of your WordPress installation, server environment, database, plugins, themes, and more. It is designed for developers, support teams, and site administrators who need quick access to diagnostic information.
 
 **Key Features:**
 
@@ -48,13 +48,13 @@ System Report provides a detailed overview of your WordPress installation, serve
 
 1. Upload the `wp-system-report` folder to `wp-content/plugins/`
 2. Activate the plugin through the Plugins menu in WordPress
-3. Navigate to **Tools > System Report** to view your report
+3. Navigate to **Tools > WP System Report** to view your report
 
 == Frequently Asked Questions ==
 
 = Does this require WooCommerce? =
 
-No. System Report is fully standalone and works on any WordPress installation.
+No. WP System Report is fully standalone and works on any WordPress installation.
 
 = What is the AI export? =
 
@@ -74,7 +74,7 @@ Yes. Expensive collectors (plugins, themes, site health) use transient caching w
 
 == Screenshots ==
 
-1. System Report admin page showing diagnostic tables
+1. WP System Report admin page showing diagnostic tables
 2. Plain text report output
 3. AI-optimized markdown export with issue detection
 

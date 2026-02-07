@@ -177,7 +177,7 @@ class RESTControllerTest extends WP_UnitTestCase {
 		$response = rest_get_server()->dispatch( $request );
 
 		$this->assertSame( 200, $response->get_status() );
-		$this->assertStringContainsString( '# System Report for', $response->get_data() );
+		$this->assertStringContainsString( '# WP System Report for', $response->get_data() );
 
 		$headers = $response->get_headers();
 		$this->assertSame( 'text/markdown; charset=utf-8', $headers['Content-Type'] );

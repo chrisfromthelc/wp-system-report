@@ -13,7 +13,7 @@ defined( 'ABSPATH' ) || exit;
 // phpcs:disable WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedVariableFound
 ?>
 <div class="wrap wp-system-report-wrap">
-	<h1><?php esc_html_e( 'System Report', 'wp-system-report' ); ?></h1>
+	<h1><?php esc_html_e( 'WP System Report', 'wp-system-report' ); ?></h1>
 
 	<div class="sr-report-actions updated">
 		<p>

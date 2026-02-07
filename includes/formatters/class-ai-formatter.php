@@ -64,7 +64,7 @@ class AI_Formatter implements Formatter {
 		 */
 		$header = apply_filters(
 			'wp_system_report_ai_header',
-			"# System Report for {$host}\n"
+			"# WP System Report for {$host}\n"
 			. "Generated: {$now} | WP {$wp_ver} | PHP {$php_ver}\n"
 			. 'Report Version: ' . WP_SYSTEM_REPORT_VERSION . "\n\n"
 			. "---\n\n"

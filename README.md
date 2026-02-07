@@ -1,4 +1,4 @@
-# System Report
+# WP System Report
 
 A comprehensive WordPress system status report plugin with AI-optimized export. Standalone, no WooCommerce required.
 
@@ -23,7 +23,7 @@ A comprehensive WordPress system status report plugin with AI-optimized export. 
 
 1. Download or clone this repository into `wp-content/plugins/wp-system-report/`
 2. Activate the plugin through the WordPress admin
-3. Navigate to **Tools > System Report**
+3. Navigate to **Tools > WP System Report**
 
 ### From GitHub
 
@@ -36,11 +36,11 @@ git clone https://github.com/chrisfromthelc/wp-system-report.git wp-system-repor
 
 ### Admin Page
 
-Navigate to **Tools > System Report** to view the full system status report. The admin page provides:
+Navigate to **Tools > WP System Report** to view the full system status report. The admin page provides:
 
 | Button | Description |
 |--------|-------------|
-| **Get System Report** | Generates a plain text report from the displayed data |
+| **Get WP System Report** | Generates a plain text report from the displayed data |
 | **Copy for Support** | Copies the report to clipboard |
 | **Download for Support** | Downloads a `.txt` file |
 | **Copy for GitHub** | Copies a redacted report wrapped in `<details>` tags |

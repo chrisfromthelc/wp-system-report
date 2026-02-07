@@ -1,6 +1,6 @@
 <?xml version="1.0"?>
-<ruleset name="System Report">
-	<description>WordPress coding standards for System Report plugin.</description>
+<ruleset name="WP System Report">
+	<description>WordPress coding standards for WP System Report plugin.</description>
 
 	<!-- What to scan -->
 	<file>wp-system-report.php</file>

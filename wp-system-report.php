@@ -1,6 +1,6 @@
 <?php
 /**
- * Plugin Name: System Report
+ * Plugin Name: WP System Report
  * Plugin URI:  https://github.com/chrisfromthelc/wp-system-report
  * Description: Comprehensive WordPress system status report with AI-optimized export.
  * Version:     1.0.0

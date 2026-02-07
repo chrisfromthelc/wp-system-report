@@ -42,8 +42,8 @@ class Admin_Page {
 		$capability = $this->get_capability();
 
 		add_management_page(
-			__( 'System Report', 'wp-system-report' ),
-			__( 'System Report', 'wp-system-report' ),
+			__( 'WP System Report', 'wp-system-report' ),
+			__( 'WP System Report', 'wp-system-report' ),
 			$capability,
 			self::MENU_SLUG,
 			array( $this, 'render_page' )

@@ -294,7 +294,7 @@
 						}
 						downloadFile(
 							content,
-							buildFilename( 'SystemReport_AI', 'md' ),
+							buildFilename( 'WPSystemReport_AI', 'md' ),
 							'text/markdown'
 						);
 					} )
