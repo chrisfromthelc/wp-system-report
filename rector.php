@@ -1,6 +1,6 @@
 <?php
 /**
- * Rector configuration for System Report plugin.
+ * Rector configuration for WP System Report plugin.
  *
  * @package SystemReport
  */

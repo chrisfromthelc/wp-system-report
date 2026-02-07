@@ -10,7 +10,7 @@ namespace SystemReport;
 defined( 'ABSPATH' ) || exit;
 
 /**
- * REST API controller for the system report endpoint.
+ * REST API controller for the WP System Report endpoint.
  */
 class REST_Controller extends \WP_REST_Controller {
 
@@ -94,7 +94,7 @@ class REST_Controller extends \WP_REST_Controller {
 	}
 
 	/**
-	 * Get the system report.
+	 * Get the WP System Report.
 	 *
 	 * @param \WP_REST_Request $request Full details about the request.
 	 * @return \WP_REST_Response|\WP_Error Response object or error.

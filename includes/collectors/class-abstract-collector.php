@@ -46,7 +46,7 @@ abstract class Abstract_Collector implements Collector {
 
 		if ( null !== $cache_key ) {
 			/**
-			 * Filter the transient cache TTL for system report collectors.
+			 * Filter the transient cache TTL for WP System Report collectors.
 			 *
 			 * @param int    $ttl       Cache TTL in seconds. Default 3600 (1 hour).
 			 * @param string $cache_key The transient cache key.

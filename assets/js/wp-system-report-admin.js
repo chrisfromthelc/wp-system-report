@@ -1,5 +1,5 @@
 /**
- * System Report - Admin JavaScript (Vanilla, no jQuery)
+ * WP System Report - Admin JavaScript (Vanilla, no jQuery)
  *
  * @package SystemReport
  */
@@ -7,7 +7,7 @@
 	'use strict';
 
 	/**
-	 * Generate the plain-text system report from the DOM tables.
+	 * Generate the plain-text WP System Report from the DOM tables.
 	 *
 	 * Scrapes all .sr_status_table elements, using data-export-label
 	 * attributes for section headers and field labels.
@@ -300,7 +300,7 @@
 					} )
 					.catch( function ( error ) {
 						/* eslint-disable no-console */
-						console.error( 'System Report AI download failed:', error );
+						console.error( 'WP System Report AI download failed:', error );
 						/* eslint-enable no-console */
 						/* eslint-disable no-alert */
 						alert( 'Failed to generate AI report. Please try again.' );

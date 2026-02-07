@@ -111,7 +111,7 @@ class Admin_Page {
 	 */
 	private function get_capability() {
 		/**
-		 * Filter the required capability for viewing the system report.
+		 * Filter the required capability for viewing the WP System Report.
 		 *
 		 * @param string $capability WordPress capability. Default 'manage_options'.
 		 */
