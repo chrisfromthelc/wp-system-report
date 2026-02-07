@@ -12,36 +12,36 @@ defined( 'ABSPATH' ) || exit;
 // Template variables are scoped to the including method, not truly global.
 // phpcs:disable WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedVariableFound
 ?>
-<div class="wrap system-report-wrap">
-	<h1><?php esc_html_e( 'System Report', 'system-report' ); ?></h1>
+<div class="wrap wp-system-report-wrap">
+	<h1><?php esc_html_e( 'System Report', 'wp-system-report' ); ?></h1>
 
 	<div class="sr-report-actions updated">
 		<p>
-			<?php esc_html_e( 'Copy and paste this information when contacting support or use the AI export for detailed analysis:', 'system-report' ); ?>
+			<?php esc_html_e( 'Copy and paste this information when contacting support or use the AI export for detailed analysis:', 'wp-system-report' ); ?>
 		</p>
 		<p class="submit">
 			<button type="button" class="button-primary" id="sr-generate-report">
-				<?php esc_html_e( 'Get system report', 'system-report' ); ?>
+				<?php esc_html_e( 'Get system report', 'wp-system-report' ); ?>
 			</button>
 			<button type="button" class="button" id="sr-download-ai" style="margin-left: 4px;">
-				<?php esc_html_e( 'Download for AI analysis', 'system-report' ); ?>
+				<?php esc_html_e( 'Download for AI analysis', 'wp-system-report' ); ?>
 			</button>
 		</p>
 		<div id="sr-debug-report" style="display: none;">
 			<textarea readonly="readonly" rows="12"></textarea>
 			<p class="submit">
 				<button type="button" class="button-primary" id="sr-download-support">
-					<?php esc_html_e( 'Download for support', 'system-report' ); ?>
+					<?php esc_html_e( 'Download for support', 'wp-system-report' ); ?>
 				</button>
 				<button type="button" class="button" id="sr-copy-support">
-					<?php esc_html_e( 'Copy for support', 'system-report' ); ?>
+					<?php esc_html_e( 'Copy for support', 'wp-system-report' ); ?>
 				</button>
 				<button type="button" class="button" id="sr-copy-github">
-					<?php esc_html_e( 'Copy for GitHub', 'system-report' ); ?>
+					<?php esc_html_e( 'Copy for GitHub', 'wp-system-report' ); ?>
 				</button>
 			</p>
 			<p class="sr-copy-error" style="display: none;">
-				<?php esc_html_e( 'Copying to clipboard failed. Please press Ctrl/Cmd+C to copy.', 'system-report' ); ?>
+				<?php esc_html_e( 'Copying to clipboard failed. Please press Ctrl/Cmd+C to copy.', 'wp-system-report' ); ?>
 			</p>
 		</div>
 	</div>

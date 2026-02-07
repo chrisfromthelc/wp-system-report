@@ -1,5 +1,5 @@
 {
-	"name": "chrisfromthelc/system-report",
+	"name": "chrisfromthelc/wp-system-report",
 	"description": "Comprehensive WordPress system status report with AI-optimized export.",
 	"type": "wordpress-plugin",
 	"license": "GPL-2.0-or-later",

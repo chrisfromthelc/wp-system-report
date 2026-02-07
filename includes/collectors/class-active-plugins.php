@@ -27,7 +27,7 @@ class Active_Plugins extends Abstract_Collector {
 	 * @return string
 	 */
 	public function get_label() {
-		return __( 'Active Plugins', 'system-report' );
+		return __( 'Active Plugins', 'wp-system-report' );
 	}
 
 	/**
@@ -36,7 +36,7 @@ class Active_Plugins extends Abstract_Collector {
 	 * @return string
 	 */
 	public function get_description() {
-		return __( 'Currently active plugins with version and update information.', 'system-report' );
+		return __( 'Currently active plugins with version and update information.', 'wp-system-report' );
 	}
 
 	/**
@@ -100,14 +100,14 @@ class Active_Plugins extends Abstract_Collector {
 
 		// Build fields for each active plugin.
 		foreach ( $active_plugin_data as $plugin_path => $plugin_data ) {
-			$version     = ! empty( $plugin_data['Version'] ) ? $plugin_data['Version'] : __( 'Unknown', 'system-report' );
-			$author      = ! empty( $plugin_data['Author'] ) ? wp_strip_all_tags( $plugin_data['Author'] ) : __( 'Unknown', 'system-report' );
+			$version     = ! empty( $plugin_data['Version'] ) ? $plugin_data['Version'] : __( 'Unknown', 'wp-system-report' );
+			$author      = ! empty( $plugin_data['Author'] ) ? wp_strip_all_tags( $plugin_data['Author'] ) : __( 'Unknown', 'wp-system-report' );
 			$plugin_name = ! empty( $plugin_data['Name'] ) ? $plugin_data['Name'] : basename( $plugin_path, '.php' );
 
 			// Build value string.
 			$value = sprintf(
 				/* translators: 1: Plugin author, 2: Plugin version */
-				__( 'by %1$s - version %2$s', 'system-report' ),
+				__( 'by %1$s - version %2$s', 'wp-system-report' ),
 				$author,
 				$version
 			);
@@ -122,7 +122,7 @@ class Active_Plugins extends Abstract_Collector {
 					$new_version = $update_info->update->new_version;
 					$value      .= sprintf(
 						/* translators: %s: New version number */
-						__( ' (update available: %s)', 'system-report' ),
+						__( ' (update available: %s)', 'wp-system-report' ),
 						$new_version
 					);
 					$status = 'warning';
@@ -143,8 +143,8 @@ class Active_Plugins extends Abstract_Collector {
 		// If no active plugins found.
 		if ( empty( $fields ) ) {
 			$fields[] = $this->make_field(
-				__( 'No Active Plugins', 'system-report' ),
-				__( 'No active plugins installed.', 'system-report' ),
+				__( 'No Active Plugins', 'wp-system-report' ),
+				__( 'No active plugins installed.', 'wp-system-report' ),
 				array( 'status' => 'info' )
 			);
 		}

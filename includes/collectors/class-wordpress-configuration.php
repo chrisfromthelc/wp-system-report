@@ -27,7 +27,7 @@ class WordPress_Configuration extends Abstract_Collector {
 	 * @return string
 	 */
 	public function get_label() {
-		return __( 'WordPress Configuration', 'system-report' );
+		return __( 'WordPress Configuration', 'wp-system-report' );
 	}
 
 	/**
@@ -36,7 +36,7 @@ class WordPress_Configuration extends Abstract_Collector {
 	 * @return string
 	 */
 	public function get_description() {
-		return __( 'User roles, permalink structure, and site settings.', 'system-report' );
+		return __( 'User roles, permalink structure, and site settings.', 'wp-system-report' );
 	}
 
 	/**
@@ -55,8 +55,8 @@ class WordPress_Configuration extends Abstract_Collector {
 		// Permalink Structure.
 		$permalink_structure = get_option( 'permalink_structure' );
 		$fields[]            = $this->make_field(
-			__( 'Permalink Structure', 'system-report' ),
-			! empty( $permalink_structure ) ? $permalink_structure : __( 'Plain (default)', 'system-report' ),
+			__( 'Permalink Structure', 'wp-system-report' ),
+			! empty( $permalink_structure ) ? $permalink_structure : __( 'Plain (default)', 'wp-system-report' ),
 			array(
 				'status' => empty( $permalink_structure ) ? 'warning' : 'good',
 			)
@@ -64,13 +64,13 @@ class WordPress_Configuration extends Abstract_Collector {
 
 		// User Registration Enabled.
 		$fields[] = $this->make_field(
-			__( 'User Registration Enabled', 'system-report' ),
+			__( 'User Registration Enabled', 'wp-system-report' ),
 			$this->format_boolean( get_option( 'users_can_register' ) )
 		);
 
 		// Default Role.
 		$fields[] = $this->make_field(
-			__( 'Default Role', 'system-report' ),
+			__( 'Default Role', 'wp-system-report' ),
 			get_option( 'default_role' )
 		);
 
@@ -89,31 +89,31 @@ class WordPress_Configuration extends Abstract_Collector {
 		}
 
 		$fields[] = $this->make_field(
-			__( 'User Roles', 'system-report' ),
-			! empty( $role_info ) ? implode( ', ', $role_info ) : __( 'None', 'system-report' )
+			__( 'User Roles', 'wp-system-report' ),
+			! empty( $role_info ) ? implode( ', ', $role_info ) : __( 'None', 'wp-system-report' )
 		);
 
 		// Comments Enabled.
 		$fields[] = $this->make_field(
-			__( 'Comments Enabled', 'system-report' ),
+			__( 'Comments Enabled', 'wp-system-report' ),
 			$this->format_boolean( get_option( 'default_comment_status' ) === 'open' )
 		);
 
 		// Comment Moderation.
 		$fields[] = $this->make_field(
-			__( 'Comment Moderation', 'system-report' ),
+			__( 'Comment Moderation', 'wp-system-report' ),
 			$this->format_boolean( get_option( 'comment_moderation' ) )
 		);
 
 		// Comment Registration Required.
 		$fields[] = $this->make_field(
-			__( 'Comment Registration Required', 'system-report' ),
+			__( 'Comment Registration Required', 'wp-system-report' ),
 			$this->format_boolean( get_option( 'comment_registration' ) )
 		);
 
 		// Max Upload Size.
 		$fields[] = $this->make_field(
-			__( 'Max Upload Size', 'system-report' ),
+			__( 'Max Upload Size', 'wp-system-report' ),
 			size_format( wp_max_upload_size() )
 		);
 
@@ -122,8 +122,8 @@ class WordPress_Configuration extends Abstract_Collector {
 		$extensions    = ! empty( $allowed_mimes ) ? array_keys( $allowed_mimes ) : array();
 
 		$fields[] = $this->make_field(
-			__( 'Allowed Upload Types', 'system-report' ),
-			! empty( $extensions ) ? implode( ', ', $extensions ) : __( 'None', 'system-report' )
+			__( 'Allowed Upload Types', 'wp-system-report' ),
+			! empty( $extensions ) ? implode( ', ', $extensions ) : __( 'None', 'wp-system-report' )
 		);
 
 		// Timezone.
@@ -135,7 +135,7 @@ class WordPress_Configuration extends Abstract_Collector {
 		} elseif ( $gmt_offset ) {
 			$timezone_value = sprintf(
 			/* translators: %s: GMT offset */
-				__( 'UTC%s', 'system-report' ),
+				__( 'UTC%s', 'wp-system-report' ),
 				( $gmt_offset >= 0 ? '+' : '' ) . $gmt_offset
 			);
 		} else {
@@ -143,19 +143,19 @@ class WordPress_Configuration extends Abstract_Collector {
 		}
 
 		$fields[] = $this->make_field(
-			__( 'Timezone', 'system-report' ),
+			__( 'Timezone', 'wp-system-report' ),
 			$timezone_value
 		);
 
 		// Date Format.
 		$fields[] = $this->make_field(
-			__( 'Date Format', 'system-report' ),
+			__( 'Date Format', 'wp-system-report' ),
 			get_option( 'date_format' )
 		);
 
 		// Time Format.
 		$fields[] = $this->make_field(
-			__( 'Time Format', 'system-report' ),
+			__( 'Time Format', 'wp-system-report' ),
 			get_option( 'time_format' )
 		);
 

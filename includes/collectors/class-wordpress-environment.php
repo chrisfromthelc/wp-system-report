@@ -27,7 +27,7 @@ class WordPress_Environment extends Abstract_Collector {
 	 * @return string
 	 */
 	public function get_label() {
-		return __( 'WordPress Environment', 'system-report' );
+		return __( 'WordPress Environment', 'wp-system-report' );
 	}
 
 	/**
@@ -36,7 +36,7 @@ class WordPress_Environment extends Abstract_Collector {
 	 * @return string
 	 */
 	public function get_description() {
-		return __( 'Core WordPress installation settings and configuration.', 'system-report' );
+		return __( 'Core WordPress installation settings and configuration.', 'wp-system-report' );
 	}
 
 	/**
@@ -54,14 +54,14 @@ class WordPress_Environment extends Abstract_Collector {
 
 		// Home URL.
 		$data[] = $this->make_field(
-			__( 'Home URL', 'system-report' ),
+			__( 'Home URL', 'wp-system-report' ),
 			get_option( 'home' ),
 			array( 'private' => true )
 		);
 
 		// Site URL.
 		$data[] = $this->make_field(
-			__( 'Site URL', 'system-report' ),
+			__( 'Site URL', 'wp-system-report' ),
 			get_option( 'siteurl' ),
 			array( 'private' => true )
 		);
@@ -77,21 +77,21 @@ class WordPress_Environment extends Abstract_Collector {
 		}
 
 		$data[] = $this->make_field(
-			__( 'WordPress Version', 'system-report' ),
+			__( 'WordPress Version', 'wp-system-report' ),
 			$wp_version,
 			array( 'status' => $wp_version_status )
 		);
 
 		// WordPress Multisite.
 		$data[] = $this->make_field(
-			__( 'WordPress Multisite', 'system-report' ),
+			__( 'WordPress Multisite', 'wp-system-report' ),
 			$this->format_boolean( is_multisite() )
 		);
 
 		// WordPress Memory Limit.
 		$memory_limit = $this->get_constant_value( 'WP_MEMORY_LIMIT', '40M' );
 		$data[]       = $this->make_field(
-			__( 'WordPress Memory Limit', 'system-report' ),
+			__( 'WordPress Memory Limit', 'wp-system-report' ),
 			$memory_limit,
 			array( 'recommended' => '>= 256M' )
 		);
@@ -104,7 +104,7 @@ class WordPress_Environment extends Abstract_Collector {
 		}
 
 		$data[] = $this->make_field(
-			__( 'WordPress Debug Mode', 'system-report' ),
+			__( 'WordPress Debug Mode', 'wp-system-report' ),
 			$this->format_boolean( $debug_mode ),
 			array( 'status' => $debug_mode_status )
 		);
@@ -115,26 +115,26 @@ class WordPress_Environment extends Abstract_Collector {
 		$cron_status   = $cron_disabled ? 'warning' : 'good';
 
 		$data[] = $this->make_field(
-			__( 'WordPress Cron', 'system-report' ),
+			__( 'WordPress Cron', 'wp-system-report' ),
 			$this->format_boolean( $cron_enabled ),
 			array( 'status' => $cron_status )
 		);
 
 		// Language.
 		$data[] = $this->make_field(
-			__( 'Language', 'system-report' ),
+			__( 'Language', 'wp-system-report' ),
 			get_locale()
 		);
 
 		// Environment Type.
 		$data[] = $this->make_field(
-			__( 'Environment Type', 'system-report' ),
+			__( 'Environment Type', 'wp-system-report' ),
 			wp_get_environment_type()
 		);
 
 		// External Object Cache.
 		$data[] = $this->make_field(
-			__( 'External Object Cache', 'system-report' ),
+			__( 'External Object Cache', 'wp-system-report' ),
 			$this->format_boolean( wp_using_ext_object_cache() )
 		);
 
@@ -143,8 +143,8 @@ class WordPress_Environment extends Abstract_Collector {
 		$visibility_status = ( '0' === $blog_public ) ? 'warning' : 'good';
 
 		$data[] = $this->make_field(
-			__( 'Search Engine Visibility', 'system-report' ),
-			( '0' === $blog_public ) ? __( 'Discouraged', 'system-report' ) : __( 'Allowed', 'system-report' ),
+			__( 'Search Engine Visibility', 'wp-system-report' ),
+			( '0' === $blog_public ) ? __( 'Discouraged', 'wp-system-report' ) : __( 'Allowed', 'wp-system-report' ),
 			array( 'status' => $visibility_status )
 		);
 

@@ -8,7 +8,7 @@
  * Author URI:  https://github.com/chrisfromthelc
  * License:     GPL-2.0-or-later
  * License URI: https://www.gnu.org/licenses/gpl-2.0.html
- * Text Domain: system-report
+ * Text Domain: wp-system-report
  * Requires at least: 6.2
  * Requires PHP: 7.4
  *
@@ -17,10 +17,10 @@
 
 defined( 'ABSPATH' ) || exit;
 
-define( 'SYSTEM_REPORT_VERSION', '1.0.0' );
-define( 'SYSTEM_REPORT_FILE', __FILE__ );
-define( 'SYSTEM_REPORT_DIR', plugin_dir_path( __FILE__ ) );
-define( 'SYSTEM_REPORT_URL', plugin_dir_url( __FILE__ ) );
+define( 'WP_SYSTEM_REPORT_VERSION', '1.0.0' );
+define( 'WP_SYSTEM_REPORT_FILE', __FILE__ );
+define( 'WP_SYSTEM_REPORT_DIR', plugin_dir_path( __FILE__ ) );
+define( 'WP_SYSTEM_REPORT_URL', plugin_dir_url( __FILE__ ) );
 
 /**
  * Autoloader for SystemReport classes.
@@ -30,7 +30,7 @@ define( 'SYSTEM_REPORT_URL', plugin_dir_url( __FILE__ ) );
  *
  * @param string $class_name The fully qualified class name.
  */
-function system_report_autoloader( $class_name ): void {
+function wp_system_report_autoloader( $class_name ): void {
 	$namespace = 'SystemReport\\';
 
 	if ( 0 !== strpos( $class_name, $namespace ) ) {
@@ -42,7 +42,7 @@ function system_report_autoloader( $class_name ): void {
 	$class_file     = array_pop( $parts );
 
 	// Build directory path from namespace parts.
-	$path = SYSTEM_REPORT_DIR . 'includes/';
+	$path = WP_SYSTEM_REPORT_DIR . 'includes/';
 	foreach ( $parts as $part ) {
 		$path .= strtolower( str_replace( '_', '-', $part ) ) . '/';
 	}
@@ -60,14 +60,14 @@ function system_report_autoloader( $class_name ): void {
 		require_once $class_file;
 	}
 }
-spl_autoload_register( 'system_report_autoloader' );
+spl_autoload_register( 'wp_system_report_autoloader' );
 
 /**
  * Get the main plugin instance.
  */
-function system_report(): \SystemReport\Plugin {
+function wp_system_report(): \SystemReport\Plugin {
 	return \SystemReport\Plugin::get_instance();
 }
 
 // Initialize the plugin.
-system_report();
+wp_system_report();

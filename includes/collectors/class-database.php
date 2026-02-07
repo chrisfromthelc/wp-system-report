@@ -27,7 +27,7 @@ class Database extends Abstract_Collector {
 	 * @return string
 	 */
 	public function get_label() {
-		return __( 'Database', 'system-report' );
+		return __( 'Database', 'wp-system-report' );
 	}
 
 	/**
@@ -36,7 +36,7 @@ class Database extends Abstract_Collector {
 	 * @return string
 	 */
 	public function get_description() {
-		return __( 'Database tables, sizes, and engine information.', 'system-report' );
+		return __( 'Database tables, sizes, and engine information.', 'wp-system-report' );
 	}
 
 	/**
@@ -62,7 +62,7 @@ class Database extends Abstract_Collector {
 		}
 
 		$data[] = $this->make_field(
-			__( 'Database Prefix', 'system-report' ),
+			__( 'Database Prefix', 'wp-system-report' ),
 			$prefix,
 			array( 'status' => $prefix_status )
 		);
@@ -70,22 +70,22 @@ class Database extends Abstract_Collector {
 		// Database Charset.
 		$charset = $this->get_constant_value( 'DB_CHARSET', 'utf8' );
 		$data[]  = $this->make_field(
-			__( 'Database Charset', 'system-report' ),
+			__( 'Database Charset', 'wp-system-report' ),
 			$charset
 		);
 
 		// Database Collation.
 		$collate = $this->get_constant_value( 'DB_COLLATE', $wpdb->collate );
 		$data[]  = $this->make_field(
-			__( 'Database Collation', 'system-report' ),
-			$collate ? $collate : __( 'Default', 'system-report' )
+			__( 'Database Collation', 'wp-system-report' ),
+			$collate ? $collate : __( 'Default', 'wp-system-report' )
 		);
 
 		// Max Allowed Packet.
 		$max_allowed_packet = $wpdb->get_var( 'SELECT @@max_allowed_packet' );
 		$data[]             = $this->make_field(
-			__( 'Max Allowed Packet', 'system-report' ),
-			$max_allowed_packet ? $this->format_size( $max_allowed_packet ) : __( 'Unknown', 'system-report' )
+			__( 'Max Allowed Packet', 'wp-system-report' ),
+			$max_allowed_packet ? $this->format_size( $max_allowed_packet ) : __( 'Unknown', 'wp-system-report' )
 		);
 
 		// Get all tables from information_schema using lowercase aliases for PHPCS compliance.
@@ -147,7 +147,7 @@ class Database extends Abstract_Collector {
 
 		// Total Database Size.
 		$data[] = $this->make_field(
-			__( 'Total Database Size', 'system-report' ),
+			__( 'Total Database Size', 'wp-system-report' ),
 			$this->format_size( $total_size )
 		);
 
@@ -155,7 +155,7 @@ class Database extends Abstract_Collector {
 		foreach ( $wp_core_tables as $table ) {
 			$table_info = sprintf(
 				/* translators: 1: Engine, 2: Rows, 3: Size */
-				__( 'Engine: %1$s | Rows: %2$s | Size: %3$s', 'system-report' ),
+				__( 'Engine: %1$s | Rows: %2$s | Size: %3$s', 'wp-system-report' ),
 				$table['engine'],
 				number_format_i18n( $table['rows'] ),
 				$this->format_size( $table['size'] )
@@ -171,7 +171,7 @@ class Database extends Abstract_Collector {
 		foreach ( $other_tables as $table ) {
 			$table_info = sprintf(
 				/* translators: 1: Engine, 2: Rows, 3: Size */
-				__( 'Engine: %1$s | Rows: %2$s | Size: %3$s', 'system-report' ),
+				__( 'Engine: %1$s | Rows: %2$s | Size: %3$s', 'wp-system-report' ),
 				$table['engine'],
 				number_format_i18n( $table['rows'] ),
 				$this->format_size( $table['size'] )

@@ -15,7 +15,7 @@ return RectorConfig::configure()
 	->withPaths(
 		array(
 			__DIR__ . '/includes',
-			__DIR__ . '/system-report.php',
+			__DIR__ . '/wp-system-report.php',
 		)
 	)
 	->withSkip(

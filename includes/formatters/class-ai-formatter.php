@@ -63,10 +63,10 @@ class AI_Formatter implements Formatter {
 		 * @param string $header The markdown header string.
 		 */
 		$header = apply_filters(
-			'system_report_ai_header',
+			'wp_system_report_ai_header',
 			"# System Report for {$host}\n"
 			. "Generated: {$now} | WP {$wp_ver} | PHP {$php_ver}\n"
-			. 'Report Version: ' . SYSTEM_REPORT_VERSION . "\n\n"
+			. 'Report Version: ' . WP_SYSTEM_REPORT_VERSION . "\n\n"
 			. "---\n\n"
 		);
 
@@ -91,7 +91,7 @@ class AI_Formatter implements Formatter {
 		 * @param array $issues      Array of issue arrays with 'severity', 'title', 'description' keys.
 		 * @param array $report_data The full report data.
 		 */
-		$issues = apply_filters( 'system_report_ai_issues', $issues, $report_data );
+		$issues = apply_filters( 'wp_system_report_ai_issues', $issues, $report_data );
 
 		if ( empty( $issues ) ) {
 			return "## Potential Issues Detected\n\nNo issues detected. The site appears to be well-configured.\n\n---\n\n";

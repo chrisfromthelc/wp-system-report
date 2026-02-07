@@ -27,7 +27,7 @@ class Theme_Info extends Abstract_Collector {
 	 * @return string
 	 */
 	public function get_label() {
-		return __( 'Theme', 'system-report' );
+		return __( 'Theme', 'wp-system-report' );
 	}
 
 	/**
@@ -36,7 +36,7 @@ class Theme_Info extends Abstract_Collector {
 	 * @return string
 	 */
 	public function get_description() {
-		return __( 'Active theme information including parent and child theme details.', 'system-report' );
+		return __( 'Active theme information including parent and child theme details.', 'wp-system-report' );
 	}
 
 	/**
@@ -69,7 +69,7 @@ class Theme_Info extends Abstract_Collector {
 
 		// Theme Name.
 		$fields[] = $this->make_field(
-			__( 'Theme Name', 'system-report' ),
+			__( 'Theme Name', 'wp-system-report' ),
 			$theme->get( 'Name' ),
 			array(
 				'export_label' => 'Theme Name',
@@ -91,7 +91,7 @@ class Theme_Info extends Abstract_Collector {
 				$new_version    = $update_info->update['new_version'];
 				$version_value .= sprintf(
 					/* translators: %s: New version number */
-					__( ' (update available: %s)', 'system-report' ),
+					__( ' (update available: %s)', 'wp-system-report' ),
 					$new_version
 				);
 				$version_status = 'warning';
@@ -99,7 +99,7 @@ class Theme_Info extends Abstract_Collector {
 		}
 
 		$fields[] = $this->make_field(
-			__( 'Theme Version', 'system-report' ),
+			__( 'Theme Version', 'wp-system-report' ),
 			$version_value,
 			array(
 				'export_label' => 'Theme Version',
@@ -110,7 +110,7 @@ class Theme_Info extends Abstract_Collector {
 		// Theme Author.
 		$author   = wp_strip_all_tags( $theme->get( 'Author' ) );
 		$fields[] = $this->make_field(
-			__( 'Theme Author', 'system-report' ),
+			__( 'Theme Author', 'wp-system-report' ),
 			$author,
 			array(
 				'export_label' => 'Theme Author',
@@ -122,7 +122,7 @@ class Theme_Info extends Abstract_Collector {
 		$author_uri = $theme->get( 'AuthorURI' );
 		if ( ! empty( $author_uri ) ) {
 			$fields[] = $this->make_field(
-				__( 'Theme Author URL', 'system-report' ),
+				__( 'Theme Author URL', 'wp-system-report' ),
 				$author_uri,
 				array(
 					'export_label' => 'Theme Author URL',
@@ -134,7 +134,7 @@ class Theme_Info extends Abstract_Collector {
 		// Is Child Theme.
 		$is_child_theme = $theme->parent() !== false;
 		$fields[]       = $this->make_field(
-			__( 'Is Child Theme', 'system-report' ),
+			__( 'Is Child Theme', 'wp-system-report' ),
 			$this->format_boolean( $is_child_theme ),
 			array(
 				'export_label' => 'Is Child Theme',
@@ -145,7 +145,7 @@ class Theme_Info extends Abstract_Collector {
 		// Is Block Theme.
 		$is_block_theme = function_exists( 'wp_is_block_theme' ) && wp_is_block_theme();
 		$fields[]       = $this->make_field(
-			__( 'Is Block Theme', 'system-report' ),
+			__( 'Is Block Theme', 'wp-system-report' ),
 			$this->format_boolean( $is_block_theme ),
 			array(
 				'export_label' => 'Is Block Theme',
@@ -159,7 +159,7 @@ class Theme_Info extends Abstract_Collector {
 
 			// Parent Theme Name.
 			$fields[] = $this->make_field(
-				__( 'Parent Theme Name', 'system-report' ),
+				__( 'Parent Theme Name', 'wp-system-report' ),
 				$parent_theme->get( 'Name' ),
 				array(
 					'export_label' => 'Parent Theme Name',
@@ -169,7 +169,7 @@ class Theme_Info extends Abstract_Collector {
 
 			// Parent Theme Version.
 			$fields[] = $this->make_field(
-				__( 'Parent Theme Version', 'system-report' ),
+				__( 'Parent Theme Version', 'wp-system-report' ),
 				$parent_theme->get( 'Version' ),
 				array(
 					'export_label' => 'Parent Theme Version',
@@ -180,7 +180,7 @@ class Theme_Info extends Abstract_Collector {
 			// Parent Theme Author.
 			$parent_author = wp_strip_all_tags( $parent_theme->get( 'Author' ) );
 			$fields[]      = $this->make_field(
-				__( 'Parent Theme Author', 'system-report' ),
+				__( 'Parent Theme Author', 'wp-system-report' ),
 				$parent_author,
 				array(
 					'export_label' => 'Parent Theme Author',

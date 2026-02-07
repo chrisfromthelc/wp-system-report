@@ -1,4 +1,4 @@
-=== System Report ===
+=== WP System Report ===
 Contributors: chrisfromthelc
 Tags: system report, server info, debug, diagnostics, ai
 Requires at least: 6.2
@@ -46,7 +46,7 @@ System Report provides a detailed overview of your WordPress installation, serve
 
 == Installation ==
 
-1. Upload the `system-report` folder to `wp-content/plugins/`
+1. Upload the `wp-system-report` folder to `wp-content/plugins/`
 2. Activate the plugin through the Plugins menu in WordPress
 3. Navigate to **Tools > System Report** to view your report
 
@@ -62,11 +62,11 @@ The AI export produces a structured markdown file optimized for AI assistants li
 
 = How do I add a custom collector? =
 
-Use the `system_report_collectors` filter to add your own collector class. See the plugin's README.md for a full example.
+Use the `wp_system_report_collectors` filter to add your own collector class. See the plugin's README.md for a full example.
 
 = What capability is required? =
 
-By default, `manage_options` (Administrator). You can change this with the `system_report_capability` filter.
+By default, `manage_options` (Administrator). You can change this with the `wp_system_report_capability` filter.
 
 = Is data cached? =
 

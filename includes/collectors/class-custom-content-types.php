@@ -27,7 +27,7 @@ class Custom_Content_Types extends Abstract_Collector {
 	 * @return string
 	 */
 	public function get_label() {
-		return __( 'Custom Content Types', 'system-report' );
+		return __( 'Custom Content Types', 'wp-system-report' );
 	}
 
 	/**
@@ -36,7 +36,7 @@ class Custom_Content_Types extends Abstract_Collector {
 	 * @return string
 	 */
 	public function get_description() {
-		return __( 'Custom post types, taxonomies, image sizes, and shortcodes.', 'system-report' );
+		return __( 'Custom post types, taxonomies, image sizes, and shortcodes.', 'wp-system-report' );
 	}
 
 	/**
@@ -63,8 +63,8 @@ class Custom_Content_Types extends Abstract_Collector {
 		}
 
 		$fields[] = $this->make_field(
-			__( 'Custom Post Types', 'system-report' ),
-			! empty( $cpt_list ) ? implode( ', ', $cpt_list ) : __( 'None', 'system-report' )
+			__( 'Custom Post Types', 'wp-system-report' ),
+			! empty( $cpt_list ) ? implode( ', ', $cpt_list ) : __( 'None', 'wp-system-report' )
 		);
 
 		// Custom Taxonomies.
@@ -76,8 +76,8 @@ class Custom_Content_Types extends Abstract_Collector {
 		}
 
 		$fields[] = $this->make_field(
-			__( 'Custom Taxonomies', 'system-report' ),
-			! empty( $taxonomy_list ) ? implode( ', ', $taxonomy_list ) : __( 'None', 'system-report' )
+			__( 'Custom Taxonomies', 'wp-system-report' ),
+			! empty( $taxonomy_list ) ? implode( ', ', $taxonomy_list ) : __( 'None', 'wp-system-report' )
 		);
 
 		// Registered Image Sizes.
@@ -94,16 +94,16 @@ class Custom_Content_Types extends Abstract_Collector {
 		}
 
 		$fields[] = $this->make_field(
-			__( 'Registered Image Sizes', 'system-report' ),
-			! empty( $size_list ) ? implode( ', ', $size_list ) : __( 'None', 'system-report' )
+			__( 'Registered Image Sizes', 'wp-system-report' ),
+			! empty( $size_list ) ? implode( ', ', $size_list ) : __( 'None', 'wp-system-report' )
 		);
 
 		// Registered Shortcodes.
 		$shortcodes = ! empty( $shortcode_tags ) ? array_keys( $shortcode_tags ) : array();
 
 		$fields[] = $this->make_field(
-			__( 'Registered Shortcodes', 'system-report' ),
-			! empty( $shortcodes ) ? implode( ', ', $shortcodes ) : __( 'None', 'system-report' )
+			__( 'Registered Shortcodes', 'wp-system-report' ),
+			! empty( $shortcodes ) ? implode( ', ', $shortcodes ) : __( 'None', 'wp-system-report' )
 		);
 
 		// Active Sidebars.
@@ -120,12 +120,12 @@ class Custom_Content_Types extends Abstract_Collector {
 		}
 
 		$fields[] = $this->make_field(
-			__( 'Active Sidebars', 'system-report' ),
+			__( 'Active Sidebars', 'wp-system-report' ),
 			sprintf(
 				/* translators: 1: sidebar count, 2: sidebar list */
-				__( '%1$d: %2$s', 'system-report' ),
+				__( '%1$d: %2$s', 'wp-system-report' ),
 				$sidebar_count,
-				! empty( $sidebar_list ) ? implode( ', ', $sidebar_list ) : __( 'None', 'system-report' )
+				! empty( $sidebar_list ) ? implode( ', ', $sidebar_list ) : __( 'None', 'wp-system-report' )
 			)
 		);
 

@@ -19,7 +19,7 @@ class Admin_Page {
 	 *
 	 * @var string
 	 */
-	const MENU_SLUG = 'system-report';
+	const MENU_SLUG = 'wp-system-report';
 
 	/**
  * Report generator instance.
@@ -42,8 +42,8 @@ class Admin_Page {
 		$capability = $this->get_capability();
 
 		add_management_page(
-			__( 'System Report', 'system-report' ),
-			__( 'System Report', 'system-report' ),
+			__( 'System Report', 'wp-system-report' ),
+			__( 'System Report', 'wp-system-report' ),
 			$capability,
 			self::MENU_SLUG,
 			array( $this, 'render_page' )
@@ -61,31 +61,31 @@ class Admin_Page {
 		}
 
 		wp_enqueue_style(
-			'system-report-admin',
-			SYSTEM_REPORT_URL . 'assets/css/system-report-admin.css',
+			'wp-system-report-admin',
+			WP_SYSTEM_REPORT_URL . 'assets/css/wp-system-report-admin.css',
 			array(),
-			SYSTEM_REPORT_VERSION
+			WP_SYSTEM_REPORT_VERSION
 		);
 
 		wp_enqueue_script(
-			'system-report-admin',
-			SYSTEM_REPORT_URL . 'assets/js/system-report-admin.js',
+			'wp-system-report-admin',
+			WP_SYSTEM_REPORT_URL . 'assets/js/wp-system-report-admin.js',
 			array(),
-			SYSTEM_REPORT_VERSION,
+			WP_SYSTEM_REPORT_VERSION,
 			true
 		);
 
 		wp_localize_script(
-			'system-report-admin',
+			'wp-system-report-admin',
 			'systemReportAdmin',
 			array(
-				'restUrl'   => rest_url( 'system-report/v1/report' ),
+				'restUrl'   => rest_url( 'wp-system-report/v1/report' ),
 				'restNonce' => wp_create_nonce( 'wp_rest' ),
 				'i18n'      => array(
-					'copied'     => __( 'Copied!', 'system-report' ),
-					'copyFailed' => __( 'Copying to clipboard failed. Please press Ctrl/Cmd+C to copy.', 'system-report' ),
-					'generating' => __( 'Generating...', 'system-report' ),
-					'downloadAi' => __( 'Download for AI analysis', 'system-report' ),
+					'copied'     => __( 'Copied!', 'wp-system-report' ),
+					'copyFailed' => __( 'Copying to clipboard failed. Please press Ctrl/Cmd+C to copy.', 'wp-system-report' ),
+					'generating' => __( 'Generating...', 'wp-system-report' ),
+					'downloadAi' => __( 'Download for AI analysis', 'wp-system-report' ),
 				),
 			)
 		);
@@ -96,12 +96,12 @@ class Admin_Page {
 	 */
 	public function render_page(): void {
 		if ( ! current_user_can( $this->get_capability() ) ) {
-			wp_die( esc_html__( 'You do not have sufficient permissions to access this page.', 'system-report' ) );
+			wp_die( esc_html__( 'You do not have sufficient permissions to access this page.', 'wp-system-report' ) );
 		}
 
 		$report = $this->report_generator->generate();
 
-		include SYSTEM_REPORT_DIR . 'templates/admin-page.php';
+		include WP_SYSTEM_REPORT_DIR . 'templates/admin-page.php';
 	}
 
 	/**
@@ -115,6 +115,6 @@ class Admin_Page {
 		 *
 		 * @param string $capability WordPress capability. Default 'manage_options'.
 		 */
-		return apply_filters( 'system_report_capability', 'manage_options' );
+		return apply_filters( 'wp_system_report_capability', 'manage_options' );
 	}
 }

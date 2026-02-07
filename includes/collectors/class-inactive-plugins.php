@@ -27,7 +27,7 @@ class Inactive_Plugins extends Abstract_Collector {
 	 * @return string
 	 */
 	public function get_label() {
-		return __( 'Inactive Plugins', 'system-report' );
+		return __( 'Inactive Plugins', 'wp-system-report' );
 	}
 
 	/**
@@ -36,7 +36,7 @@ class Inactive_Plugins extends Abstract_Collector {
 	 * @return string
 	 */
 	public function get_description() {
-		return __( 'Installed but inactive plugins.', 'system-report' );
+		return __( 'Installed but inactive plugins.', 'wp-system-report' );
 	}
 
 	/**
@@ -91,14 +91,14 @@ class Inactive_Plugins extends Abstract_Collector {
 
 		// Build fields for each inactive plugin.
 		foreach ( $inactive_plugins as $plugin_path => $plugin_data ) {
-			$version     = ! empty( $plugin_data['Version'] ) ? $plugin_data['Version'] : __( 'Unknown', 'system-report' );
-			$author      = ! empty( $plugin_data['Author'] ) ? wp_strip_all_tags( $plugin_data['Author'] ) : __( 'Unknown', 'system-report' );
+			$version     = ! empty( $plugin_data['Version'] ) ? $plugin_data['Version'] : __( 'Unknown', 'wp-system-report' );
+			$author      = ! empty( $plugin_data['Author'] ) ? wp_strip_all_tags( $plugin_data['Author'] ) : __( 'Unknown', 'wp-system-report' );
 			$plugin_name = ! empty( $plugin_data['Name'] ) ? $plugin_data['Name'] : basename( $plugin_path, '.php' );
 
 			// Build value string.
 			$value = sprintf(
 				/* translators: 1: Plugin author, 2: Plugin version */
-				__( 'by %1$s - version %2$s', 'system-report' ),
+				__( 'by %1$s - version %2$s', 'wp-system-report' ),
 				$author,
 				$version
 			);
@@ -119,8 +119,8 @@ class Inactive_Plugins extends Abstract_Collector {
 		// If no inactive plugins found.
 		if ( empty( $fields ) ) {
 			$fields[] = $this->make_field(
-				__( 'No Inactive Plugins', 'system-report' ),
-				__( 'All installed plugins are active.', 'system-report' ),
+				__( 'No Inactive Plugins', 'wp-system-report' ),
+				__( 'All installed plugins are active.', 'wp-system-report' ),
 				array( 'status' => 'info' )
 			);
 		}

@@ -3,7 +3,7 @@
 	<description>WordPress coding standards for System Report plugin.</description>
 
 	<!-- What to scan -->
-	<file>system-report.php</file>
+	<file>wp-system-report.php</file>
 	<file>uninstall.php</file>
 	<file>includes/</file>
 	<file>templates/</file>
@@ -29,7 +29,7 @@
 	<rule ref="WordPress.WP.I18n">
 		<properties>
 			<property name="text_domain" type="array">
-				<element value="system-report"/>
+				<element value="wp-system-report"/>
 			</property>
 		</properties>
 	</rule>
@@ -38,7 +38,7 @@
 	<rule ref="WordPress.NamingConventions.PrefixAllGlobals">
 		<properties>
 			<property name="prefixes" type="array">
-				<element value="system_report"/>
+				<element value="wp_system_report"/>
 				<element value="SystemReport"/>
 			</property>
 		</properties>

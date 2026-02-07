@@ -113,9 +113,9 @@ class Plugin {
 	 */
 	public function load_textdomain(): void {
 		load_plugin_textdomain(
-			'system-report',
+			'wp-system-report',
 			false,
-			dirname( plugin_basename( SYSTEM_REPORT_FILE ) ) . '/languages'
+			dirname( plugin_basename( WP_SYSTEM_REPORT_FILE ) ) . '/languages'
 		);
 	}
 

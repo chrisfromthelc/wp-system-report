@@ -1,7 +1,7 @@
 parameters:
     level: 5
     paths:
-        - system-report.php
+        - wp-system-report.php
         - includes/
     excludePaths:
         - vendor/

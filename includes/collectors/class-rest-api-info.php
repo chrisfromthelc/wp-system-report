@@ -27,7 +27,7 @@ class REST_API_Info extends Abstract_Collector {
 	 * @return string
 	 */
 	public function get_label() {
-		return __( 'REST API', 'system-report' );
+		return __( 'REST API', 'wp-system-report' );
 	}
 
 	/**
@@ -36,7 +36,7 @@ class REST_API_Info extends Abstract_Collector {
 	 * @return string
 	 */
 	public function get_description() {
-		return __( 'REST API availability and registered namespaces.', 'system-report' );
+		return __( 'REST API availability and registered namespaces.', 'wp-system-report' );
 	}
 
 	/**
@@ -54,13 +54,13 @@ class REST_API_Info extends Abstract_Collector {
 
 		// REST API URL.
 		$fields[] = $this->make_field(
-			__( 'REST API URL', 'system-report' ),
+			__( 'REST API URL', 'wp-system-report' ),
 			rest_url()
 		);
 
 		// REST Prefix.
 		$fields[] = $this->make_field(
-			__( 'REST Prefix', 'system-report' ),
+			__( 'REST Prefix', 'wp-system-report' ),
 			rest_get_url_prefix()
 		);
 
@@ -70,13 +70,13 @@ class REST_API_Info extends Abstract_Collector {
 
 		// Registered Namespaces (comma-separated list).
 		$fields[] = $this->make_field(
-			__( 'Registered Namespaces', 'system-report' ),
-			! empty( $namespaces ) ? implode( ', ', $namespaces ) : __( 'None', 'system-report' )
+			__( 'Registered Namespaces', 'wp-system-report' ),
+			! empty( $namespaces ) ? implode( ', ', $namespaces ) : __( 'None', 'wp-system-report' )
 		);
 
 		// Total Namespaces count.
 		$fields[] = $this->make_field(
-			__( 'Total Namespaces', 'system-report' ),
+			__( 'Total Namespaces', 'wp-system-report' ),
 			count( $namespaces )
 		);
 

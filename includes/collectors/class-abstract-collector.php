@@ -51,7 +51,7 @@ abstract class Abstract_Collector implements Collector {
 			 * @param int    $ttl       Cache TTL in seconds. Default 3600 (1 hour).
 			 * @param string $cache_key The transient cache key.
 			 */
-			$ttl = apply_filters( 'system_report_cache_ttl', HOUR_IN_SECONDS, $cache_key );
+			$ttl = apply_filters( 'wp_system_report_cache_ttl', HOUR_IN_SECONDS, $cache_key );
 			set_transient( $cache_key, $data, $ttl );
 		}
 
@@ -109,7 +109,7 @@ abstract class Abstract_Collector implements Collector {
 	 * @return string 'Yes' or 'No'.
 	 */
 	protected function format_boolean( $value ) {
-		return $value ? __( 'Yes', 'system-report' ) : __( 'No', 'system-report' );
+		return $value ? __( 'Yes', 'wp-system-report' ) : __( 'No', 'wp-system-report' );
 	}
 
 	/**

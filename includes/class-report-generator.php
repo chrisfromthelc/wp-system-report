@@ -35,7 +35,7 @@ class Report_Generator {
 	/**
 	 * Get all registered collectors, sorted by priority.
 	 *
-	 * Applies the 'system_report_collectors' filter to allow third-party
+	 * Applies the 'wp_system_report_collectors' filter to allow third-party
 	 * plugins to add, remove, or reorder collectors.
 	 *
 	 * @return Collector[] Sorted array of collectors.
@@ -46,7 +46,7 @@ class Report_Generator {
 		 *
 		 * @param Collector[] $collectors Associative array of collector ID => Collector instance.
 		 */
-		$collectors = apply_filters( 'system_report_collectors', $this->collectors );
+		$collectors = apply_filters( 'wp_system_report_collectors', $this->collectors );
 
 		// Sort by priority.
 		uasort(
@@ -86,7 +86,7 @@ class Report_Generator {
 			 * @param array     $fields    Collected field data.
 			 * @param Collector $collector The collector instance.
 			 */
-			$fields = apply_filters( "system_report_fields_{$id}", $fields, $collector );
+			$fields = apply_filters( "wp_system_report_fields_{$id}", $fields, $collector );
 
 			$report[ $id ] = array(
 				'id'          => $id,
@@ -121,7 +121,7 @@ class Report_Generator {
 		}
 
 		/** This filter is documented in includes/class-report-generator.php */
-		$fields = apply_filters( "system_report_fields_{$id}", $fields, $collector );
+		$fields = apply_filters( "wp_system_report_fields_{$id}", $fields, $collector );
 
 		return array(
 			'id'          => $id,

@@ -7,7 +7,7 @@ A comprehensive WordPress system status report plugin with AI-optimized export. 
 - **Full System Diagnostics** - 17 collectors covering WordPress environment, server, database, plugins, themes, security, cron, REST API, and more
 - **Multiple Export Formats** - Plain text, GitHub-friendly (with redactions and `<details>` wrapper), and AI-optimized markdown
 - **AI-Ready Export** - Structured markdown with contextual descriptions, status indicators, recommendations, and proactive issue detection designed for Claude, ChatGPT, and other LLMs
-- **REST API** - Full JSON API at `system-report/v1/report` with format parameter support
+- **REST API** - Full JSON API at `wp-system-report/v1/report` with format parameter support
 - **Extensible** - Filter hooks for adding custom collectors, modifying fields, and extending issue detection
 - **Zero Dependencies** - Works standalone without WooCommerce or any other plugin
 - **Cached** - Transient caching for expensive collectors with automatic invalidation
@@ -21,7 +21,7 @@ A comprehensive WordPress system status report plugin with AI-optimized export. 
 
 ### Manual Installation
 
-1. Download or clone this repository into `wp-content/plugins/system-report/`
+1. Download or clone this repository into `wp-content/plugins/wp-system-report/`
 2. Activate the plugin through the WordPress admin
 3. Navigate to **Tools > System Report**
 
@@ -29,7 +29,7 @@ A comprehensive WordPress system status report plugin with AI-optimized export. 
 
 ```bash
 cd wp-content/plugins/
-git clone https://github.com/chrisfromthelc/wp-system-report.git system-report
+git clone https://github.com/chrisfromthelc/wp-system-report.git wp-system-report
 ```
 
 ## Usage
@@ -48,22 +48,22 @@ Navigate to **Tools > System Report** to view the full system status report. The
 
 ### REST API
 
-The plugin registers a REST endpoint at `system-report/v1/report` (requires `manage_options` capability).
+The plugin registers a REST endpoint at `wp-system-report/v1/report` (requires `manage_options` capability).
 
 **Formats:**
 
 ```
-GET /wp-json/system-report/v1/report              # JSON (default)
-GET /wp-json/system-report/v1/report?format=plain  # Plain text
-GET /wp-json/system-report/v1/report?format=github # GitHub (redacted + details wrapper)
-GET /wp-json/system-report/v1/report?format=ai     # AI-optimized markdown
+GET /wp-json/wp-system-report/v1/report              # JSON (default)
+GET /wp-json/wp-system-report/v1/report?format=plain  # Plain text
+GET /wp-json/wp-system-report/v1/report?format=github # GitHub (redacted + details wrapper)
+GET /wp-json/wp-system-report/v1/report?format=ai     # AI-optimized markdown
 ```
 
 **Example (cURL):**
 
 ```bash
 curl -H "Authorization: Basic BASE64_CREDENTIALS" \
-  "https://example.com/wp-json/system-report/v1/report?format=ai"
+  "https://example.com/wp-json/wp-system-report/v1/report?format=ai"
 ```
 
 ### AI Export Format
@@ -106,7 +106,7 @@ The AI export produces structured markdown designed for LLM consumption:
 ### Adding a Custom Collector
 
 ```php
-add_filter( 'system_report_collectors', function ( $collectors ) {
+add_filter( 'wp_system_report_collectors', function ( $collectors ) {
     $collectors['my_custom'] = new My_Custom_Collector();
     return $collectors;
 });
@@ -138,20 +138,20 @@ class My_Custom_Collector extends Abstract_Collector {
 
 | Filter | Description |
 |--------|-------------|
-| `system_report_collectors` | Add, remove, or reorder collectors |
-| `system_report_fields_{collector_id}` | Modify fields for a specific collector |
-| `system_report_ai_issues` | Add or modify AI-detected issues |
-| `system_report_ai_header` | Customize the AI report header |
-| `system_report_capability` | Change required capability (default: `manage_options`) |
-| `system_report_cache_ttl` | Change cache TTL (default: 1 hour) |
-| `system_report_redactions` | Add redaction patterns for GitHub export |
-| `system_report_constants` | Add/remove constants to display |
+| `wp_system_report_collectors` | Add, remove, or reorder collectors |
+| `wp_system_report_fields_{collector_id}` | Modify fields for a specific collector |
+| `wp_system_report_ai_issues` | Add or modify AI-detected issues |
+| `wp_system_report_ai_header` | Customize the AI report header |
+| `wp_system_report_capability` | Change required capability (default: `manage_options`) |
+| `wp_system_report_cache_ttl` | Change cache TTL (default: 1 hour) |
+| `wp_system_report_redactions` | Add redaction patterns for GitHub export |
+| `wp_system_report_constants` | Add/remove constants to display |
 
 ### Available Actions
 
 | Action | Description |
 |--------|-------------|
-| `system_report_after_section_{id}` | Fires after each section renders |
+| `wp_system_report_after_section_{id}` | Fires after each section renders |
 
 ## Development
 
@@ -202,8 +202,8 @@ composer test
 ### Architecture
 
 ```
-system-report/
-  system-report.php              # Bootstrap + autoloader
+wp-system-report/
+  wp-system-report.php           # Bootstrap + autoloader
   uninstall.php                  # Cleanup on deletion
   includes/
     class-plugin.php             # Singleton orchestrator
@@ -220,8 +220,8 @@ system-report/
       class-github-formatter.php
       class-ai-formatter.php
   assets/
-    css/system-report-admin.css  # Admin styles
-    js/system-report-admin.js    # Vanilla JS (no jQuery)
+    css/wp-system-report-admin.css  # Admin styles
+    js/wp-system-report-admin.js    # Vanilla JS (no jQuery)
   templates/
     admin-page.php               # Admin page template
     report-section.php           # Section template

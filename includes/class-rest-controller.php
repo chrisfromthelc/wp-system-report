@@ -19,7 +19,7 @@ class REST_Controller extends \WP_REST_Controller {
 	 *
 	 * @var string
 	 */
-	protected $namespace = 'system-report/v1';
+	protected $namespace = 'wp-system-report/v1';
 
 	/**
 	 * REST route base.
@@ -56,7 +56,7 @@ class REST_Controller extends \WP_REST_Controller {
 					'permission_callback' => array( $this, 'get_report_permissions_check' ),
 					'args'                => array(
 						'format' => array(
-							'description' => __( 'Output format.', 'system-report' ),
+							'description' => __( 'Output format.', 'wp-system-report' ),
 							'type'        => 'string',
 							'enum'        => array( 'json', 'plain', 'github', 'ai' ),
 							'default'     => 'json',
@@ -80,12 +80,12 @@ class REST_Controller extends \WP_REST_Controller {
 		 *
 		 * @param string $capability WordPress capability. Default 'manage_options'.
 		 */
-		$capability = apply_filters( 'system_report_capability', 'manage_options' );
+		$capability = apply_filters( 'wp_system_report_capability', 'manage_options' );
 
 		if ( ! current_user_can( $capability ) ) {
 			return new \WP_Error(
-				'system_report_rest_forbidden',
-				__( 'Sorry, you are not allowed to view the system report.', 'system-report' ),
+				'wp_system_report_rest_forbidden',
+				__( 'Sorry, you are not allowed to view the system report.', 'wp-system-report' ),
 				array( 'status' => rest_authorization_required_code() )
 			);
 		}
@@ -111,8 +111,8 @@ class REST_Controller extends \WP_REST_Controller {
 
 		if ( null === $formatter ) {
 			return new \WP_Error(
-				'system_report_invalid_format',
-				__( 'Invalid report format.', 'system-report' ),
+				'wp_system_report_invalid_format',
+				__( 'Invalid report format.', 'wp-system-report' ),
 				array( 'status' => 400 )
 			);
 		}

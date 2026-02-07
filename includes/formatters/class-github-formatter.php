@@ -81,7 +81,7 @@ class GitHub_Formatter implements Formatter {
 		 *
 		 * @param array $redactions Array of redaction rules.
 		 */
-		$redactions = apply_filters( 'system_report_redactions', $redactions );
+		$redactions = apply_filters( 'wp_system_report_redactions', $redactions );
 
 		foreach ( $redactions as $redaction ) {
 			$report = preg_replace( $redaction['pattern'], $redaction['replacement'], $report );

@@ -142,7 +142,7 @@ class ReportGeneratorTest extends WP_UnitTestCase {
 	}
 
 	/**
-	 * Test that the system_report_collectors filter works.
+	 * Test that the wp_system_report_collectors filter works.
 	 */
 	public function test_collectors_filter() {
 		$this->generator->register_collector(
@@ -152,7 +152,7 @@ class ReportGeneratorTest extends WP_UnitTestCase {
 		// Add a filter to inject a new collector.
 		$extra_collector = $this->create_mock_collector( 'injected', 'Injected', '', 5 );
 		add_filter(
-			'system_report_collectors',
+			'wp_system_report_collectors',
 			function ( $collectors ) use ( $extra_collector ) {
 				$collectors['injected'] = $extra_collector;
 				return $collectors;
@@ -169,7 +169,7 @@ class ReportGeneratorTest extends WP_UnitTestCase {
 	}
 
 	/**
-	 * Test that the system_report_fields_{id} filter works.
+	 * Test that the wp_system_report_fields_{id} filter works.
 	 */
 	public function test_fields_filter() {
 		$fields = array(
@@ -183,7 +183,7 @@ class ReportGeneratorTest extends WP_UnitTestCase {
 		$this->generator->register_collector( $collector );
 
 		add_filter(
-			'system_report_fields_test',
+			'wp_system_report_fields_test',
 			function ( $fields ) {
 				$fields[] = array(
 					'label' => 'Injected Field',

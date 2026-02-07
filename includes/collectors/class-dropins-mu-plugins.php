@@ -27,7 +27,7 @@ class Dropins_MU_Plugins extends Abstract_Collector {
 	 * @return string
 	 */
 	public function get_label() {
-		return __( 'Drop-ins & Must-Use Plugins', 'system-report' );
+		return __( 'Drop-ins & Must-Use Plugins', 'wp-system-report' );
 	}
 
 	/**
@@ -36,7 +36,7 @@ class Dropins_MU_Plugins extends Abstract_Collector {
 	 * @return string
 	 */
 	public function get_description() {
-		return __( 'Drop-in replacements and must-use plugins.', 'system-report' );
+		return __( 'Drop-in replacements and must-use plugins.', 'wp-system-report' );
 	}
 
 	/**
@@ -77,7 +77,7 @@ class Dropins_MU_Plugins extends Abstract_Collector {
 				$fields[] = $this->make_field(
 					sprintf(
 						/* translators: %s: Drop-in filename */
-						__( 'Drop-in: %s', 'system-report' ),
+						__( 'Drop-in: %s', 'wp-system-report' ),
 						$dropin_file
 					),
 					$dropin_name,
@@ -103,13 +103,13 @@ class Dropins_MU_Plugins extends Abstract_Collector {
 
 			foreach ( $mu_plugins as $mu_plugin_path => $mu_plugin_data ) {
 				$plugin_name = ! empty( $mu_plugin_data['Name'] ) ? $mu_plugin_data['Name'] : basename( $mu_plugin_path, '.php' );
-				$version     = ! empty( $mu_plugin_data['Version'] ) ? $mu_plugin_data['Version'] : __( 'Unknown', 'system-report' );
-				$author      = ! empty( $mu_plugin_data['Author'] ) ? wp_strip_all_tags( $mu_plugin_data['Author'] ) : __( 'Unknown', 'system-report' );
+				$version     = ! empty( $mu_plugin_data['Version'] ) ? $mu_plugin_data['Version'] : __( 'Unknown', 'wp-system-report' );
+				$author      = ! empty( $mu_plugin_data['Author'] ) ? wp_strip_all_tags( $mu_plugin_data['Author'] ) : __( 'Unknown', 'wp-system-report' );
 
 				// Build value string.
 				$value = sprintf(
 					/* translators: 1: Plugin author, 2: Plugin version */
-					__( 'by %1$s - version %2$s', 'system-report' ),
+					__( 'by %1$s - version %2$s', 'wp-system-report' ),
 					$author,
 					$version
 				);
@@ -119,7 +119,7 @@ class Dropins_MU_Plugins extends Abstract_Collector {
 				$fields[] = $this->make_field(
 					sprintf(
 						/* translators: %s: MU Plugin name */
-						__( 'MU Plugin: %s', 'system-report' ),
+						__( 'MU Plugin: %s', 'wp-system-report' ),
 						$plugin_name
 					),
 					$value,
@@ -135,8 +135,8 @@ class Dropins_MU_Plugins extends Abstract_Collector {
 		// If no drop-ins or MU plugins found.
 		if ( empty( $fields ) ) {
 			$fields[] = $this->make_field(
-				__( 'No Drop-ins or MU Plugins', 'system-report' ),
-				__( 'No drop-ins or must-use plugins installed.', 'system-report' ),
+				__( 'No Drop-ins or MU Plugins', 'wp-system-report' ),
+				__( 'No drop-ins or must-use plugins installed.', 'wp-system-report' ),
 				array( 'status' => 'info' )
 			);
 		}

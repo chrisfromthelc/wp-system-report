@@ -27,7 +27,7 @@ class Filesystem_Permissions extends Abstract_Collector {
 	 * @return string
 	 */
 	public function get_label() {
-		return __( 'Filesystem Permissions', 'system-report' );
+		return __( 'Filesystem Permissions', 'wp-system-report' );
 	}
 
 	/**
@@ -36,7 +36,7 @@ class Filesystem_Permissions extends Abstract_Collector {
 	 * @return string
 	 */
 	public function get_description() {
-		return __( 'Directory writability and file permission status.', 'system-report' );
+		return __( 'Directory writability and file permission status.', 'wp-system-report' );
 	}
 
 	/**
@@ -56,8 +56,8 @@ class Filesystem_Permissions extends Abstract_Collector {
 		$wp_root_path     = ABSPATH;
 		$wp_root_writable = wp_is_writable( $wp_root_path );
 		$fields[]         = $this->make_field(
-			__( 'WordPress Root', 'system-report' ),
-			$wp_root_writable ? __( 'Writable', 'system-report' ) : __( 'Not Writable', 'system-report' ),
+			__( 'WordPress Root', 'wp-system-report' ),
+			$wp_root_writable ? __( 'Writable', 'wp-system-report' ) : __( 'Not Writable', 'wp-system-report' ),
 			array(
 				'debug'       => $wp_root_path,
 				'status'      => 'info',
@@ -69,8 +69,8 @@ class Filesystem_Permissions extends Abstract_Collector {
 		$content_dir_path     = WP_CONTENT_DIR;
 		$content_dir_writable = wp_is_writable( $content_dir_path );
 		$fields[]             = $this->make_field(
-			__( 'wp-content Directory', 'system-report' ),
-			$content_dir_writable ? __( 'Writable', 'system-report' ) : __( 'Not Writable', 'system-report' ),
+			__( 'wp-content Directory', 'wp-system-report' ),
+			$content_dir_writable ? __( 'Writable', 'wp-system-report' ) : __( 'Not Writable', 'wp-system-report' ),
 			array(
 				'debug'       => $content_dir_path,
 				'status'      => 'info',
@@ -83,8 +83,8 @@ class Filesystem_Permissions extends Abstract_Collector {
 		$uploads_path     = $upload_dir['basedir'];
 		$uploads_writable = wp_is_writable( $uploads_path );
 		$fields[]         = $this->make_field(
-			__( 'Uploads Directory', 'system-report' ),
-			$uploads_writable ? __( 'Writable', 'system-report' ) : __( 'Not Writable', 'system-report' ),
+			__( 'Uploads Directory', 'wp-system-report' ),
+			$uploads_writable ? __( 'Writable', 'wp-system-report' ) : __( 'Not Writable', 'wp-system-report' ),
 			array(
 				'debug'       => $uploads_path,
 				'status'      => $uploads_writable ? 'good' : 'critical',
@@ -96,8 +96,8 @@ class Filesystem_Permissions extends Abstract_Collector {
 		$plugins_path     = WP_PLUGIN_DIR;
 		$plugins_writable = wp_is_writable( $plugins_path );
 		$fields[]         = $this->make_field(
-			__( 'Plugins Directory', 'system-report' ),
-			$plugins_writable ? __( 'Writable', 'system-report' ) : __( 'Not Writable', 'system-report' ),
+			__( 'Plugins Directory', 'wp-system-report' ),
+			$plugins_writable ? __( 'Writable', 'wp-system-report' ) : __( 'Not Writable', 'wp-system-report' ),
 			array(
 				'debug'       => $plugins_path,
 				'status'      => 'info',
@@ -109,8 +109,8 @@ class Filesystem_Permissions extends Abstract_Collector {
 		$themes_path     = get_theme_root();
 		$themes_writable = wp_is_writable( $themes_path );
 		$fields[]        = $this->make_field(
-			__( 'Themes Directory', 'system-report' ),
-			$themes_writable ? __( 'Writable', 'system-report' ) : __( 'Not Writable', 'system-report' ),
+			__( 'Themes Directory', 'wp-system-report' ),
+			$themes_writable ? __( 'Writable', 'wp-system-report' ) : __( 'Not Writable', 'wp-system-report' ),
 			array(
 				'debug'       => $themes_path,
 				'status'      => 'info',
@@ -123,8 +123,8 @@ class Filesystem_Permissions extends Abstract_Collector {
 			$mu_plugins_path     = WPMU_PLUGIN_DIR;
 			$mu_plugins_writable = wp_is_writable( $mu_plugins_path );
 			$fields[]            = $this->make_field(
-				__( 'MU Plugins Directory', 'system-report' ),
-				$mu_plugins_writable ? __( 'Writable', 'system-report' ) : __( 'Not Writable', 'system-report' ),
+				__( 'MU Plugins Directory', 'wp-system-report' ),
+				$mu_plugins_writable ? __( 'Writable', 'wp-system-report' ) : __( 'Not Writable', 'wp-system-report' ),
 				array(
 					'debug'       => $mu_plugins_path,
 					'status'      => 'info',

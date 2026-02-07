@@ -27,7 +27,7 @@ class Advanced_Diagnostics extends Abstract_Collector {
 	 * @return string
 	 */
 	public function get_label() {
-		return __( 'Advanced Diagnostics', 'system-report' );
+		return __( 'Advanced Diagnostics', 'wp-system-report' );
 	}
 
 	/**
@@ -36,7 +36,7 @@ class Advanced_Diagnostics extends Abstract_Collector {
 	 * @return string
 	 */
 	public function get_description() {
-		return __( 'Autoloaded options, disk usage, and error log information.', 'system-report' );
+		return __( 'Autoloaded options, disk usage, and error log information.', 'wp-system-report' );
 	}
 
 	/**
@@ -61,7 +61,7 @@ class Advanced_Diagnostics extends Abstract_Collector {
 		);
 
 		$fields[] = $this->make_field(
-			__( 'Autoloaded Options Count', 'system-report' ),
+			__( 'Autoloaded Options Count', 'wp-system-report' ),
 			$autoload_count ? absint( $autoload_count ) : 0
 		);
 
@@ -77,14 +77,14 @@ class Advanced_Diagnostics extends Abstract_Collector {
 
 		if ( $autoload_size > 1572864 ) { // 1.5 MB.
 			$status      = 'critical';
-			$recommended = __( '< 800 KB', 'system-report' );
+			$recommended = __( '< 800 KB', 'wp-system-report' );
 		} elseif ( $autoload_size > 819200 ) { // 800 KB.
 			$status      = 'warning';
-			$recommended = __( '< 800 KB', 'system-report' );
+			$recommended = __( '< 800 KB', 'wp-system-report' );
 		}
 
 		$fields[] = $this->make_field(
-			__( 'Autoloaded Options Size', 'system-report' ),
+			__( 'Autoloaded Options Size', 'wp-system-report' ),
 			$this->format_size( $autoload_size ),
 			array(
 				'status'      => $status,
@@ -106,8 +106,8 @@ class Advanced_Diagnostics extends Abstract_Collector {
 		}
 
 		$fields[] = $this->make_field(
-			__( 'Uploads Directory Size', 'system-report' ),
-			$uploads_dirsize ? $this->format_size( $uploads_dirsize ) : __( 'Unable to calculate', 'system-report' )
+			__( 'Uploads Directory Size', 'wp-system-report' ),
+			$uploads_dirsize ? $this->format_size( $uploads_dirsize ) : __( 'Unable to calculate', 'wp-system-report' )
 		);
 
 		// Plugins Directory Size.
@@ -122,8 +122,8 @@ class Advanced_Diagnostics extends Abstract_Collector {
 		}
 
 		$fields[] = $this->make_field(
-			__( 'Plugins Directory Size', 'system-report' ),
-			$plugins_dirsize ? $this->format_size( $plugins_dirsize ) : __( 'Unable to calculate', 'system-report' )
+			__( 'Plugins Directory Size', 'wp-system-report' ),
+			$plugins_dirsize ? $this->format_size( $plugins_dirsize ) : __( 'Unable to calculate', 'wp-system-report' )
 		);
 
 		// Themes Directory Size.
@@ -139,8 +139,8 @@ class Advanced_Diagnostics extends Abstract_Collector {
 		}
 
 		$fields[] = $this->make_field(
-			__( 'Themes Directory Size', 'system-report' ),
-			$themes_dirsize ? $this->format_size( $themes_dirsize ) : __( 'Unable to calculate', 'system-report' )
+			__( 'Themes Directory Size', 'wp-system-report' ),
+			$themes_dirsize ? $this->format_size( $themes_dirsize ) : __( 'Unable to calculate', 'wp-system-report' )
 		);
 
 		// Rewrite Rules Count.
@@ -148,7 +148,7 @@ class Advanced_Diagnostics extends Abstract_Collector {
 		$rules_count   = is_array( $rewrite_rules ) ? count( $rewrite_rules ) : 0;
 
 		$fields[] = $this->make_field(
-			__( 'Rewrite Rules Count', 'system-report' ),
+			__( 'Rewrite Rules Count', 'wp-system-report' ),
 			$rules_count,
 			array(
 				'status' => $rules_count > 500 ? 'warning' : 'good',
@@ -162,7 +162,7 @@ class Advanced_Diagnostics extends Abstract_Collector {
 			$error_log_size = filesize( $error_log );
 			$log_value      = sprintf(
 				/* translators: 1: file path, 2: file size */
-				__( '%1$s (%2$s)', 'system-report' ),
+				__( '%1$s (%2$s)', 'wp-system-report' ),
 				$error_log,
 				$this->format_size( $error_log_size )
 			);
@@ -176,7 +176,7 @@ class Advanced_Diagnostics extends Abstract_Collector {
 					$last_lines = array_slice( $lines, -5 );
 					$log_value  = sprintf(
 						/* translators: 1: file path, 2: file size, 3: last log lines */
-						__( '%1$s (%2$s) - Last entries: %3$s', 'system-report' ),
+						__( '%1$s (%2$s) - Last entries: %3$s', 'wp-system-report' ),
 						$error_log,
 						$this->format_size( $error_log_size ),
 						implode( ' | ', $last_lines )
@@ -185,13 +185,13 @@ class Advanced_Diagnostics extends Abstract_Collector {
 			}
 
 			$fields[] = $this->make_field(
-				__( 'PHP Error Log', 'system-report' ),
+				__( 'PHP Error Log', 'wp-system-report' ),
 				$log_value
 			);
 		} else {
 			$fields[] = $this->make_field(
-				__( 'PHP Error Log', 'system-report' ),
-				$error_log ? __( 'Not accessible', 'system-report' ) : __( 'Not configured', 'system-report' )
+				__( 'PHP Error Log', 'wp-system-report' ),
+				$error_log ? __( 'Not accessible', 'wp-system-report' ) : __( 'Not configured', 'wp-system-report' )
 			);
 		}
 
@@ -199,7 +199,7 @@ class Advanced_Diagnostics extends Abstract_Collector {
 		$htaccess_exists = file_exists( ABSPATH . '.htaccess' );
 
 		$fields[] = $this->make_field(
-			__( '.htaccess Present', 'system-report' ),
+			__( '.htaccess Present', 'wp-system-report' ),
 			$this->format_boolean( $htaccess_exists )
 		);
 

@@ -27,7 +27,7 @@ class Site_Health extends Abstract_Collector {
 	 * @return string
 	 */
 	public function get_label() {
-		return __( 'Site Health', 'system-report' );
+		return __( 'Site Health', 'wp-system-report' );
 	}
 
 	/**
@@ -36,7 +36,7 @@ class Site_Health extends Abstract_Collector {
 	 * @return string
 	 */
 	public function get_description() {
-		return __( 'WordPress Site Health test results and recommendations.', 'system-report' );
+		return __( 'WordPress Site Health test results and recommendations.', 'wp-system-report' );
 	}
 
 	/**
@@ -149,10 +149,10 @@ class Site_Health extends Abstract_Collector {
 			array_unshift(
 				$fields,
 				$this->make_field(
-					__( 'Site Health Summary', 'system-report' ),
+					__( 'Site Health Summary', 'wp-system-report' ),
 					sprintf(
 						// translators: %1$d: Good count, %2$d: Recommended count, %3$d: Critical count.
-						__( '%1$d good, %2$d recommended, %3$d critical', 'system-report' ),
+						__( '%1$d good, %2$d recommended, %3$d critical', 'wp-system-report' ),
 						$good_count,
 						$recommended_count,
 						$critical_count
@@ -171,8 +171,8 @@ class Site_Health extends Abstract_Collector {
 		} catch ( \Exception $e ) {
 			// If Site Health fails completely, add error field.
 			$fields[] = $this->make_field(
-				__( 'Site Health Status', 'system-report' ),
-				__( 'Unable to retrieve Site Health data', 'system-report' ),
+				__( 'Site Health Status', 'wp-system-report' ),
+				__( 'Unable to retrieve Site Health data', 'wp-system-report' ),
 				array(
 					'status'      => 'warning',
 					'description' => $e->getMessage(),

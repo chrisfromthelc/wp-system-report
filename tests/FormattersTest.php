@@ -353,7 +353,7 @@ class FormattersTest extends WP_UnitTestCase {
 		$formatter = new AI_Formatter();
 		$output    = $formatter->format( $this->sample_report );
 
-		$this->assertStringContainsString( 'Report Version: ' . SYSTEM_REPORT_VERSION, $output );
+		$this->assertStringContainsString( 'Report Version: ' . WP_SYSTEM_REPORT_VERSION, $output );
 	}
 
 	/**
@@ -361,7 +361,7 @@ class FormattersTest extends WP_UnitTestCase {
 	 */
 	public function test_ai_issues_filter() {
 		add_filter(
-			'system_report_ai_issues',
+			'wp_system_report_ai_issues',
 			function ( $issues ) {
 				$issues[] = array(
 					'severity'    => 'warning',

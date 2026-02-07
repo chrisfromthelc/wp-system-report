@@ -27,7 +27,7 @@ class WordPress_Constants extends Abstract_Collector {
 	 * @return string
 	 */
 	public function get_label() {
-		return __( 'WordPress Constants', 'system-report' );
+		return __( 'WordPress Constants', 'wp-system-report' );
 	}
 
 	/**
@@ -36,7 +36,7 @@ class WordPress_Constants extends Abstract_Collector {
 	 * @return string
 	 */
 	public function get_description() {
-		return __( 'Defined WordPress constants and their values.', 'system-report' );
+		return __( 'Defined WordPress constants and their values.', 'wp-system-report' );
 	}
 
 	/**
@@ -52,96 +52,96 @@ class WordPress_Constants extends Abstract_Collector {
 	public function collect(): array {
 		$constants_to_check = array(
 			'ABSPATH'             => array(
-				'label'   => __( 'ABSPATH', 'system-report' ),
+				'label'   => __( 'ABSPATH', 'wp-system-report' ),
 				'private' => true,
 			),
 			'WP_HOME'             => array(
-				'label'   => __( 'WP_HOME', 'system-report' ),
+				'label'   => __( 'WP_HOME', 'wp-system-report' ),
 				'private' => true,
 			),
 			'WP_SITEURL'          => array(
-				'label'   => __( 'WP_SITEURL', 'system-report' ),
+				'label'   => __( 'WP_SITEURL', 'wp-system-report' ),
 				'private' => true,
 			),
 			'WP_CONTENT_DIR'      => array(
-				'label' => __( 'WP_CONTENT_DIR', 'system-report' ),
+				'label' => __( 'WP_CONTENT_DIR', 'wp-system-report' ),
 			),
 			'WP_PLUGIN_DIR'       => array(
-				'label' => __( 'WP_PLUGIN_DIR', 'system-report' ),
+				'label' => __( 'WP_PLUGIN_DIR', 'wp-system-report' ),
 			),
 			'WP_MEMORY_LIMIT'     => array(
-				'label' => __( 'WP_MEMORY_LIMIT', 'system-report' ),
+				'label' => __( 'WP_MEMORY_LIMIT', 'wp-system-report' ),
 			),
 			'WP_MAX_MEMORY_LIMIT' => array(
-				'label' => __( 'WP_MAX_MEMORY_LIMIT', 'system-report' ),
+				'label' => __( 'WP_MAX_MEMORY_LIMIT', 'wp-system-report' ),
 			),
 			'WP_DEBUG'            => array(
-				'label'   => __( 'WP_DEBUG', 'system-report' ),
+				'label'   => __( 'WP_DEBUG', 'wp-system-report' ),
 				'boolean' => true,
 			),
 			'WP_DEBUG_DISPLAY'    => array(
-				'label'   => __( 'WP_DEBUG_DISPLAY', 'system-report' ),
+				'label'   => __( 'WP_DEBUG_DISPLAY', 'wp-system-report' ),
 				'boolean' => true,
 			),
 			'WP_DEBUG_LOG'        => array(
-				'label'   => __( 'WP_DEBUG_LOG', 'system-report' ),
+				'label'   => __( 'WP_DEBUG_LOG', 'wp-system-report' ),
 				'boolean' => true,
 			),
 			'SCRIPT_DEBUG'        => array(
-				'label'   => __( 'SCRIPT_DEBUG', 'system-report' ),
+				'label'   => __( 'SCRIPT_DEBUG', 'wp-system-report' ),
 				'boolean' => true,
 			),
 			'WP_CACHE'            => array(
-				'label'   => __( 'WP_CACHE', 'system-report' ),
+				'label'   => __( 'WP_CACHE', 'wp-system-report' ),
 				'boolean' => true,
 			),
 			'CONCATENATE_SCRIPTS' => array(
-				'label'   => __( 'CONCATENATE_SCRIPTS', 'system-report' ),
+				'label'   => __( 'CONCATENATE_SCRIPTS', 'wp-system-report' ),
 				'boolean' => true,
 			),
 			'COMPRESS_SCRIPTS'    => array(
-				'label'   => __( 'COMPRESS_SCRIPTS', 'system-report' ),
+				'label'   => __( 'COMPRESS_SCRIPTS', 'wp-system-report' ),
 				'boolean' => true,
 			),
 			'COMPRESS_CSS'        => array(
-				'label'   => __( 'COMPRESS_CSS', 'system-report' ),
+				'label'   => __( 'COMPRESS_CSS', 'wp-system-report' ),
 				'boolean' => true,
 			),
 			'WP_ENVIRONMENT_TYPE' => array(
-				'label' => __( 'WP_ENVIRONMENT_TYPE', 'system-report' ),
+				'label' => __( 'WP_ENVIRONMENT_TYPE', 'wp-system-report' ),
 			),
 			'WP_DEVELOPMENT_MODE' => array(
-				'label' => __( 'WP_DEVELOPMENT_MODE', 'system-report' ),
+				'label' => __( 'WP_DEVELOPMENT_MODE', 'wp-system-report' ),
 			),
 			'DISALLOW_FILE_EDIT'  => array(
-				'label'   => __( 'DISALLOW_FILE_EDIT', 'system-report' ),
+				'label'   => __( 'DISALLOW_FILE_EDIT', 'wp-system-report' ),
 				'boolean' => true,
 			),
 			'DISALLOW_FILE_MODS'  => array(
-				'label'   => __( 'DISALLOW_FILE_MODS', 'system-report' ),
+				'label'   => __( 'DISALLOW_FILE_MODS', 'wp-system-report' ),
 				'boolean' => true,
 			),
 			'DISABLE_WP_CRON'     => array(
-				'label'   => __( 'DISABLE_WP_CRON', 'system-report' ),
+				'label'   => __( 'DISABLE_WP_CRON', 'wp-system-report' ),
 				'boolean' => true,
 			),
 			'WP_AUTO_UPDATE_CORE' => array(
-				'label' => __( 'WP_AUTO_UPDATE_CORE', 'system-report' ),
+				'label' => __( 'WP_AUTO_UPDATE_CORE', 'wp-system-report' ),
 			),
 			'FORCE_SSL_ADMIN'     => array(
-				'label'   => __( 'FORCE_SSL_ADMIN', 'system-report' ),
+				'label'   => __( 'FORCE_SSL_ADMIN', 'wp-system-report' ),
 				'boolean' => true,
 			),
 			'AUTOSAVE_INTERVAL'   => array(
-				'label' => __( 'AUTOSAVE_INTERVAL', 'system-report' ),
+				'label' => __( 'AUTOSAVE_INTERVAL', 'wp-system-report' ),
 			),
 			'WP_POST_REVISIONS'   => array(
-				'label' => __( 'WP_POST_REVISIONS', 'system-report' ),
+				'label' => __( 'WP_POST_REVISIONS', 'wp-system-report' ),
 			),
 		);
 
 		// Allow filtering the constants list.
-		$constants_to_check = apply_filters( 'system_report_constants', $constants_to_check );
+		$constants_to_check = apply_filters( 'wp_system_report_constants', $constants_to_check );
 
 		$fields           = array();
 		$environment_type = function_exists( 'wp_get_environment_type' ) ? wp_get_environment_type() : 'production';
@@ -151,7 +151,7 @@ class WordPress_Constants extends Abstract_Collector {
 			$value = $this->get_constant_value( $constant );
 
 			if ( null === $value ) {
-				$display_value = __( 'Not defined', 'system-report' );
+				$display_value = __( 'Not defined', 'wp-system-report' );
 				$debug_value   = null;
 			} elseif ( ! empty( $config['boolean'] ) ) {
 				$display_value = $this->format_boolean( $value );

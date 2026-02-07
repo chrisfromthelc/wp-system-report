@@ -13,7 +13,7 @@ if ( ! defined( 'WP_UNINSTALL_PLUGIN' ) ) {
 }
 
 // Delete all plugin transients.
-$system_report_transients = array(
+$wp_system_report_transients = array(
 	'sr_active_plugins',
 	'sr_inactive_plugins',
 	'sr_dropins_mu_plugins',
@@ -21,6 +21,6 @@ $system_report_transients = array(
 	'sr_site_health',
 );
 
-foreach ( $system_report_transients as $system_report_transient ) {
-	delete_transient( $system_report_transient );
+foreach ( $wp_system_report_transients as $wp_system_report_transient ) {
+	delete_transient( $wp_system_report_transient );
 }

@@ -268,7 +268,7 @@ class CollectorsTest extends WP_UnitTestCase {
 
 		$custom_ttl = null;
 		add_filter(
-			'system_report_cache_ttl',
+			'wp_system_report_cache_ttl',
 			function ( $ttl, $key ) use ( &$custom_ttl ) {
 				$custom_ttl = 300;
 				return $custom_ttl;

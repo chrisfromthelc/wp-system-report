@@ -27,7 +27,7 @@ class Cron_Health extends Abstract_Collector {
 	 * @return string
 	 */
 	public function get_label() {
-		return __( 'Cron Health', 'system-report' );
+		return __( 'Cron Health', 'wp-system-report' );
 	}
 
 	/**
@@ -36,7 +36,7 @@ class Cron_Health extends Abstract_Collector {
 	 * @return string
 	 */
 	public function get_description() {
-		return __( 'Scheduled events, overdue jobs, and WP-Cron status.', 'system-report' );
+		return __( 'Scheduled events, overdue jobs, and WP-Cron status.', 'wp-system-report' );
 	}
 
 	/**
@@ -55,7 +55,7 @@ class Cron_Health extends Abstract_Collector {
 		// Check if WP-Cron is disabled.
 		$cron_disabled = $this->get_constant_value( 'DISABLE_WP_CRON', false );
 		$fields[]      = $this->make_field(
-			__( 'WP-Cron Disabled', 'system-report' ),
+			__( 'WP-Cron Disabled', 'wp-system-report' ),
 			$this->format_boolean( $cron_disabled ),
 			array(
 				'status' => $cron_disabled ? 'warning' : 'good',
@@ -77,7 +77,7 @@ class Cron_Health extends Abstract_Collector {
 		}
 
 		$fields[] = $this->make_field(
-			__( 'Total Scheduled Events', 'system-report' ),
+			__( 'Total Scheduled Events', 'wp-system-report' ),
 			$total_events,
 			array(
 				'debug' => $total_events,
@@ -96,19 +96,19 @@ class Cron_Health extends Abstract_Collector {
 			if ( $time_diff > 0 ) {
 				$next_run_display = sprintf(
 					// translators: %s: Human-readable time difference.
-					__( 'In %s', 'system-report' ),
+					__( 'In %s', 'wp-system-report' ),
 					human_time_diff( time(), $next_run_timestamp )
 				);
 			} else {
 				$next_run_display = sprintf(
 					// translators: %s: Human-readable time difference.
-					__( '%s ago', 'system-report' ),
+					__( '%s ago', 'wp-system-report' ),
 					human_time_diff( $next_run_timestamp, time() )
 				);
 			}
 
 			$fields[] = $this->make_field(
-				__( 'Next Cron Run', 'system-report' ),
+				__( 'Next Cron Run', 'wp-system-report' ),
 				$next_run_display,
 				array(
 					'debug' => gmdate( 'Y-m-d H:i:s', $next_run_timestamp ),
@@ -116,8 +116,8 @@ class Cron_Health extends Abstract_Collector {
 			);
 		} else {
 			$fields[] = $this->make_field(
-				__( 'Next Cron Run', 'system-report' ),
-				__( 'No scheduled events', 'system-report' ),
+				__( 'Next Cron Run', 'wp-system-report' ),
+				__( 'No scheduled events', 'wp-system-report' ),
 				array(
 					'debug' => null,
 				)
@@ -146,7 +146,7 @@ class Cron_Health extends Abstract_Collector {
 		}
 
 		$fields[] = $this->make_field(
-			__( 'Overdue Events', 'system-report' ),
+			__( 'Overdue Events', 'wp-system-report' ),
 			$overdue_count,
 			array(
 				'status' => $overdue_status,
@@ -158,7 +158,7 @@ class Cron_Health extends Abstract_Collector {
 		if ( $overdue_count > 0 ) {
 			$overdue_hooks_unique = array_unique( $overdue_hooks );
 			$fields[]             = $this->make_field(
-				__( 'Overdue Event Hooks', 'system-report' ),
+				__( 'Overdue Event Hooks', 'wp-system-report' ),
 				implode( ', ', array_slice( $overdue_hooks_unique, 0, 10 ) ),
 				array(
 					'status'      => 'info',
@@ -166,7 +166,7 @@ class Cron_Health extends Abstract_Collector {
 					'description' => $overdue_count > 10 ?
 						sprintf(
 							// translators: %d: Number of additional overdue hooks.
-							__( 'Showing first 10 of %d overdue hooks', 'system-report' ),
+							__( 'Showing first 10 of %d overdue hooks', 'wp-system-report' ),
 							$overdue_count
 						) : '',
 				)
@@ -179,11 +179,11 @@ class Cron_Health extends Abstract_Collector {
 		if ( $doing_cron ) {
 			$last_run_display = sprintf(
 				// translators: %s: Human-readable time difference.
-				__( '%s ago (currently running)', 'system-report' ),
+				__( '%s ago (currently running)', 'wp-system-report' ),
 				human_time_diff( $doing_cron, time() )
 			);
 			$fields[] = $this->make_field(
-				__( 'Last Cron Run', 'system-report' ),
+				__( 'Last Cron Run', 'wp-system-report' ),
 				$last_run_display,
 				array(
 					'debug' => gmdate( 'Y-m-d H:i:s', $doing_cron ),
@@ -191,11 +191,11 @@ class Cron_Health extends Abstract_Collector {
 			);
 		} else {
 			$fields[] = $this->make_field(
-				__( 'Last Cron Run', 'system-report' ),
-				__( 'Unknown', 'system-report' ),
+				__( 'Last Cron Run', 'wp-system-report' ),
+				__( 'Unknown', 'wp-system-report' ),
 				array(
 					'debug'       => null,
-					'description' => __( 'No recent execution detected', 'system-report' ),
+					'description' => __( 'No recent execution detected', 'wp-system-report' ),
 				)
 			);
 		}

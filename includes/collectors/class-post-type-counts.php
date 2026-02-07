@@ -27,7 +27,7 @@ class Post_Type_Counts extends Abstract_Collector {
 	 * @return string
 	 */
 	public function get_label() {
-		return __( 'Post Type Counts', 'system-report' );
+		return __( 'Post Type Counts', 'wp-system-report' );
 	}
 
 	/**
@@ -36,7 +36,7 @@ class Post_Type_Counts extends Abstract_Collector {
 	 * @return string
 	 */
 	public function get_description() {
-		return __( 'Number of published entries for each post type.', 'system-report' );
+		return __( 'Number of published entries for each post type.', 'wp-system-report' );
 	}
 
 	/**

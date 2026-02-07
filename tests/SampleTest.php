@@ -16,7 +16,7 @@ class SampleTest extends WP_UnitTestCase {
 	 * Verify the plugin is loaded.
 	 */
 	public function test_plugin_loaded(): void {
-		$this->assertTrue( defined( 'SYSTEM_REPORT_VERSION' ) );
+		$this->assertTrue( defined( 'WP_SYSTEM_REPORT_VERSION' ) );
 	}
 
 	/**
