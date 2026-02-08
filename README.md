@@ -26,6 +26,8 @@ A comprehensive WordPress system status report plugin with AI-optimized export. 
 2. Activate the plugin through the WordPress admin
 3. Navigate to **Tools > WP System Report**
 
+[Click to download the latest release](https://github.com/chrisfromthelc/wp-system-report/releases/latest/download/wp-system-report.zip).
+
 ### From GitHub
 
 ```bash
@@ -249,4 +251,4 @@ array(
 
 ## License
 
-GPL-2.0-or-later. See [LICENSE](https://www.gnu.org/licenses/gpl-2.0.html).
+MIT License See [LICENSE](https://opensource.org/license/mit).
