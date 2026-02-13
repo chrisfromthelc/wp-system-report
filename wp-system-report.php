@@ -10,6 +10,7 @@
  * License URI: https://www.gnu.org/licenses/gpl-2.0.html
  * Text Domain: wp-system-report
  * Requires at least: 6.2
+ * Tested up to: 6.9.1
  * Requires PHP: 7.4
  * Update URI:  https://github.com/chrisfromthelc/wp-system-report
  *
