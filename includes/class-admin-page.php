@@ -111,6 +111,7 @@ class Admin_Page {
 					'statusUrl' => rest_url( 'wp-system-report/v1/error-log/status' ),
 					'logUrl'    => rest_url( 'wp-system-report/v1/error-log' ),
 					'toggleUrl' => rest_url( 'wp-system-report/v1/error-log/toggle' ),
+					'reportUrl' => rest_url( 'wp-system-report/v1/report' ),
 					'restNonce' => wp_create_nonce( 'wp_rest' ),
 					'i18n'      => array(
 						'copied'        => __( 'Copied!', 'wp-system-report' ),
@@ -118,6 +119,7 @@ class Admin_Page {
 						'loading'       => __( 'Loading...', 'wp-system-report' ),
 						'loadLog'       => __( 'Load error log', 'wp-system-report' ),
 						'refresh'       => __( 'Refresh', 'wp-system-report' ),
+						'download'      => __( 'Download', 'wp-system-report' ),
 						'noLogFile'     => __( 'No error log file found.', 'wp-system-report' ),
 						'logEmpty'      => __( 'Error log is empty.', 'wp-system-report' ),
 						'toggleSuccess' => __( 'Debug settings updated. Changes will take effect on the next page load.', 'wp-system-report' ),

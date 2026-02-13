@@ -88,7 +88,7 @@ wp config set WP_DEBUG_DISPLAY false --raw</pre>
 		<div class="sr-log-controls">
 			<label for="sr-log-lines" class="sr-log-lines-label">
 				<?php esc_html_e( 'Lines:', 'wp-system-report' ); ?>
-				<input type="number" id="sr-log-lines" min="1" max="1000" value="100" class="small-text" />
+				<input type="number" id="sr-log-lines" min="1" max="10000" value="100" class="small-text" />
 			</label>
 
 			<button type="button" class="button button-primary" id="sr-load-log">
@@ -103,6 +103,10 @@ wp config set WP_DEBUG_DISPLAY false --raw</pre>
 			<button type="button" class="button" id="sr-copy-log" style="display: none;">
 				<?php esc_html_e( 'Copy to clipboard', 'wp-system-report' ); ?>
 			</button>
+			<label for="sr-include-report" class="sr-include-report-label" id="sr-include-report-label" style="display: none;">
+				<input type="checkbox" id="sr-include-report" />
+				<?php esc_html_e( 'Include system report', 'wp-system-report' ); ?>
+			</label>
 		</div>
 
 		<div id="sr-log-output" class="sr-log-output" style="display: none;">

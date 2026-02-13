@@ -246,11 +246,13 @@
 					}
 				}
 
-				// Update line count from settings.
-				var settings = data.settings || {};
-				var linesInput = document.getElementById( 'sr-log-lines' );
-				if ( linesInput && settings.error_log_lines ) {
-					linesInput.value = settings.error_log_lines;
+				// Update line count from settings only on initial load.
+				if ( ! logLoaded ) {
+					var settings = data.settings || {};
+					var linesInput = document.getElementById( 'sr-log-lines' );
+					if ( linesInput && settings.error_log_lines ) {
+						linesInput.value = settings.error_log_lines;
+					}
 				}
 			} )
 			.catch( function ( error ) {
@@ -307,6 +309,10 @@
 					}
 					if ( copyBtn ) {
 						copyBtn.style.display = '';
+					}
+					var includeLabel = document.getElementById( 'sr-include-report-label' );
+					if ( includeLabel ) {
+						includeLabel.style.display = '';
 					}
 				} else {
 					if ( outputEl ) {
@@ -425,11 +431,46 @@
 		if ( downloadBtn ) {
 			downloadBtn.addEventListener( 'click', function () {
 				var contentEl = document.getElementById( 'sr-log-content' );
-				if ( contentEl ) {
-					downloadFile(
-						contentEl.textContent,
-						buildFilename( 'ErrorLog', 'log' )
-					);
+				if ( ! contentEl ) {
+					return;
+				}
+
+				var logContent = contentEl.textContent;
+				var includeReport = document.getElementById( 'sr-include-report' );
+
+				if ( includeReport && includeReport.checked && config.reportUrl ) {
+					downloadBtn.disabled = true;
+					downloadBtn.textContent = config.i18n.loading;
+
+					var sep = config.reportUrl.indexOf( '?' ) === -1 ? '?' : '&';
+					apiFetch( config.reportUrl + sep + 'format=plain' )
+						.then( function ( response ) {
+							if ( ! response.ok ) {
+								throw new Error( 'Failed to fetch system report' );
+							}
+							return response.text();
+						} )
+						.then( function ( reportText ) {
+							var combined = '===================================\n' +
+								'WP SYSTEM REPORT\n' +
+								'===================================\n\n' +
+								reportText + '\n\n' +
+								'===================================\n' +
+								'ERROR LOG\n' +
+								'===================================\n\n' +
+								logContent;
+							downloadFile( combined, buildFilename( 'SystemReport_ErrorLog', 'txt' ) );
+						} )
+						.catch( function () {
+							// Fall back to error log only on failure.
+							downloadFile( logContent, buildFilename( 'ErrorLog', 'log' ) );
+						} )
+						.finally( function () {
+							downloadBtn.disabled = false;
+							downloadBtn.textContent = config.i18n.download;
+						} );
+				} else {
+					downloadFile( logContent, buildFilename( 'ErrorLog', 'log' ) );
 				}
 			} );
 		}
@@ -468,8 +509,8 @@
 				var val = parseInt( this.value, 10 );
 				if ( isNaN( val ) || val < 1 ) {
 					this.value = 1;
-				} else if ( val > 1000 ) {
-					this.value = 1000;
+				} else if ( val > 10000 ) {
+					this.value = 10000;
 				}
 			} );
 		}

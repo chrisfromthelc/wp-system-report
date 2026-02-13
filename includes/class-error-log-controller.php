@@ -67,7 +67,7 @@ class Error_Log_Controller extends \WP_REST_Controller {
 							'description'       => __( 'Number of lines to return.', 'wp-system-report' ),
 							'type'              => 'integer',
 							'minimum'           => 1,
-							'maximum'           => 1000,
+							'maximum'           => 10000,
 							'default'           => 100,
 							'sanitize_callback' => 'absint',
 						),
