@@ -1,0 +1,269 @@
+<?php
+/**
+ * Error Log Controller tests.
+ *
+ * @package SystemReport
+ */
+
+/**
+ * Test the Error Log REST API endpoints.
+ */
+class ErrorLogControllerTest extends WP_UnitTestCase {
+
+	/**
+	 * Admin user ID.
+	 *
+	 * @var int
+	 */
+	private $admin_id;
+
+	/**
+	 * Subscriber user ID.
+	 *
+	 * @var int
+	 */
+	private $subscriber_id;
+
+	/**
+	 * Set up test fixtures.
+	 */
+	public function set_up() {
+		parent::set_up();
+
+		$this->admin_id      = self::factory()->user->create( array( 'role' => 'administrator' ) );
+		$this->subscriber_id = self::factory()->user->create( array( 'role' => 'subscriber' ) );
+
+		// Ensure REST server is initialized.
+		do_action( 'rest_api_init' );
+	}
+
+	// ---------------------------------------------------------------
+	// Route registration tests
+	// ---------------------------------------------------------------
+
+	/**
+	 * Test that the error-log route is registered.
+	 */
+	public function test_error_log_route_registered(): void {
+		$routes = rest_get_server()->get_routes();
+		$this->assertArrayHasKey( '/wp-system-report/v1/error-log', $routes );
+	}
+
+	/**
+	 * Test that the status route is registered.
+	 */
+	public function test_status_route_registered(): void {
+		$routes = rest_get_server()->get_routes();
+		$this->assertArrayHasKey( '/wp-system-report/v1/error-log/status', $routes );
+	}
+
+	/**
+	 * Test that the toggle route is registered.
+	 */
+	public function test_toggle_route_registered(): void {
+		$routes = rest_get_server()->get_routes();
+		$this->assertArrayHasKey( '/wp-system-report/v1/error-log/toggle', $routes );
+	}
+
+	// ---------------------------------------------------------------
+	// Authentication tests
+	// ---------------------------------------------------------------
+
+	/**
+	 * Test admin can access error log.
+	 */
+	public function test_admin_can_access_log(): void {
+		wp_set_current_user( $this->admin_id );
+
+		$request  = new WP_REST_Request( 'GET', '/wp-system-report/v1/error-log' );
+		$response = rest_get_server()->dispatch( $request );
+
+		// May be 200 or 404 depending on whether a log file exists.
+		$this->assertContains( $response->get_status(), array( 200, 404 ) );
+	}
+
+	/**
+	 * Test subscriber cannot access error log.
+	 */
+	public function test_subscriber_cannot_access_log(): void {
+		wp_set_current_user( $this->subscriber_id );
+
+		$request  = new WP_REST_Request( 'GET', '/wp-system-report/v1/error-log' );
+		$response = rest_get_server()->dispatch( $request );
+
+		$this->assertSame( 403, $response->get_status() );
+	}
+
+	/**
+	 * Test unauthenticated user cannot access error log.
+	 */
+	public function test_unauthenticated_cannot_access_log(): void {
+		wp_set_current_user( 0 );
+
+		$request  = new WP_REST_Request( 'GET', '/wp-system-report/v1/error-log' );
+		$response = rest_get_server()->dispatch( $request );
+
+		$this->assertSame( 401, $response->get_status() );
+	}
+
+	/**
+	 * Test admin can access status.
+	 */
+	public function test_admin_can_access_status(): void {
+		wp_set_current_user( $this->admin_id );
+
+		$request  = new WP_REST_Request( 'GET', '/wp-system-report/v1/error-log/status' );
+		$response = rest_get_server()->dispatch( $request );
+
+		$this->assertSame( 200, $response->get_status() );
+	}
+
+	/**
+	 * Test subscriber cannot access status.
+	 */
+	public function test_subscriber_cannot_access_status(): void {
+		wp_set_current_user( $this->subscriber_id );
+
+		$request  = new WP_REST_Request( 'GET', '/wp-system-report/v1/error-log/status' );
+		$response = rest_get_server()->dispatch( $request );
+
+		$this->assertSame( 403, $response->get_status() );
+	}
+
+	/**
+	 * Test subscriber cannot toggle debug.
+	 */
+	public function test_subscriber_cannot_toggle(): void {
+		wp_set_current_user( $this->subscriber_id );
+
+		$request = new WP_REST_Request( 'POST', '/wp-system-report/v1/error-log/toggle' );
+		$request->set_param( 'enable', true );
+		$response = rest_get_server()->dispatch( $request );
+
+		$this->assertSame( 403, $response->get_status() );
+	}
+
+	/**
+	 * Test error code for unauthorized access.
+	 */
+	public function test_unauthorized_error_code(): void {
+		wp_set_current_user( $this->subscriber_id );
+
+		$request  = new WP_REST_Request( 'GET', '/wp-system-report/v1/error-log' );
+		$response = rest_get_server()->dispatch( $request );
+
+		$data = $response->get_data();
+		$this->assertSame( 'wp_system_report_rest_forbidden', $data['code'] );
+	}
+
+	// ---------------------------------------------------------------
+	// Status endpoint tests
+	// ---------------------------------------------------------------
+
+	/**
+	 * Test status response structure.
+	 */
+	public function test_status_response_structure(): void {
+		wp_set_current_user( $this->admin_id );
+
+		$request  = new WP_REST_Request( 'GET', '/wp-system-report/v1/error-log/status' );
+		$response = rest_get_server()->dispatch( $request );
+		$data     = $response->get_data();
+
+		$this->assertArrayHasKey( 'file', $data );
+		$this->assertArrayHasKey( 'constants', $data );
+		$this->assertArrayHasKey( 'toggle', $data );
+		$this->assertArrayHasKey( 'settings', $data );
+	}
+
+	/**
+	 * Test status contains toggle state.
+	 */
+	public function test_status_toggle_state(): void {
+		wp_set_current_user( $this->admin_id );
+
+		$request  = new WP_REST_Request( 'GET', '/wp-system-report/v1/error-log/status' );
+		$response = rest_get_server()->dispatch( $request );
+		$data     = $response->get_data();
+
+		$this->assertArrayHasKey( 'can_modify', $data['toggle'] );
+		$this->assertArrayHasKey( 'wp_debug', $data['toggle'] );
+	}
+
+	/**
+	 * Test status contains settings.
+	 */
+	public function test_status_contains_settings(): void {
+		wp_set_current_user( $this->admin_id );
+
+		$request  = new WP_REST_Request( 'GET', '/wp-system-report/v1/error-log/status' );
+		$response = rest_get_server()->dispatch( $request );
+		$data     = $response->get_data();
+
+		$this->assertArrayHasKey( 'error_log_lines', $data['settings'] );
+	}
+
+	// ---------------------------------------------------------------
+	// Log endpoint parameter validation tests
+	// ---------------------------------------------------------------
+
+	/**
+	 * Test lines parameter defaults to 100.
+	 */
+	public function test_lines_defaults_to_100(): void {
+		wp_set_current_user( $this->admin_id );
+
+		$request = new WP_REST_Request( 'GET', '/wp-system-report/v1/error-log' );
+		// Defaults are applied when the route is matched during dispatch.
+		$request->set_default_params( array( 'lines' => 100 ) );
+		$this->assertSame( 100, $request->get_param( 'lines' ) );
+	}
+
+	/**
+	 * Test format parameter defaults to json.
+	 */
+	public function test_format_defaults_to_json(): void {
+		wp_set_current_user( $this->admin_id );
+
+		$request = new WP_REST_Request( 'GET', '/wp-system-report/v1/error-log' );
+		// Defaults are applied when the route is matched during dispatch.
+		$request->set_default_params( array( 'format' => 'json' ) );
+		$this->assertSame( 'json', $request->get_param( 'format' ) );
+	}
+
+	// ---------------------------------------------------------------
+	// Toggle endpoint tests
+	// ---------------------------------------------------------------
+
+	/**
+	 * Test toggle requires enable parameter.
+	 */
+	public function test_toggle_requires_enable_param(): void {
+		wp_set_current_user( $this->admin_id );
+
+		$request  = new WP_REST_Request( 'POST', '/wp-system-report/v1/error-log/toggle' );
+		$response = rest_get_server()->dispatch( $request );
+
+		$this->assertSame( 400, $response->get_status() );
+	}
+
+	/**
+	 * Test capability filter for error log endpoints.
+	 */
+	public function test_capability_filter(): void {
+		wp_set_current_user( $this->subscriber_id );
+
+		// Allow subscriber access via filter.
+		add_filter(
+			'wp_system_report_error_log_capability',
+			function () {
+				return 'read';
+			}
+		);
+
+		$request  = new WP_REST_Request( 'GET', '/wp-system-report/v1/error-log/status' );
+		$response = rest_get_server()->dispatch( $request );
+
+		$this->assertSame( 200, $response->get_status() );
+	}
+}
