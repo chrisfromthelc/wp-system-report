@@ -120,6 +120,7 @@ class Admin_Page {
 						'loadLog'       => __( 'Load error log', 'wp-system-report' ),
 						'refresh'       => __( 'Refresh', 'wp-system-report' ),
 						'download'      => __( 'Download', 'wp-system-report' ),
+						'copyClipboard' => __( 'Copy to clipboard', 'wp-system-report' ),
 						'noLogFile'     => __( 'No error log file found.', 'wp-system-report' ),
 						'logEmpty'      => __( 'Error log is empty.', 'wp-system-report' ),
 						'toggleSuccess' => __( 'Debug settings updated. Changes will take effect on the next page load.', 'wp-system-report' ),

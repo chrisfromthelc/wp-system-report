@@ -96,8 +96,8 @@ class SettingsTest extends WP_UnitTestCase {
 	 * Test sanitize clamps error_log_lines maximum.
 	 */
 	public function test_sanitize_clamps_maximum(): void {
-		$this->assertSame( 1000, SystemReport\Settings::sanitize( 'error_log_lines', 5000 ) );
-		$this->assertSame( 1000, SystemReport\Settings::sanitize( 'error_log_lines', 1001 ) );
+		$this->assertSame( 10000, SystemReport\Settings::sanitize( 'error_log_lines', 50000 ) );
+		$this->assertSame( 10000, SystemReport\Settings::sanitize( 'error_log_lines', 10001 ) );
 	}
 
 	/**
@@ -106,7 +106,7 @@ class SettingsTest extends WP_UnitTestCase {
 	public function test_sanitize_accepts_valid_values(): void {
 		$this->assertSame( 1, SystemReport\Settings::sanitize( 'error_log_lines', 1 ) );
 		$this->assertSame( 500, SystemReport\Settings::sanitize( 'error_log_lines', 500 ) );
-		$this->assertSame( 1000, SystemReport\Settings::sanitize( 'error_log_lines', 1000 ) );
+		$this->assertSame( 10000, SystemReport\Settings::sanitize( 'error_log_lines', 10000 ) );
 	}
 
 	/**
@@ -120,8 +120,8 @@ class SettingsTest extends WP_UnitTestCase {
 	 * Test update applies sanitization.
 	 */
 	public function test_update_applies_sanitization(): void {
-		SystemReport\Settings::update( 'error_log_lines', 9999 );
-		$this->assertSame( 1000, SystemReport\Settings::get( 'error_log_lines' ) );
+		SystemReport\Settings::update( 'error_log_lines', 99999 );
+		$this->assertSame( 10000, SystemReport\Settings::get( 'error_log_lines' ) );
 	}
 
 	/**

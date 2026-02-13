@@ -480,8 +480,46 @@
 		if ( copyBtn ) {
 			copyBtn.addEventListener( 'click', function () {
 				var contentEl = document.getElementById( 'sr-log-content' );
-				if ( contentEl ) {
-					copyToClipboard( contentEl.textContent, copyBtn );
+				if ( ! contentEl ) {
+					return;
+				}
+
+				var logContent = contentEl.textContent;
+				var includeReport = document.getElementById( 'sr-include-report' );
+
+				if ( includeReport && includeReport.checked && config.reportUrl ) {
+					copyBtn.disabled = true;
+					copyBtn.textContent = config.i18n.loading;
+
+					var sep = config.reportUrl.indexOf( '?' ) === -1 ? '?' : '&';
+					apiFetch( config.reportUrl + sep + 'format=plain' )
+						.then( function ( response ) {
+							if ( ! response.ok ) {
+								throw new Error( 'Failed to fetch system report' );
+							}
+							return response.text();
+						} )
+						.then( function ( reportText ) {
+							var combined = '===================================\n' +
+								'WP SYSTEM REPORT\n' +
+								'===================================\n\n' +
+								reportText + '\n\n' +
+								'===================================\n' +
+								'ERROR LOG\n' +
+								'===================================\n\n' +
+								logContent;
+							copyToClipboard( combined, copyBtn );
+						} )
+						.catch( function () {
+							// Fall back to error log only on failure.
+							copyToClipboard( logContent, copyBtn );
+						} )
+						.finally( function () {
+							copyBtn.disabled = false;
+							copyBtn.textContent = config.i18n.copyClipboard;
+						} );
+				} else {
+					copyToClipboard( logContent, copyBtn );
 				}
 			} );
 		}

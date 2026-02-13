@@ -31,12 +31,12 @@ class Settings {
 	/**
 	 * Get a settings value.
 	 *
-	 * @param string $key     Setting key.
-	 * @param mixed  $default Optional. Default value if key is not set.
-	 *                        Falls back to the built-in default if not provided.
+	 * @param string $key           Setting key.
+	 * @param mixed  $default_value Optional. Default value if key is not set.
+	 *                              Falls back to the built-in default if not provided.
 	 * @return mixed Setting value.
 	 */
-	public static function get( string $key, $default = null ) {
+	public static function get( string $key, $default_value = null ) {
 		$settings = get_option( self::OPTION_NAME, array() );
 
 		if ( ! is_array( $settings ) ) {
@@ -52,7 +52,7 @@ class Settings {
 			return self::$defaults[ $key ];
 		}
 
-		return $default;
+		return $default_value;
 	}
 
 	/**
@@ -111,7 +111,7 @@ class Settings {
 		switch ( $key ) {
 			case 'error_log_lines':
 				$value = absint( $value );
-				return max( 1, min( 1000, $value ) );
+				return max( 1, min( 10000, $value ) );
 
 			default:
 				return $value;

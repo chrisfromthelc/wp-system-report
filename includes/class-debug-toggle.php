@@ -57,6 +57,7 @@ class Debug_Toggle {
 			return false;
 		}
 
+		// phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_is_writable -- Checking writability before direct file ops; WP_Filesystem not appropriate here.
 		return is_writable( $this->config_path );
 	}
 
