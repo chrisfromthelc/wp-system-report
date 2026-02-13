@@ -37,6 +37,21 @@ class Plugin {
 	private \SystemReport\REST_Controller $rest_controller;
 
 	/**
+	 * Error log reader instance.
+	 */
+	private \SystemReport\Error_Log_Reader $error_log_reader;
+
+	/**
+	 * Debug toggle instance.
+	 */
+	private \SystemReport\Debug_Toggle $debug_toggle;
+
+	/**
+	 * Error log controller instance.
+	 */
+	private \SystemReport\Error_Log_Controller $error_log_controller;
+
+	/**
 	 * GitHub updater instance.
 	 *
 	 * Stored to prevent garbage collection; hooks are registered in the constructor.
@@ -73,10 +88,13 @@ class Plugin {
 	 * Constructor.
 	 */
 	private function __construct() {
-		$this->report_generator = new Report_Generator();
-		$this->admin_page       = new Admin_Page( $this->report_generator );
-		$this->rest_controller  = new REST_Controller( $this->report_generator );
-		$this->github_updater   = new GitHub_Updater( WP_SYSTEM_REPORT_FILE );
+		$this->report_generator     = new Report_Generator();
+		$this->admin_page           = new Admin_Page( $this->report_generator );
+		$this->rest_controller      = new REST_Controller( $this->report_generator );
+		$this->error_log_reader     = new Error_Log_Reader();
+		$this->debug_toggle         = new Debug_Toggle();
+		$this->error_log_controller = new Error_Log_Controller( $this->error_log_reader, $this->debug_toggle );
+		$this->github_updater       = new GitHub_Updater( WP_SYSTEM_REPORT_FILE );
 
 		$this->register_default_collectors();
 		$this->register_hooks();
@@ -118,6 +136,7 @@ class Plugin {
 		add_action( 'init', array( $this, 'load_textdomain' ) );
 		add_action( 'admin_menu', array( $this->admin_page, 'register_menu' ) );
 		add_action( 'rest_api_init', array( $this->rest_controller, 'register_routes' ) );
+		add_action( 'rest_api_init', array( $this->error_log_controller, 'register_routes' ) );
 		add_action( 'admin_enqueue_scripts', array( $this->admin_page, 'enqueue_assets' ) );
 
 		// Cache invalidation hooks.
