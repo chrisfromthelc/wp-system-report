@@ -27,9 +27,18 @@ class DebugToggleTest extends WP_UnitTestCase {
 			if ( file_exists( $this->temp_config ) ) {
 				unlink( $this->temp_config ); // phpcs:ignore WordPress.WP.AlternativeFunctions.unlink_unlink
 			}
-			if ( file_exists( $this->temp_config . '.bak' ) ) {
-				unlink( $this->temp_config . '.bak' ); // phpcs:ignore WordPress.WP.AlternativeFunctions.unlink_unlink
+
+			// Clean up backup in temp directory.
+			$backup_path = get_temp_dir() . 'wp-system-report-config-' . md5( $this->temp_config ) . '.bak';
+			if ( file_exists( $backup_path ) ) {
+				unlink( $backup_path ); // phpcs:ignore WordPress.WP.AlternativeFunctions.unlink_unlink
 			}
+		}
+
+		// Clean up lock file.
+		$lock_path = get_temp_dir() . 'wp-system-report-config.lock';
+		if ( file_exists( $lock_path ) ) {
+			unlink( $lock_path ); // phpcs:ignore WordPress.WP.AlternativeFunctions.unlink_unlink
 		}
 	}
 
@@ -199,14 +208,21 @@ class DebugToggleTest extends WP_UnitTestCase {
 	}
 
 	/**
-	 * Test enable_debug creates backup file.
+	 * Test enable_debug creates backup in temp dir and deletes it on success.
 	 */
-	public function test_enable_debug_creates_backup(): void {
-		$path   = $this->create_temp_config();
-		$toggle = new SystemReport\Debug_Toggle( $path );
+	public function test_enable_debug_backup_lifecycle(): void {
+		$path        = $this->create_temp_config();
+		$backup_path = get_temp_dir() . 'wp-system-report-config-' . md5( $path ) . '.bak';
+		$toggle      = new SystemReport\Debug_Toggle( $path );
 
-		$toggle->enable_debug();
-		$this->assertFileExists( $path . '.bak' );
+		$result = $toggle->enable_debug();
+		$this->assertTrue( $result );
+
+		// Backup should be cleaned up after successful operation.
+		$this->assertFileDoesNotExist( $backup_path );
+
+		// Old-style backup in webroot should NOT exist.
+		$this->assertFileDoesNotExist( $path . '.bak' );
 	}
 
 	/**
@@ -250,15 +266,22 @@ class DebugToggleTest extends WP_UnitTestCase {
 	}
 
 	/**
-	 * Test disable_debug creates backup file.
+	 * Test disable_debug creates backup in temp dir and deletes it on success.
 	 */
-	public function test_disable_debug_creates_backup(): void {
-		$extra  = "define( 'WP_DEBUG', true );";
-		$path   = $this->create_temp_config( $extra );
-		$toggle = new SystemReport\Debug_Toggle( $path );
+	public function test_disable_debug_backup_lifecycle(): void {
+		$extra       = "define( 'WP_DEBUG', true );";
+		$path        = $this->create_temp_config( $extra );
+		$backup_path = get_temp_dir() . 'wp-system-report-config-' . md5( $path ) . '.bak';
+		$toggle      = new SystemReport\Debug_Toggle( $path );
 
-		$toggle->disable_debug();
-		$this->assertFileExists( $path . '.bak' );
+		$result = $toggle->disable_debug();
+		$this->assertTrue( $result );
+
+		// Backup should be cleaned up after successful operation.
+		$this->assertFileDoesNotExist( $backup_path );
+
+		// Old-style backup in webroot should NOT exist.
+		$this->assertFileDoesNotExist( $path . '.bak' );
 	}
 
 	// ---------------------------------------------------------------
@@ -299,5 +322,54 @@ class DebugToggleTest extends WP_UnitTestCase {
 	public function test_default_config_path(): void {
 		$toggle = new SystemReport\Debug_Toggle();
 		$this->assertSame( ABSPATH . 'wp-config.php', $toggle->get_config_path() );
+	}
+
+	// ---------------------------------------------------------------
+	// File locking tests
+	// ---------------------------------------------------------------
+
+	/**
+	 * Test that concurrent toggle operations are rejected via file locking.
+	 */
+	public function test_concurrent_toggle_is_rejected(): void {
+		$path   = $this->create_temp_config();
+		$toggle = new SystemReport\Debug_Toggle( $path );
+
+		// Simulate a held lock by acquiring the lock file ourselves.
+		$lock_path = get_temp_dir() . 'wp-system-report-config.lock';
+		// phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_fopen
+		$handle = fopen( $lock_path, 'w' );
+		flock( $handle, LOCK_EX | LOCK_NB );
+
+		// Now the toggle should fail because the lock is held.
+		$result = $toggle->enable_debug();
+		$this->assertIsString( $result );
+		$this->assertStringContainsString( 'lock', strtolower( $result ) );
+
+		// Release the lock.
+		flock( $handle, LOCK_UN );
+		// phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_fclose
+		fclose( $handle );
+
+		// Now it should succeed.
+		$result = $toggle->enable_debug();
+		$this->assertTrue( $result );
+	}
+
+	// ---------------------------------------------------------------
+	// Backup security tests
+	// ---------------------------------------------------------------
+
+	/**
+	 * Test that backup is never created in the webroot.
+	 */
+	public function test_backup_not_in_webroot(): void {
+		$path   = $this->create_temp_config();
+		$toggle = new SystemReport\Debug_Toggle( $path );
+
+		$toggle->enable_debug();
+
+		// The old-style .bak file next to wp-config.php must not exist.
+		$this->assertFileDoesNotExist( $path . '.bak' );
 	}
 }

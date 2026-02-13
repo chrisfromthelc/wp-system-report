@@ -120,8 +120,14 @@ class Debug_Toggle {
 			return __( 'wp-config.php is not writable or file modifications are disabled.', 'wp-system-report' );
 		}
 
+		$lock = $this->acquire_lock();
+		if ( false === $lock ) {
+			return __( 'Could not acquire lock on wp-config.php. Another operation may be in progress.', 'wp-system-report' );
+		}
+
 		$backup = $this->create_backup();
 		if ( true !== $backup ) {
+			$this->release_lock( $lock );
 			return $backup;
 		}
 
@@ -134,12 +140,16 @@ class Debug_Toggle {
 			$this->update_or_add( $transformer, 'WP_DEBUG_DISPLAY', 'false', $raw_option );
 		} catch ( \Exception $e ) {
 			$this->restore_backup();
+			$this->release_lock( $lock );
 			return sprintf(
 				/* translators: %s: error message */
 				__( 'Failed to modify wp-config.php: %s', 'wp-system-report' ),
 				$e->getMessage()
 			);
 		}
+
+		$this->delete_backup();
+		$this->release_lock( $lock );
 
 		return true;
 	}
@@ -156,8 +166,14 @@ class Debug_Toggle {
 			return __( 'wp-config.php is not writable or file modifications are disabled.', 'wp-system-report' );
 		}
 
+		$lock = $this->acquire_lock();
+		if ( false === $lock ) {
+			return __( 'Could not acquire lock on wp-config.php. Another operation may be in progress.', 'wp-system-report' );
+		}
+
 		$backup = $this->create_backup();
 		if ( true !== $backup ) {
+			$this->release_lock( $lock );
 			return $backup;
 		}
 
@@ -170,12 +186,16 @@ class Debug_Toggle {
 			$this->update_or_add( $transformer, 'WP_DEBUG_DISPLAY', 'true', $raw_option );
 		} catch ( \Exception $e ) {
 			$this->restore_backup();
+			$this->release_lock( $lock );
 			return sprintf(
 				/* translators: %s: error message */
 				__( 'Failed to modify wp-config.php: %s', 'wp-system-report' ),
 				$e->getMessage()
 			);
 		}
+
+		$this->delete_backup();
+		$this->release_lock( $lock );
 
 		return true;
 	}
@@ -197,12 +217,28 @@ class Debug_Toggle {
 	}
 
 	/**
-	 * Create a backup of wp-config.php.
+	 * Get the backup file path in the system temp directory.
+	 *
+	 * Uses an MD5 hash of the config path to create a unique, predictable
+	 * filename that is stored outside the webroot.
+	 *
+	 * @return string Absolute path to the backup file.
+	 */
+	private function get_backup_path(): string {
+		$hash = md5( $this->config_path );
+		return get_temp_dir() . 'wp-system-report-config-' . $hash . '.bak';
+	}
+
+	/**
+	 * Create a backup of wp-config.php in the system temp directory.
+	 *
+	 * The backup is stored outside the webroot with restricted permissions
+	 * (0600) so it cannot be served over HTTP.
 	 *
 	 * @return bool|string True on success, error message on failure.
 	 */
 	private function create_backup() {
-		$backup_path = $this->config_path . '.bak';
+		$backup_path = $this->get_backup_path();
 
 		// phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_file_put_contents, WordPress.WP.AlternativeFunctions.file_get_contents_file_get_contents
 		$contents = file_get_contents( $this->config_path );
@@ -218,7 +254,21 @@ class Debug_Toggle {
 			return __( 'Failed to create wp-config.php backup.', 'wp-system-report' );
 		}
 
+		// Restrict permissions to owner read/write only.
+		chmod( $backup_path, 0600 ); // phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_chmod
+
 		return true;
+	}
+
+	/**
+ * Delete the backup file after a successful operation.
+ */
+	private function delete_backup(): void {
+		$backup_path = $this->get_backup_path();
+
+		if ( file_exists( $backup_path ) ) {
+			wp_delete_file( $backup_path );
+		}
 	}
 
 	/**
@@ -227,7 +277,7 @@ class Debug_Toggle {
 	 * @return bool True on success, false on failure.
 	 */
 	private function restore_backup(): bool {
-		$backup_path = $this->config_path . '.bak';
+		$backup_path = $this->get_backup_path();
 
 		if ( ! file_exists( $backup_path ) ) {
 			return false;
@@ -243,7 +293,49 @@ class Debug_Toggle {
 		// phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_file_put_contents
 		$result = file_put_contents( $this->config_path, $contents );
 
+		// Clean up the backup regardless of restore result.
+		wp_delete_file( $backup_path );
+
 		return false !== $result;
+	}
+
+	/**
+	 * Acquire an exclusive file lock for wp-config.php modification.
+	 *
+	 * Uses a separate lock file in the temp directory rather than
+	 * locking wp-config.php itself (WPConfigTransformer opens its own handle).
+	 *
+	 * @return resource|false File handle on success, false on failure.
+	 */
+	private function acquire_lock() {
+		$lock_path = get_temp_dir() . 'wp-system-report-config.lock';
+
+		// phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_fopen
+		$handle = fopen( $lock_path, 'w' );
+
+		if ( ! $handle ) {
+			return false;
+		}
+
+		// Non-blocking attempt — fail fast if another operation is in progress.
+		if ( ! flock( $handle, LOCK_EX | LOCK_NB ) ) {
+			// phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_fclose
+			fclose( $handle );
+			return false;
+		}
+
+		return $handle;
+	}
+
+	/**
+ * Release a previously acquired file lock.
+ *
+ * @param resource $handle File handle from acquire_lock().
+ */
+	private function release_lock( $handle ): void {
+		flock( $handle, LOCK_UN );
+		// phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_fclose
+		fclose( $handle );
 	}
 
 	/**

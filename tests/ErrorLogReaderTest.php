@@ -283,4 +283,89 @@ class ErrorLogReaderTest extends WP_UnitTestCase {
 		// It will resolve to something (ini error_log is set in Local) or null.
 		$this->assertTrue( null === $path || is_string( $path ) );
 	}
+
+	// ---------------------------------------------------------------
+	// Default redaction tests
+	// ---------------------------------------------------------------
+
+	/**
+	 * Test default redaction replaces password patterns.
+	 */
+	public function test_default_redaction_password_pattern(): void {
+		$lines = array( 'Error: password=mysecret123 in connection' );
+		$path  = $this->create_temp_log( $lines );
+
+		$result = $this->reader->read_last_lines( $path, 1 );
+		$this->assertStringContainsString( '[REDACTED]', $result[0] );
+		$this->assertStringNotContainsString( 'mysecret123', $result[0] );
+	}
+
+	/**
+	 * Test default redaction replaces token patterns.
+	 */
+	public function test_default_redaction_token_pattern(): void {
+		$lines = array( 'API call failed: token=abc123xyz api_key=def456' );
+		$path  = $this->create_temp_log( $lines );
+
+		$result = $this->reader->read_last_lines( $path, 1 );
+		$this->assertStringContainsString( '[REDACTED]', $result[0] );
+		$this->assertStringNotContainsString( 'abc123xyz', $result[0] );
+		$this->assertStringNotContainsString( 'def456', $result[0] );
+	}
+
+	/**
+	 * Test default redaction replaces Authorization headers.
+	 */
+	public function test_default_redaction_authorization_header(): void {
+		$lines = array( 'Request: Authorization: Bearer eyJhbGciOiJIUzI1NiJ9' );
+		$path  = $this->create_temp_log( $lines );
+
+		$result = $this->reader->read_last_lines( $path, 1 );
+		$this->assertStringContainsString( 'Authorization: [REDACTED]', $result[0] );
+		$this->assertStringNotContainsString( 'eyJhbGciOiJIUzI1NiJ9', $result[0] );
+	}
+
+	/**
+	 * Test default redaction replaces database connection strings.
+	 */
+	public function test_default_redaction_db_connection_string(): void {
+		$lines = array( 'Connection: mysql://root:secret@localhost/mydb' );
+		$path  = $this->create_temp_log( $lines );
+
+		$result = $this->reader->read_last_lines( $path, 1 );
+		$this->assertStringContainsString( 'mysql://[REDACTED]', $result[0] );
+		$this->assertStringNotContainsString( 'root:secret', $result[0] );
+	}
+
+	/**
+	 * Test default redaction does not affect normal lines.
+	 */
+	public function test_default_redaction_normal_line_unchanged(): void {
+		$lines = array( '[01-Jan-2025 12:00:00] PHP Notice: Undefined variable: foo in /var/www/test.php on line 42' );
+		$path  = $this->create_temp_log( $lines );
+
+		$result = $this->reader->read_last_lines( $path, 1 );
+		$this->assertStringNotContainsString( '[REDACTED]', $result[0] );
+	}
+
+	// ---------------------------------------------------------------
+	// Path redaction tests
+	// ---------------------------------------------------------------
+
+	/**
+	 * Test get_file_info returns relative path, not absolute.
+	 */
+	public function test_get_file_info_returns_relative_path(): void {
+		$info = $this->reader->get_file_info();
+
+		if ( null !== $info['path'] ) {
+			// Path should be relative (no leading slash from WP_CONTENT_DIR).
+			$this->assertStringNotContainsString( ABSPATH, $info['path'] );
+			// Should not start with / (absolute path indicator).
+			$this->assertDoesNotMatchRegularExpression( '#^/#', $info['path'] );
+		} else {
+			// If no log file exists, path should be null — still a valid assertion.
+			$this->assertNull( $info['path'] );
+		}
+	}
 }

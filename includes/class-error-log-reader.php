@@ -32,6 +32,71 @@ class Error_Log_Reader {
 	const INITIAL_CHUNK_SIZE = 8192;
 
 	/**
+ * Whether default redaction filters have been registered.
+ */
+	private static bool $redaction_registered = false;
+
+	/**
+	 * Constructor.
+	 *
+	 * Registers default redaction patterns on first instantiation.
+	 */
+	public function __construct() {
+		$this->register_default_redaction();
+	}
+
+	/**
+ * Register default redaction patterns for sensitive data in log lines.
+ *
+ * Runs at priority 5 so custom user filters at priority 10 can
+ * override or extend the default patterns.
+ */
+	private function register_default_redaction(): void {
+		if ( self::$redaction_registered ) {
+			return;
+		}
+
+		add_filter( 'wp_system_report_redact_log_line', array( __CLASS__, 'redact_sensitive_patterns' ), 5 );
+		self::$redaction_registered = true;
+	}
+
+	/**
+	 * Redact common sensitive patterns from a log line.
+	 *
+	 * Matches key=value, key: value, and connection string patterns for:
+	 * - Passwords, secrets, tokens, API keys
+	 * - Authorization headers
+	 * - Database connection strings
+	 *
+	 * @param string $line A single log line.
+	 * @return string The line with sensitive values replaced by [REDACTED].
+	 */
+	public static function redact_sensitive_patterns( string $line ): string {
+		// Redact key=value patterns (password=xxx, token=xxx, secret=xxx, key=xxx, api_key=xxx).
+		$line = preg_replace(
+			'/\b(password|passwd|secret|token|api_key|apikey|api[-_]?secret|access[-_]?key|private[-_]?key)\s*[=:]\s*\S+/i',
+			'$1=[REDACTED]',
+			$line
+		);
+
+		// Redact Authorization header values (e.g. "Authorization: Bearer token123").
+		$line = preg_replace(
+			'/Authorization:\s*\S+(\s+\S+)?/i',
+			'Authorization: [REDACTED]',
+			$line
+		);
+
+		// Redact database connection strings (mysql://, pgsql://, etc).
+		$line = preg_replace(
+			'#(mysql|pgsql|mysqli|postgres|mariadb)://[^\s]+#i',
+			'$1://[REDACTED]',
+			$line
+		);
+
+		return $line;
+	}
+
+	/**
 	 * Resolve the active PHP error log path.
 	 *
 	 * Checks in order:
@@ -195,13 +260,18 @@ class Error_Log_Reader {
 	/**
 	 * Get information about the current error log file.
 	 *
+	 * Returns a relative path instead of the absolute filesystem path
+	 * to avoid disclosing server directory structure in REST responses.
+	 * If the file is within WP_CONTENT_DIR, the path is relative to it.
+	 * Otherwise, only the basename is returned.
+	 *
 	 * @return array{path: string|null, exists: bool, readable: bool, size: int, size_formatted: string, safe: bool}
 	 */
 	public function get_file_info(): array {
 		$path = $this->resolve_log_path();
 
 		$info = array(
-			'path'           => $path,
+			'path'           => null,
 			'exists'         => false,
 			'readable'       => false,
 			'size'           => 0,
@@ -212,6 +282,9 @@ class Error_Log_Reader {
 		if ( null === $path ) {
 			return $info;
 		}
+
+		// Expose only a relative path, not the full filesystem path.
+		$info['path'] = $this->make_relative_path( $path );
 
 		$info['exists'] = file_exists( $path );
 
@@ -229,6 +302,26 @@ class Error_Log_Reader {
 		}
 
 		return $info;
+	}
+
+	/**
+	 * Convert an absolute path to a relative one for safe display.
+	 *
+	 * If the file is within WP_CONTENT_DIR, returns the path relative to it.
+	 * Otherwise, returns only the basename to prevent path disclosure.
+	 *
+	 * @param string $absolute_path Absolute file path.
+	 * @return string Relative or basename path.
+	 */
+	private function make_relative_path( string $absolute_path ): string {
+		if ( defined( 'WP_CONTENT_DIR' ) ) {
+			$content_dir = trailingslashit( WP_CONTENT_DIR );
+			if ( 0 === strpos( $absolute_path, $content_dir ) ) {
+				return substr( $absolute_path, strlen( $content_dir ) );
+			}
+		}
+
+		return basename( $absolute_path );
 	}
 
 	/**

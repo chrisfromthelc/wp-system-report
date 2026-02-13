@@ -185,6 +185,7 @@ class Error_Log_Controller extends \WP_REST_Controller {
 				function ( $served ) use ( $output ): bool {
 					if ( ! headers_sent() ) {
 						header( 'Content-Type: text/plain; charset=utf-8' );
+						header( 'X-Content-Type-Options: nosniff' );
 					}
 					echo $output; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Raw log output for download.
 					return true;
