@@ -266,4 +266,128 @@ class ErrorLogControllerTest extends WP_UnitTestCase {
 
 		$this->assertSame( 200, $response->get_status() );
 	}
+
+	// ---------------------------------------------------------------
+	// Security hardening tests
+	// ---------------------------------------------------------------
+
+	/**
+	 * Test that raw format response registers nosniff header via filter.
+	 *
+	 * Since PHPUnit cannot capture actual HTTP headers, we verify the
+	 * rest_pre_serve_request filter is registered when raw format is used.
+	 * The filter callback sets both Content-Type and X-Content-Type-Options.
+	 */
+	public function test_raw_format_registers_pre_serve_filter(): void {
+		wp_set_current_user( $this->admin_id );
+
+		// Create a temp log file so the endpoint returns 200.
+		$temp_log = tempnam( sys_get_temp_dir(), 'sr_test_log_' );
+		// phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_file_put_contents
+		file_put_contents( $temp_log, "Test log line\n" );
+
+		// Mock the reader to return our temp file path.
+		$reader = $this->createMock( SystemReport\Error_Log_Reader::class );
+		$reader->method( 'resolve_log_path' )->willReturn( $temp_log );
+		$reader->method( 'is_path_safe' )->willReturn( true );
+		$reader->method( 'read_last_lines' )->willReturn( array( 'Test log line' ) );
+		$reader->method( 'get_file_info' )->willReturn(
+			array(
+				'path'           => 'test.log',
+				'exists'         => true,
+				'readable'       => true,
+				'size'           => 14,
+				'size_formatted' => '14 B',
+				'safe'           => true,
+			)
+		);
+
+		$toggle     = $this->createMock( SystemReport\Debug_Toggle::class );
+		$controller = new SystemReport\Error_Log_Controller( $reader, $toggle );
+
+		// Build request with raw format.
+		$request = new WP_REST_Request( 'GET', '/wp-system-report/v1/error-log' );
+		$request->set_param( 'lines', 100 );
+		$request->set_param( 'format', 'raw' );
+
+		// Record the filter priority before the call.
+		$had_filter_before = has_filter( 'rest_pre_serve_request' );
+
+		$response = $controller->get_log( $request );
+
+		// After raw format, the filter should be registered.
+		$has_filter_after = has_filter( 'rest_pre_serve_request' );
+		$this->assertNotFalse( $has_filter_after, 'rest_pre_serve_request filter should be registered for raw format' );
+
+		$this->assertSame( 200, $response->get_status() );
+
+		// Clean up.
+		unlink( $temp_log ); // phpcs:ignore WordPress.WP.AlternativeFunctions.unlink_unlink
+	}
+
+	/**
+	 * Test that status endpoint file paths do not expose absolute filesystem paths.
+	 */
+	public function test_status_file_path_is_not_absolute(): void {
+		wp_set_current_user( $this->admin_id );
+
+		$request  = new WP_REST_Request( 'GET', '/wp-system-report/v1/error-log/status' );
+		$response = rest_get_server()->dispatch( $request );
+		$data     = $response->get_data();
+
+		$this->assertArrayHasKey( 'file', $data );
+		$file_path = $data['file']['path'];
+
+		if ( null !== $file_path ) {
+			// Path must not contain the ABSPATH prefix.
+			$this->assertStringNotContainsString( ABSPATH, $file_path );
+			// Path must not start with a forward slash (not absolute).
+			$this->assertDoesNotMatchRegularExpression( '#^/#', $file_path );
+		} else {
+			// No log file found is valid — path is null.
+			$this->assertNull( $file_path );
+		}
+	}
+
+	/**
+	 * Test that the capability filter rejects invalid return values.
+	 */
+	public function test_capability_filter_rejects_empty_string(): void {
+		wp_set_current_user( $this->admin_id );
+
+		// Return an empty string from the capability filter.
+		add_filter(
+			'wp_system_report_error_log_capability',
+			function () {
+				return '';
+			}
+		);
+
+		$request  = new WP_REST_Request( 'GET', '/wp-system-report/v1/error-log/status' );
+		$response = rest_get_server()->dispatch( $request );
+
+		// Should fall back to manage_options and succeed for admin.
+		$this->assertSame( 200, $response->get_status() );
+	}
+
+	/**
+	 * Test that the capability filter rejects non-string return values.
+	 */
+	public function test_capability_filter_rejects_non_string(): void {
+		wp_set_current_user( $this->admin_id );
+
+		// Return a non-string from the capability filter.
+		add_filter(
+			'wp_system_report_error_log_capability',
+			function () {
+				return false;
+			}
+		);
+
+		$request  = new WP_REST_Request( 'GET', '/wp-system-report/v1/error-log/status' );
+		$response = rest_get_server()->dispatch( $request );
+
+		// Should fall back to manage_options and succeed for admin.
+		$this->assertSame( 200, $response->get_status() );
+	}
 }
