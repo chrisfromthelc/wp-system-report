@@ -1,0 +1,279 @@
+<?php
+/**
+ * Debug toggle for wp-config.php constants.
+ *
+ * @package SystemReport
+ */
+
+namespace SystemReport;
+
+defined( 'ABSPATH' ) || exit;
+
+use WPConfigTransformer;
+
+/**
+ * Toggles WP_DEBUG, WP_DEBUG_LOG, and WP_DEBUG_DISPLAY in wp-config.php.
+ *
+ * Uses the wp-cli/wp-config-transformer library for safe, regex-based editing
+ * of wp-config.php. Creates a backup before every write operation.
+ */
+class Debug_Toggle {
+
+	/**
+	 * Path to wp-config.php.
+	 *
+	 * @var string
+	 */
+	private string $config_path;
+
+	/**
+	 * Constructor.
+	 *
+	 * @param string $config_path Optional. Absolute path to wp-config.php.
+	 *                            Defaults to ABSPATH . 'wp-config.php'.
+	 */
+	public function __construct( string $config_path = '' ) {
+		if ( '' === $config_path ) {
+			$this->config_path = ABSPATH . 'wp-config.php';
+		} else {
+			$this->config_path = $config_path;
+		}
+	}
+
+	/**
+	 * Check whether wp-config.php can be modified.
+	 *
+	 * Returns false if:
+	 * - The file doesn't exist
+	 * - The file is not writable
+	 * - DISALLOW_FILE_MODS is true
+	 *
+	 * @return bool True if modifications are allowed.
+	 */
+	public function can_modify(): bool {
+		if ( defined( 'DISALLOW_FILE_MODS' ) && DISALLOW_FILE_MODS ) {
+			return false;
+		}
+
+		if ( ! file_exists( $this->config_path ) ) {
+			return false;
+		}
+
+		return is_writable( $this->config_path );
+	}
+
+	/**
+	 * Get the current state of debug constants in wp-config.php.
+	 *
+	 * Reads the actual constant definitions from the file, not the runtime values.
+	 *
+	 * @return array{wp_debug: bool|null, wp_debug_log: bool|string|null, wp_debug_display: bool|null, can_modify: bool}
+	 */
+	public function get_state(): array {
+		$state = array(
+			'wp_debug'         => null,
+			'wp_debug_log'     => null,
+			'wp_debug_display' => null,
+			'can_modify'       => $this->can_modify(),
+		);
+
+		if ( ! file_exists( $this->config_path ) ) {
+			return $state;
+		}
+
+		try {
+			$transformer = new WPConfigTransformer( $this->config_path );
+
+			if ( $transformer->exists( 'constant', 'WP_DEBUG' ) ) {
+				$state['wp_debug'] = $this->parse_bool_value(
+					$transformer->get_value( 'constant', 'WP_DEBUG' )
+				);
+			}
+
+			if ( $transformer->exists( 'constant', 'WP_DEBUG_LOG' ) ) {
+				$raw_value = $transformer->get_value( 'constant', 'WP_DEBUG_LOG' );
+				$bool_val  = $this->parse_bool_value( $raw_value );
+				// WP_DEBUG_LOG can be a path string.
+				$state['wp_debug_log'] = ( null === $bool_val ) ? trim( $raw_value, "'" ) : $bool_val;
+			}
+
+			if ( $transformer->exists( 'constant', 'WP_DEBUG_DISPLAY' ) ) {
+				$state['wp_debug_display'] = $this->parse_bool_value(
+					$transformer->get_value( 'constant', 'WP_DEBUG_DISPLAY' )
+				);
+			}
+		} catch ( \Exception $e ) {
+			// If the transformer fails to parse, return nulls.
+			return $state;
+		}
+
+		return $state;
+	}
+
+	/**
+	 * Enable debug logging.
+	 *
+	 * Sets WP_DEBUG=true, WP_DEBUG_LOG=true, WP_DEBUG_DISPLAY=false.
+	 *
+	 * @return bool|string True on success, error message string on failure.
+	 */
+	public function enable_debug() {
+		if ( ! $this->can_modify() ) {
+			return __( 'wp-config.php is not writable or file modifications are disabled.', 'wp-system-report' );
+		}
+
+		$backup = $this->create_backup();
+		if ( true !== $backup ) {
+			return $backup;
+		}
+
+		try {
+			$transformer = new WPConfigTransformer( $this->config_path );
+			$raw_option  = array( 'raw' => true );
+
+			$this->update_or_add( $transformer, 'WP_DEBUG', 'true', $raw_option );
+			$this->update_or_add( $transformer, 'WP_DEBUG_LOG', 'true', $raw_option );
+			$this->update_or_add( $transformer, 'WP_DEBUG_DISPLAY', 'false', $raw_option );
+		} catch ( \Exception $e ) {
+			$this->restore_backup();
+			return sprintf(
+				/* translators: %s: error message */
+				__( 'Failed to modify wp-config.php: %s', 'wp-system-report' ),
+				$e->getMessage()
+			);
+		}
+
+		return true;
+	}
+
+	/**
+	 * Disable debug logging.
+	 *
+	 * Sets WP_DEBUG=false, WP_DEBUG_LOG=false, WP_DEBUG_DISPLAY=true.
+	 *
+	 * @return bool|string True on success, error message string on failure.
+	 */
+	public function disable_debug() {
+		if ( ! $this->can_modify() ) {
+			return __( 'wp-config.php is not writable or file modifications are disabled.', 'wp-system-report' );
+		}
+
+		$backup = $this->create_backup();
+		if ( true !== $backup ) {
+			return $backup;
+		}
+
+		try {
+			$transformer = new WPConfigTransformer( $this->config_path );
+			$raw_option  = array( 'raw' => true );
+
+			$this->update_or_add( $transformer, 'WP_DEBUG', 'false', $raw_option );
+			$this->update_or_add( $transformer, 'WP_DEBUG_LOG', 'false', $raw_option );
+			$this->update_or_add( $transformer, 'WP_DEBUG_DISPLAY', 'true', $raw_option );
+		} catch ( \Exception $e ) {
+			$this->restore_backup();
+			return sprintf(
+				/* translators: %s: error message */
+				__( 'Failed to modify wp-config.php: %s', 'wp-system-report' ),
+				$e->getMessage()
+			);
+		}
+
+		return true;
+	}
+
+	/**
+	 * Update a constant if it exists, or add it if it doesn't.
+	 *
+	 * @param WPConfigTransformer $transformer Config transformer instance.
+	 * @param string              $name        Constant name.
+	 * @param string              $value       Constant value.
+	 * @param array               $options     Transformer options.
+	 */
+	private function update_or_add( WPConfigTransformer $transformer, string $name, string $value, array $options ): void {
+		if ( $transformer->exists( 'constant', $name ) ) {
+			$transformer->update( 'constant', $name, $value, $options );
+		} else {
+			$transformer->add( 'constant', $name, $value, $options );
+		}
+	}
+
+	/**
+	 * Create a backup of wp-config.php.
+	 *
+	 * @return bool|string True on success, error message on failure.
+	 */
+	private function create_backup() {
+		$backup_path = $this->config_path . '.bak';
+
+		// phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_file_put_contents, WordPress.WP.AlternativeFunctions.file_get_contents_file_get_contents
+		$contents = file_get_contents( $this->config_path );
+
+		if ( false === $contents ) {
+			return __( 'Failed to read wp-config.php for backup.', 'wp-system-report' );
+		}
+
+		// phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_file_put_contents
+		$result = file_put_contents( $backup_path, $contents );
+
+		if ( false === $result ) {
+			return __( 'Failed to create wp-config.php backup.', 'wp-system-report' );
+		}
+
+		return true;
+	}
+
+	/**
+	 * Restore wp-config.php from backup.
+	 *
+	 * @return bool True on success, false on failure.
+	 */
+	private function restore_backup(): bool {
+		$backup_path = $this->config_path . '.bak';
+
+		if ( ! file_exists( $backup_path ) ) {
+			return false;
+		}
+
+		// phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_file_put_contents, WordPress.WP.AlternativeFunctions.file_get_contents_file_get_contents
+		$contents = file_get_contents( $backup_path );
+
+		if ( false === $contents ) {
+			return false;
+		}
+
+		// phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_file_put_contents
+		$result = file_put_contents( $this->config_path, $contents );
+
+		return false !== $result;
+	}
+
+	/**
+	 * Parse a raw config value into a boolean.
+	 *
+	 * @param string $value Raw value from WPConfigTransformer.
+	 * @return bool|null Parsed boolean, or null if not a boolean value.
+	 */
+	private function parse_bool_value( string $value ) {
+		$value = strtolower( trim( $value, "' " ) );
+
+		if ( 'true' === $value ) {
+			return true;
+		}
+
+		if ( 'false' === $value ) {
+			return false;
+		}
+
+		return null;
+	}
+
+	/**
+	 * Get the wp-config.php path.
+	 *
+	 * @return string The config path.
+	 */
+	public function get_config_path(): string {
+		return $this->config_path;
+	}
+}
