@@ -21,9 +21,16 @@ $wp_system_report_transients = array(
 	'sr_site_health',
 	'sr_github_update',
 	'sr_github_update_failed',
+	'sr_error_log_status',
+	'sr_debug_toggle_cooldown',
 	'sr_database',
 	'sr_post_type_counts',
 	'sr_advanced_diagnostics',
+);
+
+// Plugin options to delete.
+$wp_system_report_options = array(
+	'wp_system_report_settings',
 );
 
 if ( is_multisite() ) {
@@ -33,10 +40,16 @@ if ( is_multisite() ) {
 		foreach ( $wp_system_report_transients as $wp_system_report_transient ) {
 			delete_transient( $wp_system_report_transient );
 		}
+		foreach ( $wp_system_report_options as $wp_system_report_option ) {
+			delete_option( $wp_system_report_option );
+		}
 		restore_current_blog();
 	}
 } else {
 	foreach ( $wp_system_report_transients as $wp_system_report_transient ) {
 		delete_transient( $wp_system_report_transient );
+	}
+	foreach ( $wp_system_report_options as $wp_system_report_option ) {
+		delete_option( $wp_system_report_option );
 	}
 }
