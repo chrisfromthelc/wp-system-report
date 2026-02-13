@@ -380,6 +380,10 @@ class FormattersTest extends WP_UnitTestCase {
 
 	/**
 	 * Test that no issues produces appropriate message.
+	 *
+	 * On PHP < 8.1 the heuristic check flags the running PHP version as
+	 * end-of-life, so the "no issues" message won't appear. We assert the
+	 * correct behaviour for each PHP range instead.
 	 */
 	public function test_ai_no_issues_message() {
 		$clean_report = array(
@@ -405,6 +409,11 @@ class FormattersTest extends WP_UnitTestCase {
 		$formatter = new AI_Formatter();
 		$output    = $formatter->format( $clean_report );
 
-		$this->assertStringContainsString( 'No issues detected', $output );
+		if ( version_compare( phpversion(), '8.1', '<' ) ) {
+			$this->assertStringContainsString( 'end-of-life', $output );
+			$this->assertStringNotContainsString( 'No issues detected', $output );
+		} else {
+			$this->assertStringContainsString( 'No issues detected', $output );
+		}
 	}
 }
