@@ -38,24 +38,16 @@ class Plugin {
 
 	/**
 	 * Error log reader instance.
-	 *
-	 * @phpstan-ignore property.onlyWritten
 	 */
 	private \SystemReport\Error_Log_Reader $error_log_reader;
 
 	/**
 	 * Debug toggle instance.
-	 *
-	 * @phpstan-ignore property.onlyWritten
 	 */
 	private \SystemReport\Debug_Toggle $debug_toggle;
 
 	/**
 	 * Error log controller instance.
-	 *
-	 * Stored to prevent garbage collection; hooks are registered in register_hooks().
-	 *
-	 * @phpstan-ignore property.onlyWritten
 	 */
 	private \SystemReport\Error_Log_Controller $error_log_controller;
 

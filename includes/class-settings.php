@@ -22,10 +22,8 @@ class Settings {
 	const OPTION_NAME = 'wp_system_report_settings';
 
 	/**
-	 * Default settings values.
-	 *
-	 * @var array
-	 */
+ * Default settings values.
+ */
 	private static array $defaults = array(
 		'error_log_lines' => 100,
 	);

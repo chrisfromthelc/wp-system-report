@@ -41,7 +41,7 @@ class Error_Log_Reader {
 	 *
 	 * @return string|null Resolved file path, or null if no log is configured/found.
 	 */
-	public function resolve_log_path() {
+	public function resolve_log_path(): ?string {
 		// 1. WP_DEBUG_LOG set to a custom path.
 		if ( defined( 'WP_DEBUG_LOG' ) && is_string( constant( 'WP_DEBUG_LOG' ) ) && '' !== constant( 'WP_DEBUG_LOG' ) ) {
 			$path = constant( 'WP_DEBUG_LOG' );
@@ -149,7 +149,8 @@ class Error_Log_Reader {
 		$lines      = array();
 
 		// Adaptive backward chunking: double chunk size until we have enough lines.
-		while ( count( $lines ) <= $num_lines && $chunk_size <= self::MAX_READ_BYTES ) {
+		$line_count = count( $lines );
+		while ( $line_count <= $num_lines && $chunk_size <= self::MAX_READ_BYTES ) {
 			$read_size = min( $chunk_size, $file_size );
 			$offset    = max( 0, $file_size - $read_size );
 
@@ -161,10 +162,11 @@ class Error_Log_Reader {
 				break;
 			}
 
-			$lines = explode( "\n", trim( $chunk ) );
+			$lines      = explode( "\n", trim( $chunk ) );
+			$line_count = count( $lines );
 
 			// If we read the entire file or have enough lines, stop.
-			if ( $read_size >= $file_size || count( $lines ) > $num_lines ) {
+			if ( $read_size >= $file_size || $line_count > $num_lines ) {
 				break;
 			}
 
@@ -235,13 +237,18 @@ class Error_Log_Reader {
 	 * @return array{wp_debug: bool, wp_debug_log: mixed, wp_debug_display: bool, log_errors: string, error_log: string, display_errors: string, error_reporting: int}
 	 */
 	public function get_debug_constants(): array {
+		$log_errors     = ini_get( 'log_errors' );
+		$error_log      = ini_get( 'error_log' );
+		$display_errors = ini_get( 'display_errors' );
+
 		return array(
 			'wp_debug'         => defined( 'WP_DEBUG' ) && WP_DEBUG,
 			'wp_debug_log'     => defined( 'WP_DEBUG_LOG' ) ? constant( 'WP_DEBUG_LOG' ) : false,
 			'wp_debug_display' => defined( 'WP_DEBUG_DISPLAY' ) ? (bool) constant( 'WP_DEBUG_DISPLAY' ) : true,
-			'log_errors'       => ini_get( 'log_errors' ) ?: '0',
-			'error_log'        => ini_get( 'error_log' ) ?: '',
-			'display_errors'   => ini_get( 'display_errors' ) ?: '0',
+			'log_errors'       => ( false !== $log_errors && '' !== $log_errors ) ? $log_errors : '0',
+			'error_log'        => ( false !== $error_log ) ? $error_log : '',
+			'display_errors'   => ( false !== $display_errors && '' !== $display_errors ) ? $display_errors : '0',
+			// phpcs:ignore WordPress.PHP.DevelopmentFunctions.prevent_path_disclosure_error_reporting, WordPress.PHP.DiscouragedPHPFunctions.runtime_configuration_error_reporting -- Read-only, not changing runtime config.
 			'error_reporting'  => error_reporting(),
 		);
 	}

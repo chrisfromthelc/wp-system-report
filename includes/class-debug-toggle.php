@@ -20,10 +20,8 @@ use WPConfigTransformer;
 class Debug_Toggle {
 
 	/**
-	 * Path to wp-config.php.
-	 *
-	 * @var string
-	 */
+ * Path to wp-config.php.
+ */
 	private string $config_path;
 
 	/**
@@ -254,7 +252,7 @@ class Debug_Toggle {
 	 * @param string $value Raw value from WPConfigTransformer.
 	 * @return bool|null Parsed boolean, or null if not a boolean value.
 	 */
-	private function parse_bool_value( string $value ) {
+	private function parse_bool_value( string $value ): ?bool {
 		$value = strtolower( trim( $value, "' " ) );
 
 		if ( 'true' === $value ) {

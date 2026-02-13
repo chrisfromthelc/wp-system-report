@@ -29,17 +29,13 @@ class Error_Log_Controller extends \WP_REST_Controller {
 	protected $rest_base = 'error-log';
 
 	/**
-	 * Error log reader instance.
-	 *
-	 * @var Error_Log_Reader
-	 */
+ * Error log reader instance.
+ */
 	private Error_Log_Reader $reader;
 
 	/**
-	 * Debug toggle instance.
-	 *
-	 * @var Debug_Toggle
-	 */
+ * Debug toggle instance.
+ */
 	private Debug_Toggle $toggle;
 
 	/**
@@ -214,9 +210,9 @@ class Error_Log_Controller extends \WP_REST_Controller {
 	 * @return \WP_REST_Response Response object.
 	 */
 	public function get_status( $request ) {
-		$status               = $this->reader->get_status();
-		$status['toggle']     = $this->toggle->get_state();
-		$status['settings']   = Settings::get_all();
+		$status             = $this->reader->get_status();
+		$status['toggle']   = $this->toggle->get_state();
+		$status['settings'] = Settings::get_all();
 
 		return rest_ensure_response( $status );
 	}
