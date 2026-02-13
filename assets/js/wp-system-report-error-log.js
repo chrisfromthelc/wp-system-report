@@ -127,7 +127,7 @@
 	 * @param {*}           value The value (true, false, null, string).
 	 * @param {boolean}     invertColor Invert color (true=bad for some constants).
 	 */
-	function updateBadge( id, value, invertColor ) {
+	function updateBadge( id, value ) {
 		var badge = document.getElementById( id );
 		if ( ! badge ) {
 			return;
@@ -143,10 +143,10 @@
 			badge.classList.add( 'sr-badge-on' );
 		} else if ( value ) {
 			badge.textContent = config.i18n.enabled;
-			badge.classList.add( invertColor ? 'sr-badge-off' : 'sr-badge-on' );
+			badge.classList.add( 'sr-badge-on' );
 		} else {
 			badge.textContent = config.i18n.disabled;
-			badge.classList.add( invertColor ? 'sr-badge-on' : 'sr-badge-off' );
+			badge.classList.add( 'sr-badge-off' );
 		}
 	}
 
@@ -203,10 +203,9 @@
 
 				// Update badges from toggle state (wp-config.php values).
 				var toggle = data.toggle || {};
-				updateBadge( 'sr-wp-debug-badge', toggle.wp_debug, false );
-				updateBadge( 'sr-wp-debug-log-badge', toggle.wp_debug_log, false );
-				// WP_DEBUG_DISPLAY true = bad (shows errors to visitors).
-				updateBadge( 'sr-wp-debug-display-badge', toggle.wp_debug_display, true );
+				updateBadge( 'sr-wp-debug-badge', toggle.wp_debug );
+				updateBadge( 'sr-wp-debug-log-badge', toggle.wp_debug_log );
+				updateBadge( 'sr-wp-debug-display-badge', toggle.wp_debug_display );
 
 				// Show toggle buttons or read-only notice.
 				var toggleActions = document.getElementById( 'sr-toggle-actions' );
@@ -386,9 +385,9 @@
 
 				// Refresh the status display.
 				if ( data.state ) {
-					updateBadge( 'sr-wp-debug-badge', data.state.wp_debug, false );
-					updateBadge( 'sr-wp-debug-log-badge', data.state.wp_debug_log, false );
-					updateBadge( 'sr-wp-debug-display-badge', data.state.wp_debug_display, true );
+					updateBadge( 'sr-wp-debug-badge', data.state.wp_debug );
+					updateBadge( 'sr-wp-debug-log-badge', data.state.wp_debug_log );
+					updateBadge( 'sr-wp-debug-display-badge', data.state.wp_debug_display );
 				}
 			} )
 			.catch( function ( error ) {
