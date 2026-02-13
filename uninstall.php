@@ -26,6 +26,11 @@ $wp_system_report_transients = array(
 	'sr_advanced_diagnostics',
 );
 
+// Plugin options to delete.
+$wp_system_report_options = array(
+	'wp_system_report_settings',
+);
+
 if ( is_multisite() ) {
 	$wp_system_report_sites = get_sites( array( 'fields' => 'ids' ) );
 	foreach ( $wp_system_report_sites as $wp_system_report_site_id ) {
@@ -33,10 +38,16 @@ if ( is_multisite() ) {
 		foreach ( $wp_system_report_transients as $wp_system_report_transient ) {
 			delete_transient( $wp_system_report_transient );
 		}
+		foreach ( $wp_system_report_options as $wp_system_report_option ) {
+			delete_option( $wp_system_report_option );
+		}
 		restore_current_blog();
 	}
 } else {
 	foreach ( $wp_system_report_transients as $wp_system_report_transient ) {
 		delete_transient( $wp_system_report_transient );
+	}
+	foreach ( $wp_system_report_options as $wp_system_report_option ) {
+		delete_option( $wp_system_report_option );
 	}
 }

@@ -7,9 +7,11 @@ A comprehensive WordPress system status report plugin with AI-optimized export. 
 - **Full System Diagnostics** - 17 collectors covering WordPress environment, server, database, plugins, themes, security, cron, REST API, and more
 - **Multiple Export Formats** - Plain text, GitHub-friendly (with redactions and `<details>` wrapper), and AI-optimized markdown
 - **AI-Ready Export** - Structured markdown with contextual descriptions, status indicators, recommendations, and proactive issue detection designed for Claude, ChatGPT, and other LLMs
-- **REST API** - Full JSON API at `wp-system-report/v1/report` with format parameter support
+- **Error Log Viewer** - View, copy, and download the PHP error log directly from the admin, with configurable line count (up to 1000)
+- **Debug Toggle** - Enable/disable `WP_DEBUG`, `WP_DEBUG_LOG`, and `WP_DEBUG_DISPLAY` from the admin UI (with graceful read-only fallback)
+- **REST API** - Full JSON API at `wp-system-report/v1/report` and `wp-system-report/v1/error-log` with format parameter support
 - **Extensible** - Filter hooks for adding custom collectors, modifying fields, and extending issue detection
-- **Zero Dependencies** - Works standalone without WooCommerce or any other plugin
+- **Zero Dependencies** - Works standalone without WooCommerce or any other plugin (uses `wp-cli/wp-config-transformer` for wp-config.php editing)
 - **Cached** - Transient caching for expensive collectors with automatic invalidation
 - **Auto-Updates** - Checks GitHub Releases for new versions and serves updates through the WordPress dashboard
 
@@ -37,27 +39,43 @@ git clone https://github.com/chrisfromthelc/wp-system-report.git wp-system-repor
 
 ### Admin Page
 
-Navigate to **Tools > WP System Report** to view the full system status report. The admin page provides:
+Navigate to **Tools > WP System Report** to view the full system status report. The admin page has two tabs:
+
+#### System Report Tab
 
 | Button | Description |
 |--------|-------------|
-| **Get WP System Report** | Generates a plain text report from the displayed data |
-| **Copy for Support** | Copies the report to clipboard |
-| **Download for Support** | Downloads a `.txt` file |
+| **Get system report** | Generates a plain text report from the displayed data |
+| **Copy for support** | Copies the report to clipboard |
+| **Download for support** | Downloads a `.txt` file |
 | **Copy for GitHub** | Copies a redacted report wrapped in `<details>` tags |
-| **Download for AI** | Downloads an AI-optimized `.md` file via the REST API |
+| **Download for AI analysis** | Downloads an AI-optimized `.md` file via the REST API |
+
+#### Error Log Tab
+
+- **Debug Configuration** — Toggle `WP_DEBUG`, `WP_DEBUG_LOG`, and `WP_DEBUG_DISPLAY` with a single click (modifies `wp-config.php` via `WPConfigTransformer`). When `wp-config.php` is not writable or `DISALLOW_FILE_MODS` is set, displays read-only status badges with copy-pasteable code snippets and WP-CLI commands.
+- **Error Log Viewer** — Load the last N lines (1–1000, default 100) of the PHP error log. Supports copy to clipboard and download as `.log` file.
 
 ### REST API
 
-The plugin registers a REST endpoint at `wp-system-report/v1/report` (requires `manage_options` capability).
+The plugin registers REST endpoints under `wp-system-report/v1/` (requires `manage_options` capability).
 
-**Formats:**
+**Report Formats:**
 
 ```
 GET /wp-json/wp-system-report/v1/report              # JSON (default)
 GET /wp-json/wp-system-report/v1/report?format=plain  # Plain text
 GET /wp-json/wp-system-report/v1/report?format=github # GitHub (redacted + details wrapper)
 GET /wp-json/wp-system-report/v1/report?format=ai     # AI-optimized markdown
+```
+
+**Error Log Endpoints:**
+
+```
+GET  /wp-json/wp-system-report/v1/error-log                # JSON log lines (params: lines, format)
+GET  /wp-json/wp-system-report/v1/error-log?format=raw     # Raw text output
+GET  /wp-json/wp-system-report/v1/error-log/status         # Debug constants, file info, toggle state
+POST /wp-json/wp-system-report/v1/error-log/toggle         # Enable/disable debug logging (body: {"enable": true})
 ```
 
 **Example (cURL):**
@@ -147,6 +165,9 @@ class My_Custom_Collector extends Abstract_Collector {
 | `wp_system_report_cache_ttl` | Change cache TTL (default: 1 hour) |
 | `wp_system_report_redactions` | Add redaction patterns for GitHub export |
 | `wp_system_report_constants` | Add/remove constants to display |
+| `wp_system_report_error_log_capability` | Change required capability for error log access (default: `manage_options`) |
+| `wp_system_report_allowed_log_paths` | Add additional directories allowed for log file reading |
+| `wp_system_report_redact_log_line` | Redact sensitive content from each log line before display |
 
 ## Development
 
@@ -198,29 +219,35 @@ composer test
 
 ```
 wp-system-report/
-  wp-system-report.php           # Bootstrap + autoloader
-  uninstall.php                  # Cleanup on deletion
+  wp-system-report.php              # Bootstrap + autoloader
+  uninstall.php                     # Cleanup on deletion
   includes/
-    class-plugin.php             # Singleton orchestrator
-    class-admin-page.php         # Admin menu + rendering
-    class-rest-controller.php    # WP_REST_Controller
-    class-report-generator.php   # Collector registry
-    class-github-updater.php   # GitHub release update checker
+    class-plugin.php                # Singleton orchestrator
+    class-admin-page.php            # Admin menu + tabbed rendering
+    class-rest-controller.php       # Report REST API controller
+    class-error-log-controller.php  # Error log REST API controller
+    class-report-generator.php      # Collector registry
+    class-settings.php              # Plugin settings (error_log_lines)
+    class-error-log-reader.php      # Error log file reader
+    class-debug-toggle.php          # wp-config.php debug constant toggle
+    class-github-updater.php        # GitHub release update checker
     collectors/
-      interface-collector.php    # Collector contract
-      class-abstract-collector.php # Shared helpers + caching
-      class-*.php                # 17 concrete collectors
+      interface-collector.php       # Collector contract
+      class-abstract-collector.php  # Shared helpers + caching
+      class-*.php                   # 17 concrete collectors
     formatters/
-      interface-formatter.php    # Formatter contract
+      interface-formatter.php       # Formatter contract
       class-plain-text-formatter.php
       class-github-formatter.php
       class-ai-formatter.php
   assets/
-    css/wp-system-report-admin.css  # Admin styles
-    js/wp-system-report-admin.js    # Vanilla JS (no jQuery)
+    css/wp-system-report-admin.css     # Admin styles
+    js/wp-system-report-admin.js       # Report tab JS (vanilla, no jQuery)
+    js/wp-system-report-error-log.js   # Error log tab JS (vanilla, no jQuery)
   templates/
-    admin-page.php               # Admin page template
-  tests/                         # PHPUnit tests
+    admin-page.php                  # Admin page template (tabbed)
+    error-log-tab.php               # Error log tab template
+  tests/                            # PHPUnit tests
 ```
 
 ### Field Structure
