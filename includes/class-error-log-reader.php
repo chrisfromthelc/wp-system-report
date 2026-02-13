@@ -160,6 +160,19 @@ class Error_Log_Reader {
 			return true;
 		}
 
+		// Allow the PHP-configured error_log path implicitly.
+		// Shared hosts commonly place logs outside WordPress (e.g. /home/user/logs/).
+		$ini_error_log = ini_get( 'error_log' );
+		if ( ! empty( $ini_error_log ) ) {
+			$real_ini_log = realpath( $ini_error_log );
+			if ( false !== $real_ini_log && $real_path === $real_ini_log ) {
+				$ini_log_dir = dirname( $real_ini_log );
+				if ( ! $this->is_sensitive_path( $ini_log_dir ) ) {
+					return true;
+				}
+			}
+		}
+
 		/**
 		 * Filter additional directories allowed for error log reading.
 		 *

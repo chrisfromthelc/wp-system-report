@@ -447,4 +447,57 @@ class ErrorLogReaderTest extends WP_UnitTestCase {
 			$this->assertNull( $info['path'] );
 		}
 	}
+
+	/**
+	 * Test that the PHP ini error_log path is implicitly allowed even outside ABSPATH.
+	 */
+	public function test_ini_error_log_path_is_allowed(): void {
+		// Create a temp file outside ABSPATH to simulate a shared host log path.
+		$temp_dir  = sys_get_temp_dir() . '/sr-test-logs-' . uniqid();
+		mkdir( $temp_dir, 0755, true ); // phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_mkdir
+		$log_file  = $temp_dir . '/test.error.log';
+		file_put_contents( $log_file, "Test error\n" ); // phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_file_put_contents
+
+		// Point PHP's error_log to this file.
+		$original = ini_get( 'error_log' );
+		ini_set( 'error_log', $log_file ); // phpcs:ignore WordPress.PHP.IniSet.error_log_Blacklisted
+
+		$this->assertTrue( $this->reader->is_path_safe( $log_file ) );
+
+		// Restore original value.
+		if ( false !== $original && '' !== $original ) {
+			ini_set( 'error_log', $original ); // phpcs:ignore WordPress.PHP.IniSet.error_log_Blacklisted
+		} else {
+			ini_restore( 'error_log' );
+		}
+
+		// Clean up.
+		unlink( $log_file ); // phpcs:ignore WordPress.WP.AlternativeFunctions.unlink_unlink
+		rmdir( $temp_dir ); // phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_rmdir
+	}
+
+	/**
+	 * Test that a random path outside ABSPATH that is NOT the ini error_log is rejected.
+	 */
+	public function test_non_ini_path_outside_abspath_rejected(): void {
+		$temp_dir = sys_get_temp_dir() . '/sr-test-reject-' . uniqid();
+		mkdir( $temp_dir, 0755, true ); // phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_mkdir
+		$log_file = $temp_dir . '/other.log';
+		file_put_contents( $log_file, "Test\n" ); // phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_file_put_contents
+
+		// Make sure ini error_log does NOT point to this file.
+		$original = ini_get( 'error_log' );
+		ini_set( 'error_log', '/dev/null' ); // phpcs:ignore WordPress.PHP.IniSet.error_log_Blacklisted
+
+		$this->assertFalse( $this->reader->is_path_safe( $log_file ) );
+
+		if ( false !== $original && '' !== $original ) {
+			ini_set( 'error_log', $original ); // phpcs:ignore WordPress.PHP.IniSet.error_log_Blacklisted
+		} else {
+			ini_restore( 'error_log' );
+		}
+
+		unlink( $log_file ); // phpcs:ignore WordPress.WP.AlternativeFunctions.unlink_unlink
+		rmdir( $temp_dir ); // phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_rmdir
+	}
 }
