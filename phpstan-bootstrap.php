@@ -8,7 +8,7 @@
  */
 
 // Plugin constants.
-define( 'WP_SYSTEM_REPORT_VERSION', '1.0.0' );
+define( 'WP_SYSTEM_REPORT_VERSION', '1.1.0' );
 define( 'WP_SYSTEM_REPORT_FILE', __DIR__ . '/wp-system-report.php' );
 define( 'WP_SYSTEM_REPORT_DIR', __DIR__ . '/' );
 define( 'WP_SYSTEM_REPORT_URL', 'https://example.com/wp-content/plugins/wp-system-report/' );

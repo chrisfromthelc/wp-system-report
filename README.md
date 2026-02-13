@@ -7,7 +7,7 @@ A comprehensive WordPress system status report plugin with AI-optimized export. 
 - **Full System Diagnostics** - 17 collectors covering WordPress environment, server, database, plugins, themes, security, cron, REST API, and more
 - **Multiple Export Formats** - Plain text, GitHub-friendly (with redactions and `<details>` wrapper), and AI-optimized markdown
 - **AI-Ready Export** - Structured markdown with contextual descriptions, status indicators, recommendations, and proactive issue detection designed for Claude, ChatGPT, and other LLMs
-- **Error Log Viewer** - View, copy, and download the PHP error log directly from the admin, with configurable line count (up to 1000)
+- **Error Log Viewer** - View, copy, and download the PHP error log directly from the admin, with configurable line count (up to 10,000) and optional system report inclusion
 - **Debug Toggle** - Enable/disable `WP_DEBUG`, `WP_DEBUG_LOG`, and `WP_DEBUG_DISPLAY` from the admin UI (with graceful read-only fallback)
 - **REST API** - Full JSON API at `wp-system-report/v1/report` and `wp-system-report/v1/error-log` with format parameter support
 - **Extensible** - Filter hooks for adding custom collectors, modifying fields, and extending issue detection
@@ -54,7 +54,7 @@ Navigate to **Tools > WP System Report** to view the full system status report. 
 #### Error Log Tab
 
 - **Debug Configuration** — Toggle `WP_DEBUG`, `WP_DEBUG_LOG`, and `WP_DEBUG_DISPLAY` with a single click (modifies `wp-config.php` via `WPConfigTransformer`). When `wp-config.php` is not writable or `DISALLOW_FILE_MODS` is set, displays read-only status badges with copy-pasteable code snippets and WP-CLI commands.
-- **Error Log Viewer** — Load the last N lines (1–1000, default 100) of the PHP error log. Supports copy to clipboard and download as `.log` file.
+- **Error Log Viewer** — Load the last N lines (1–10,000, default 100) of the PHP error log. Supports copy to clipboard and download, with an "Include system report" checkbox to prepend the full system report for context when sharing with developers.
 
 ### REST API
 
