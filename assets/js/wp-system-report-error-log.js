@@ -279,7 +279,8 @@
 			loadBtn.textContent = config.i18n.loading;
 		}
 
-		apiFetch( config.logUrl + '?lines=' + lines + '&format=json' )
+		var separator = config.logUrl.indexOf( '?' ) === -1 ? '?' : '&';
+		apiFetch( config.logUrl + separator + 'lines=' + lines + '&format=json' )
 			.then( function ( response ) {
 				if ( ! response.ok ) {
 					return response.json().then( function ( err ) {
