@@ -113,12 +113,24 @@ class Debug_Toggle {
 	 *
 	 * Sets WP_DEBUG=true, WP_DEBUG_LOG=true, WP_DEBUG_DISPLAY=false.
 	 *
+	 * Fires 'wp_system_report_before_debug_toggle' before modifying
+	 * wp-config.php and 'wp_system_report_after_debug_toggle' after
+	 * a successful modification.
+	 *
 	 * @return bool|string True on success, error message string on failure.
 	 */
 	public function enable_debug() {
 		if ( ! $this->can_modify() ) {
 			return __( 'wp-config.php is not writable or file modifications are disabled.', 'wp-system-report' );
 		}
+
+		/**
+		 * Fires before debug logging is toggled.
+		 *
+		 * @param bool   $enable      Whether debug is being enabled (true) or disabled (false).
+		 * @param string $config_path Absolute path to wp-config.php.
+		 */
+		do_action( 'wp_system_report_before_debug_toggle', true, $this->config_path );
 
 		$lock = $this->acquire_lock();
 		if ( false === $lock ) {
@@ -151,6 +163,14 @@ class Debug_Toggle {
 		$this->delete_backup();
 		$this->release_lock( $lock );
 
+		/**
+		 * Fires after debug logging has been successfully toggled.
+		 *
+		 * @param bool   $enable      Whether debug was enabled (true) or disabled (false).
+		 * @param string $config_path Absolute path to wp-config.php.
+		 */
+		do_action( 'wp_system_report_after_debug_toggle', true, $this->config_path );
+
 		return true;
 	}
 
@@ -159,12 +179,19 @@ class Debug_Toggle {
 	 *
 	 * Sets WP_DEBUG=false, WP_DEBUG_LOG=false, WP_DEBUG_DISPLAY=true.
 	 *
+	 * Fires 'wp_system_report_before_debug_toggle' before modifying
+	 * wp-config.php and 'wp_system_report_after_debug_toggle' after
+	 * a successful modification.
+	 *
 	 * @return bool|string True on success, error message string on failure.
 	 */
 	public function disable_debug() {
 		if ( ! $this->can_modify() ) {
 			return __( 'wp-config.php is not writable or file modifications are disabled.', 'wp-system-report' );
 		}
+
+		/** This action is documented in includes/class-debug-toggle.php */
+		do_action( 'wp_system_report_before_debug_toggle', false, $this->config_path );
 
 		$lock = $this->acquire_lock();
 		if ( false === $lock ) {
@@ -196,6 +223,9 @@ class Debug_Toggle {
 
 		$this->delete_backup();
 		$this->release_lock( $lock );
+
+		/** This action is documented in includes/class-debug-toggle.php */
+		do_action( 'wp_system_report_after_debug_toggle', false, $this->config_path );
 
 		return true;
 	}

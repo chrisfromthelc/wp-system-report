@@ -166,14 +166,33 @@ class Error_Log_Reader {
 		 * Useful for hosting environments where the error log resides
 		 * outside the WordPress installation directory.
 		 *
+		 * Paths are validated against a blocklist of sensitive system
+		 * directories to prevent abuse by malicious plugins.
+		 *
 		 * @param array $paths Array of absolute directory paths to allow.
 		 */
 		$allowed_paths = apply_filters( 'wp_system_report_allowed_log_paths', array() );
 
 		if ( is_array( $allowed_paths ) ) {
 			foreach ( $allowed_paths as $allowed ) {
+				if ( ! is_string( $allowed ) ) {
+					continue;
+				}
+				if ( '' === $allowed ) {
+					continue;
+				}
 				$real_allowed = realpath( $allowed );
-				if ( false !== $real_allowed && 0 === strpos( $real_path, $real_allowed ) ) {
+
+				if ( false === $real_allowed ) {
+					continue;
+				}
+
+				// Reject sensitive system directories.
+				if ( $this->is_sensitive_path( $real_allowed ) ) {
+					continue;
+				}
+
+				if ( 0 === strpos( $real_path, $real_allowed ) ) {
 					return true;
 				}
 			}
@@ -322,6 +341,59 @@ class Error_Log_Reader {
 		}
 
 		return basename( $absolute_path );
+	}
+
+	/**
+	 * Check if a path is within a sensitive system directory.
+	 *
+	 * Rejects root-level system directories that should never be
+	 * allowed for error log reading, even via filter.
+	 *
+	 * @param string $real_path Resolved real path to check.
+	 * @return bool True if the path is sensitive and should be rejected.
+	 */
+	private function is_sensitive_path( string $real_path ): bool {
+		$sensitive_dirs = array(
+			'/etc',
+			'/proc',
+			'/sys',
+			'/dev',
+			'/boot',
+			'/root',
+			'/usr/sbin',
+			'/sbin',
+		);
+
+		// On Windows, override with system-critical directories.
+		if ( '\\' === DIRECTORY_SEPARATOR ) {
+			$sensitive_dirs = array(
+				'C:\\Windows',
+				'C:\\Windows\\System32',
+			);
+		}
+
+		$real_path_lower = strtolower( $real_path );
+
+		foreach ( $sensitive_dirs as $sensitive ) {
+			$sensitive_lower = strtolower( $sensitive );
+
+			// Exact match (someone allowed '/etc' itself).
+			if ( $real_path_lower === $sensitive_lower ) {
+				return true;
+			}
+
+			// Path is inside the sensitive directory.
+			if ( 0 === strpos( $real_path_lower, $sensitive_lower . DIRECTORY_SEPARATOR ) ) {
+				return true;
+			}
+		}
+
+		// Reject the filesystem root itself.
+		if ( '/' === $real_path || preg_match( '#^[A-Z]:\\\\$#i', $real_path ) ) {
+			return true;
+		}
+
+		return false;
 	}
 
 	/**

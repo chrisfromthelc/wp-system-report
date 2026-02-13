@@ -248,12 +248,15 @@ class ErrorLogControllerTest extends WP_UnitTestCase {
 	}
 
 	/**
-	 * Test capability filter for error log endpoints.
+	 * Test capability filter rejects low-privilege capabilities.
+	 *
+	 * The allowlist prevents a malicious plugin from downgrading
+	 * the required capability to something like 'read'.
 	 */
-	public function test_capability_filter(): void {
+	public function test_capability_filter_rejects_low_privilege(): void {
 		wp_set_current_user( $this->subscriber_id );
 
-		// Allow subscriber access via filter.
+		// Try to weaken the filter to 'read' (subscriber capability).
 		add_filter(
 			'wp_system_report_error_log_capability',
 			function () {
@@ -264,6 +267,48 @@ class ErrorLogControllerTest extends WP_UnitTestCase {
 		$request  = new WP_REST_Request( 'GET', '/wp-system-report/v1/error-log/status' );
 		$response = rest_get_server()->dispatch( $request );
 
+		// Should be rejected — 'read' is not in the allowlist.
+		$this->assertSame( 403, $response->get_status() );
+	}
+
+	/**
+	 * Test capability filter accepts allowed admin capabilities.
+	 */
+	public function test_capability_filter_accepts_allowed_capability(): void {
+		wp_set_current_user( $this->admin_id );
+
+		// Use an allowed capability.
+		add_filter(
+			'wp_system_report_error_log_capability',
+			function () {
+				return 'install_plugins';
+			}
+		);
+
+		$request  = new WP_REST_Request( 'GET', '/wp-system-report/v1/error-log/status' );
+		$response = rest_get_server()->dispatch( $request );
+
+		$this->assertSame( 200, $response->get_status() );
+	}
+
+	/**
+	 * Test capability filter falls back for unknown capability strings.
+	 */
+	public function test_capability_filter_rejects_unknown_capability(): void {
+		wp_set_current_user( $this->admin_id );
+
+		// Use a capability that exists but is not in the allowlist.
+		add_filter(
+			'wp_system_report_error_log_capability',
+			function () {
+				return 'edit_posts';
+			}
+		);
+
+		$request  = new WP_REST_Request( 'GET', '/wp-system-report/v1/error-log/status' );
+		$response = rest_get_server()->dispatch( $request );
+
+		// Should fall back to manage_options and succeed for admin.
 		$this->assertSame( 200, $response->get_status() );
 	}
 
@@ -389,5 +434,175 @@ class ErrorLogControllerTest extends WP_UnitTestCase {
 
 		// Should fall back to manage_options and succeed for admin.
 		$this->assertSame( 200, $response->get_status() );
+	}
+
+	// ---------------------------------------------------------------
+	// Rate limiting tests
+	// ---------------------------------------------------------------
+
+	/**
+	 * Test that toggle rate limiting returns 429 on rapid requests.
+	 */
+	public function test_toggle_rate_limiting(): void {
+		wp_set_current_user( $this->admin_id );
+
+		// Simulate the cooldown transient being set.
+		set_transient( 'sr_debug_toggle_cooldown', 1, 3 );
+
+		$request = new WP_REST_Request( 'POST', '/wp-system-report/v1/error-log/toggle' );
+		$request->set_param( 'enable', true );
+		$response = rest_get_server()->dispatch( $request );
+
+		$this->assertSame( 429, $response->get_status() );
+
+		$data = $response->get_data();
+		$this->assertSame( 'wp_system_report_rate_limited', $data['code'] );
+
+		// Clean up.
+		delete_transient( 'sr_debug_toggle_cooldown' );
+	}
+
+	/**
+	 * Test that toggle succeeds when no cooldown is active.
+	 */
+	public function test_toggle_succeeds_without_cooldown(): void {
+		wp_set_current_user( $this->admin_id );
+
+		// Ensure no cooldown transient exists.
+		delete_transient( 'sr_debug_toggle_cooldown' );
+
+		$reader = $this->createMock( SystemReport\Error_Log_Reader::class );
+		$toggle = $this->createMock( SystemReport\Debug_Toggle::class );
+		$toggle->method( 'can_modify' )->willReturn( true );
+		$toggle->method( 'enable_debug' )->willReturn( true );
+		$toggle->method( 'get_state' )->willReturn(
+			array(
+				'wp_debug'         => true,
+				'wp_debug_log'     => true,
+				'wp_debug_display' => false,
+				'can_modify'       => true,
+			)
+		);
+
+		$controller = new SystemReport\Error_Log_Controller( $reader, $toggle );
+
+		$request = new WP_REST_Request( 'POST', '/wp-system-report/v1/error-log/toggle' );
+		$request->set_param( 'enable', true );
+		$response = $controller->toggle_debug( $request );
+
+		$this->assertSame( 200, $response->get_status() );
+
+		$data = $response->get_data();
+		$this->assertTrue( $data['success'] );
+
+		// Cooldown transient should now be set.
+		$this->assertNotFalse( get_transient( 'sr_debug_toggle_cooldown' ) );
+
+		// Clean up.
+		delete_transient( 'sr_debug_toggle_cooldown' );
+	}
+
+	// ---------------------------------------------------------------
+	// Status caching tests
+	// ---------------------------------------------------------------
+
+	/**
+	 * Test that status endpoint caches its response.
+	 */
+	public function test_status_endpoint_caches_response(): void {
+		wp_set_current_user( $this->admin_id );
+
+		// Clear any existing cache.
+		delete_transient( 'sr_error_log_status' );
+
+		$request  = new WP_REST_Request( 'GET', '/wp-system-report/v1/error-log/status' );
+		$response = rest_get_server()->dispatch( $request );
+
+		$this->assertSame( 200, $response->get_status() );
+
+		// The transient should now be set.
+		$cached = get_transient( 'sr_error_log_status' );
+		$this->assertIsArray( $cached );
+		$this->assertArrayHasKey( 'file', $cached );
+		$this->assertArrayHasKey( 'constants', $cached );
+
+		// Clean up.
+		delete_transient( 'sr_error_log_status' );
+	}
+
+	/**
+	 * Test that status endpoint returns cached data on second call.
+	 */
+	public function test_status_endpoint_returns_cached_data(): void {
+		wp_set_current_user( $this->admin_id );
+
+		// Pre-set the cache with known data.
+		$cached_data = array(
+			'file'      => array(
+				'path'           => 'cached.log',
+				'exists'         => true,
+				'readable'       => true,
+				'size'           => 999,
+				'size_formatted' => '999 B',
+				'safe'           => true,
+			),
+			'constants' => array(
+				'wp_debug' => false,
+			),
+			'toggle'    => array(
+				'can_modify' => true,
+				'wp_debug'   => false,
+			),
+			'settings'  => array(
+				'error_log_lines' => 100,
+			),
+		);
+		set_transient( 'sr_error_log_status', $cached_data, 30 );
+
+		$request  = new WP_REST_Request( 'GET', '/wp-system-report/v1/error-log/status' );
+		$response = rest_get_server()->dispatch( $request );
+		$data     = $response->get_data();
+
+		// Should return the cached data.
+		$this->assertSame( 'cached.log', $data['file']['path'] );
+		$this->assertSame( 999, $data['file']['size'] );
+
+		// Clean up.
+		delete_transient( 'sr_error_log_status' );
+	}
+
+	/**
+	 * Test that toggle invalidates status cache.
+	 */
+	public function test_toggle_invalidates_status_cache(): void {
+		wp_set_current_user( $this->admin_id );
+
+		// Pre-set the status cache.
+		set_transient( 'sr_error_log_status', array( 'test' => true ), 30 );
+
+		$reader = $this->createMock( SystemReport\Error_Log_Reader::class );
+		$toggle = $this->createMock( SystemReport\Debug_Toggle::class );
+		$toggle->method( 'can_modify' )->willReturn( true );
+		$toggle->method( 'enable_debug' )->willReturn( true );
+		$toggle->method( 'get_state' )->willReturn(
+			array(
+				'wp_debug'         => true,
+				'wp_debug_log'     => true,
+				'wp_debug_display' => false,
+				'can_modify'       => true,
+			)
+		);
+
+		$controller = new SystemReport\Error_Log_Controller( $reader, $toggle );
+
+		$request = new WP_REST_Request( 'POST', '/wp-system-report/v1/error-log/toggle' );
+		$request->set_param( 'enable', true );
+		$controller->toggle_debug( $request );
+
+		// Status cache should have been deleted.
+		$this->assertFalse( get_transient( 'sr_error_log_status' ) );
+
+		// Clean up.
+		delete_transient( 'sr_debug_toggle_cooldown' );
 	}
 }

@@ -204,6 +204,85 @@ class ErrorLogReaderTest extends WP_UnitTestCase {
 		$this->assertTrue( $this->reader->is_path_safe( $path ) );
 	}
 
+	/**
+	 * Test that allowed_log_paths filter rejects sensitive system paths.
+	 */
+	public function test_allowed_paths_filter_rejects_etc(): void {
+		// Create a temp file in /etc (or simulate with a real temp file).
+		// We test that if someone adds /etc via filter, it's rejected.
+		add_filter(
+			'wp_system_report_allowed_log_paths',
+			function () {
+				return array( '/etc' );
+			}
+		);
+
+		// /etc/hostname exists on most Linux/macOS systems.
+		$this->assertFalse( $this->reader->is_path_safe( '/etc/hostname' ) );
+	}
+
+	/**
+	 * Test that allowed_log_paths filter rejects /proc.
+	 */
+	public function test_allowed_paths_filter_rejects_proc(): void {
+		add_filter(
+			'wp_system_report_allowed_log_paths',
+			function () {
+				return array( '/proc' );
+			}
+		);
+
+		$this->assertFalse( $this->reader->is_path_safe( '/proc/version' ) );
+	}
+
+	/**
+	 * Test that allowed_log_paths filter rejects the filesystem root.
+	 */
+	public function test_allowed_paths_filter_rejects_root(): void {
+		add_filter(
+			'wp_system_report_allowed_log_paths',
+			function () {
+				return array( '/' );
+			}
+		);
+
+		// A valid file at root should still be rejected because '/' is blocked.
+		$this->assertFalse( $this->reader->is_path_safe( '/etc/hostname' ) );
+	}
+
+	/**
+	 * Test that allowed_log_paths filter ignores non-string entries.
+	 */
+	public function test_allowed_paths_filter_ignores_non_string(): void {
+		add_filter(
+			'wp_system_report_allowed_log_paths',
+			function () {
+				return array( null, false, 123, '' );
+			}
+		);
+
+		// Should not crash, and should return false for unknown paths.
+		$this->assertFalse( $this->reader->is_path_safe( '/tmp/nonexistent_' . uniqid() . '.log' ) );
+	}
+
+	/**
+	 * Test that allowed_log_paths filter still works for valid non-sensitive paths.
+	 */
+	public function test_allowed_paths_filter_allows_valid_paths(): void {
+		$temp_dir = sys_get_temp_dir();
+		$path     = $this->create_temp_log( array( 'test' ) );
+
+		add_filter(
+			'wp_system_report_allowed_log_paths',
+			function () use ( $temp_dir ) {
+				return array( $temp_dir );
+			}
+		);
+
+		// Temp dir is not sensitive and should be allowed.
+		$this->assertTrue( $this->reader->is_path_safe( $path ) );
+	}
+
 	// ---------------------------------------------------------------
 	// get_debug_constants tests
 	// ---------------------------------------------------------------

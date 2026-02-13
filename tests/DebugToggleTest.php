@@ -357,6 +357,113 @@ class DebugToggleTest extends WP_UnitTestCase {
 	}
 
 	// ---------------------------------------------------------------
+	// Action hooks tests
+	// ---------------------------------------------------------------
+
+	/**
+	 * Test that enable_debug fires before and after action hooks.
+	 */
+	public function test_enable_debug_fires_action_hooks(): void {
+		$path   = $this->create_temp_config();
+		$toggle = new SystemReport\Debug_Toggle( $path );
+
+		$before_fired = false;
+		$after_fired  = false;
+
+		add_action(
+			'wp_system_report_before_debug_toggle',
+			function ( $enable, $config_path ) use ( &$before_fired, $path ) {
+				$before_fired = true;
+				$this->assertTrue( $enable );
+				$this->assertSame( $path, $config_path );
+			},
+			10,
+			2
+		);
+
+		add_action(
+			'wp_system_report_after_debug_toggle',
+			function ( $enable, $config_path ) use ( &$after_fired, $path ) {
+				$after_fired = true;
+				$this->assertTrue( $enable );
+				$this->assertSame( $path, $config_path );
+			},
+			10,
+			2
+		);
+
+		$result = $toggle->enable_debug();
+		$this->assertTrue( $result );
+		$this->assertTrue( $before_fired, 'before_debug_toggle action should fire on enable' );
+		$this->assertTrue( $after_fired, 'after_debug_toggle action should fire on enable' );
+	}
+
+	/**
+	 * Test that disable_debug fires before and after action hooks.
+	 */
+	public function test_disable_debug_fires_action_hooks(): void {
+		$extra  = "define( 'WP_DEBUG', true );";
+		$path   = $this->create_temp_config( $extra );
+		$toggle = new SystemReport\Debug_Toggle( $path );
+
+		$before_fired = false;
+		$after_fired  = false;
+
+		add_action(
+			'wp_system_report_before_debug_toggle',
+			function ( $enable ) use ( &$before_fired ) {
+				$before_fired = true;
+				$this->assertFalse( $enable );
+			},
+			10,
+			2
+		);
+
+		add_action(
+			'wp_system_report_after_debug_toggle',
+			function ( $enable ) use ( &$after_fired ) {
+				$after_fired = true;
+				$this->assertFalse( $enable );
+			},
+			10,
+			2
+		);
+
+		$result = $toggle->disable_debug();
+		$this->assertTrue( $result );
+		$this->assertTrue( $before_fired, 'before_debug_toggle action should fire on disable' );
+		$this->assertTrue( $after_fired, 'after_debug_toggle action should fire on disable' );
+	}
+
+	/**
+	 * Test that after hook does not fire when toggle fails.
+	 */
+	public function test_after_hook_not_fired_on_failure(): void {
+		$path = $this->create_temp_config();
+		chmod( $path, 0444 ); // phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_chmod
+
+		$toggle = new SystemReport\Debug_Toggle( $path );
+
+		$after_fired = false;
+
+		add_action(
+			'wp_system_report_after_debug_toggle',
+			function () use ( &$after_fired ) {
+				$after_fired = true;
+			},
+			10,
+			2
+		);
+
+		$result = $toggle->enable_debug();
+		$this->assertIsString( $result ); // Should be an error message.
+		$this->assertFalse( $after_fired, 'after_debug_toggle should NOT fire on failure' );
+
+		// Restore permission for cleanup.
+		chmod( $path, 0644 ); // phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_chmod
+	}
+
+	// ---------------------------------------------------------------
 	// Backup security tests
 	// ---------------------------------------------------------------
 

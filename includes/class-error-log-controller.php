@@ -119,6 +119,25 @@ class Error_Log_Controller extends \WP_REST_Controller {
 	}
 
 	/**
+	 * Minimum-privilege capabilities allowed for error log access.
+	 *
+	 * The capability filter can only return one of these values.
+	 * This prevents a malicious plugin from weakening access control
+	 * by returning a low-privilege capability like 'read'.
+	 *
+	 * @var string[]
+	 */
+	private const ALLOWED_CAPABILITIES = array(
+		'manage_options',
+		'manage_network',
+		'install_plugins',
+		'edit_plugins',
+		'update_plugins',
+		'delete_plugins',
+		'manage_network_plugins',
+	);
+
+	/**
 	 * Check permissions for error log operations.
 	 *
 	 * @param \WP_REST_Request $request Full details about the request.
@@ -128,11 +147,15 @@ class Error_Log_Controller extends \WP_REST_Controller {
 		/**
 		 * Filter the required capability for error log access.
 		 *
+		 * Only admin-level capabilities are accepted to prevent privilege
+		 * escalation. See Error_Log_Controller::ALLOWED_CAPABILITIES for
+		 * the full list.
+		 *
 		 * @param string $capability WordPress capability. Default 'manage_options'.
 		 */
 		$capability = apply_filters( 'wp_system_report_error_log_capability', 'manage_options' );
 
-		if ( ! is_string( $capability ) || '' === $capability ) {
+		if ( ! is_string( $capability ) || '' === $capability || ! in_array( $capability, self::ALLOWED_CAPABILITIES, true ) ) {
 			$capability = 'manage_options';
 		}
 
@@ -205,27 +228,82 @@ class Error_Log_Controller extends \WP_REST_Controller {
 	}
 
 	/**
+	 * Transient name for status endpoint cache.
+	 *
+	 * @var string
+	 */
+	private const STATUS_CACHE_KEY = 'sr_error_log_status';
+
+	/**
+	 * How long to cache the status response (in seconds).
+	 *
+	 * @var int
+	 */
+	private const STATUS_CACHE_TTL = 30;
+
+	/**
 	 * Get error log status.
+	 *
+	 * Caches the response in a transient to avoid repeated filesystem
+	 * reads and wp-config.php parsing on rapid polling.
 	 *
 	 * @param \WP_REST_Request $request Full details about the request.
 	 * @return \WP_REST_Response Response object.
 	 */
 	public function get_status( $request ) {
+		$cached = get_transient( self::STATUS_CACHE_KEY );
+
+		if ( false !== $cached && is_array( $cached ) ) {
+			return rest_ensure_response( $cached );
+		}
+
 		$status             = $this->reader->get_status();
 		$status['toggle']   = $this->toggle->get_state();
 		$status['settings'] = Settings::get_all();
+
+		set_transient( self::STATUS_CACHE_KEY, $status, self::STATUS_CACHE_TTL );
 
 		return rest_ensure_response( $status );
 	}
 
 	/**
+	 * Minimum seconds between debug toggle operations.
+	 *
+	 * @var int
+	 */
+	private const TOGGLE_COOLDOWN_SECONDS = 3;
+
+	/**
+	 * Transient name for toggle rate limiting.
+	 *
+	 * @var string
+	 */
+	private const TOGGLE_RATE_LIMIT_KEY = 'sr_debug_toggle_cooldown';
+
+	/**
 	 * Toggle debug logging.
+	 *
+	 * Enforces a cooldown period between toggle operations to prevent
+	 * rapid repeated modifications to wp-config.php.
 	 *
 	 * @param \WP_REST_Request $request Full details about the request.
 	 * @return \WP_REST_Response|\WP_Error Response object or error.
 	 */
 	public function toggle_debug( $request ) {
 		$enable = $request->get_param( 'enable' );
+
+		// Rate limiting: reject requests during cooldown period.
+		if ( get_transient( self::TOGGLE_RATE_LIMIT_KEY ) ) {
+			return new \WP_Error(
+				'wp_system_report_rate_limited',
+				sprintf(
+					/* translators: %d: cooldown seconds */
+					__( 'Please wait %d seconds between debug toggle operations.', 'wp-system-report' ),
+					self::TOGGLE_COOLDOWN_SECONDS
+				),
+				array( 'status' => 429 )
+			);
+		}
 
 		if ( ! $this->toggle->can_modify() ) {
 			return new \WP_Error(
@@ -244,6 +322,12 @@ class Error_Log_Controller extends \WP_REST_Controller {
 				array( 'status' => 500 )
 			);
 		}
+
+		// Set cooldown transient after successful toggle.
+		set_transient( self::TOGGLE_RATE_LIMIT_KEY, 1, self::TOGGLE_COOLDOWN_SECONDS );
+
+		// Invalidate status cache after toggle.
+		delete_transient( self::STATUS_CACHE_KEY );
 
 		return rest_ensure_response(
 			array(

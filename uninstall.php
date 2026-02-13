@@ -21,6 +21,8 @@ $wp_system_report_transients = array(
 	'sr_site_health',
 	'sr_github_update',
 	'sr_github_update_failed',
+	'sr_error_log_status',
+	'sr_debug_toggle_cooldown',
 	'sr_database',
 	'sr_post_type_counts',
 	'sr_advanced_diagnostics',
