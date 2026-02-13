@@ -262,7 +262,7 @@ class DebugToggleTest extends WP_UnitTestCase {
 		$state = $toggle->get_state();
 		$this->assertFalse( $state['wp_debug'] );
 		$this->assertFalse( $state['wp_debug_log'] );
-		$this->assertTrue( $state['wp_debug_display'] );
+		$this->assertFalse( $state['wp_debug_display'] );
 	}
 
 	/**
@@ -303,7 +303,7 @@ class DebugToggleTest extends WP_UnitTestCase {
 		$state = $toggle->get_state();
 		$this->assertFalse( $state['wp_debug'] );
 		$this->assertFalse( $state['wp_debug_log'] );
-		$this->assertTrue( $state['wp_debug_display'] );
+		$this->assertFalse( $state['wp_debug_display'] );
 	}
 
 	/**
@@ -461,6 +461,75 @@ class DebugToggleTest extends WP_UnitTestCase {
 
 		// Restore permission for cleanup.
 		chmod( $path, 0644 ); // phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_chmod
+	}
+
+	// ---------------------------------------------------------------
+	// WP_DEBUG_DISPLAY safety tests
+	// ---------------------------------------------------------------
+
+	/**
+	 * Test WP_DEBUG_DISPLAY is always false after enable_debug.
+	 */
+	public function test_enable_debug_always_sets_display_false(): void {
+		// Start with WP_DEBUG_DISPLAY explicitly true.
+		$extra  = "define( 'WP_DEBUG_DISPLAY', true );";
+		$path   = $this->create_temp_config( $extra );
+		$toggle = new SystemReport\Debug_Toggle( $path );
+
+		$toggle->enable_debug();
+		$state = $toggle->get_state();
+		$this->assertFalse( $state['wp_debug_display'], 'WP_DEBUG_DISPLAY should be false after enable_debug' );
+	}
+
+	/**
+	 * Test WP_DEBUG_DISPLAY is always false after disable_debug.
+	 *
+	 * Previously, disable_debug incorrectly set WP_DEBUG_DISPLAY to true,
+	 * which would expose errors to site visitors.
+	 */
+	public function test_disable_debug_always_sets_display_false(): void {
+		// Start with WP_DEBUG_DISPLAY explicitly true.
+		$extra  = "define( 'WP_DEBUG', true );\n";
+		$extra .= "define( 'WP_DEBUG_DISPLAY', true );";
+		$path   = $this->create_temp_config( $extra );
+		$toggle = new SystemReport\Debug_Toggle( $path );
+
+		$toggle->disable_debug();
+		$state = $toggle->get_state();
+		$this->assertFalse( $state['wp_debug_display'], 'WP_DEBUG_DISPLAY should be false after disable_debug' );
+	}
+
+	/**
+	 * Test disable_debug adds constants to a bare config (no existing debug constants).
+	 */
+	public function test_disable_debug_adds_constants_to_bare_config(): void {
+		$path   = $this->create_temp_config();
+		$toggle = new SystemReport\Debug_Toggle( $path );
+
+		$result = $toggle->disable_debug();
+		$this->assertTrue( $result );
+
+		$state = $toggle->get_state();
+		$this->assertFalse( $state['wp_debug'] );
+		$this->assertFalse( $state['wp_debug_log'] );
+		$this->assertFalse( $state['wp_debug_display'] );
+	}
+
+	/**
+	 * Test WP_DEBUG_DISPLAY remains false through enable/disable/enable cycle.
+	 */
+	public function test_debug_display_false_through_multiple_toggles(): void {
+		$path   = $this->create_temp_config();
+		$toggle = new SystemReport\Debug_Toggle( $path );
+
+		$toggle->enable_debug();
+		$this->assertFalse( $toggle->get_state()['wp_debug_display'], 'Display should be false after first enable' );
+
+		$toggle->disable_debug();
+		$this->assertFalse( $toggle->get_state()['wp_debug_display'], 'Display should be false after disable' );
+
+		$toggle->enable_debug();
+		$this->assertFalse( $toggle->get_state()['wp_debug_display'], 'Display should be false after second enable' );
 	}
 
 	// ---------------------------------------------------------------

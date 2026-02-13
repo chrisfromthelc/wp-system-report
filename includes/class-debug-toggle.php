@@ -178,7 +178,7 @@ class Debug_Toggle {
 	/**
 	 * Disable debug logging.
 	 *
-	 * Sets WP_DEBUG=false, WP_DEBUG_LOG=false, WP_DEBUG_DISPLAY=true.
+	 * Sets WP_DEBUG=false, WP_DEBUG_LOG=false, WP_DEBUG_DISPLAY=false.
 	 *
 	 * Fires 'wp_system_report_before_debug_toggle' before modifying
 	 * wp-config.php and 'wp_system_report_after_debug_toggle' after
@@ -211,7 +211,7 @@ class Debug_Toggle {
 
 			$this->update_or_add( $transformer, 'WP_DEBUG', 'false', $raw_option );
 			$this->update_or_add( $transformer, 'WP_DEBUG_LOG', 'false', $raw_option );
-			$this->update_or_add( $transformer, 'WP_DEBUG_DISPLAY', 'true', $raw_option );
+			$this->update_or_add( $transformer, 'WP_DEBUG_DISPLAY', 'false', $raw_option );
 		} catch ( \Exception $e ) {
 			$this->restore_backup();
 			$this->release_lock( $lock );
