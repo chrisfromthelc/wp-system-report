@@ -164,7 +164,7 @@ class ErrorLogReaderTest extends WP_UnitTestCase {
 	 */
 	public function test_is_path_safe_within_abspath(): void {
 		// ABSPATH is defined in the test environment.
-		$path = ABSPATH . 'wp-config.php';
+		$path = ABSPATH . 'index.php';
 		$this->assertTrue( $this->reader->is_path_safe( $path ) );
 	}
 
