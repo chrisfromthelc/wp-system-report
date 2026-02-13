@@ -23,6 +23,12 @@ define( 'WP_SYSTEM_REPORT_FILE', __FILE__ );
 define( 'WP_SYSTEM_REPORT_DIR', plugin_dir_path( __FILE__ ) );
 define( 'WP_SYSTEM_REPORT_URL', plugin_dir_url( __FILE__ ) );
 
+// Load Composer dependencies (wp-cli/wp-config-transformer, etc.).
+$wp_system_report_autoload = WP_SYSTEM_REPORT_DIR . 'vendor/autoload.php';
+if ( file_exists( $wp_system_report_autoload ) ) {
+	require_once $wp_system_report_autoload;
+}
+
 /**
  * Autoloader for SystemReport classes.
  *
