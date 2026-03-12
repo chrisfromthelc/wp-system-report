@@ -56,6 +56,7 @@ class CollectorsTest extends WP_UnitTestCase {
 			'performance',
 			'update_health',
 			'network_connectivity',
+			'block_editor',
 		);
 
 		foreach ( $expected_ids as $id ) {
@@ -531,5 +532,42 @@ class CollectorsTest extends WP_UnitTestCase {
 		$this->assertNotFalse( $cached );
 
 		delete_transient( 'sr_network_connectivity' );
+	}
+
+	/**
+	 * Test that the Block Editor collector returns expected fields.
+	 */
+	public function test_block_editor_has_expected_fields() {
+		$collector = $this->collectors['block_editor'];
+		$fields    = $collector->collect();
+		$labels    = wp_list_pluck( $fields, 'label' );
+
+		$this->assertContains( 'Block Theme (FSE)', $labels );
+		$this->assertContains( 'Registered Block Types', $labels );
+		$this->assertContains( 'Block Sources', $labels );
+		$this->assertContains( 'Registered Block Patterns', $labels );
+		$this->assertContains( 'Pattern Categories', $labels );
+		$this->assertContains( 'Template Parts', $labels );
+		$this->assertContains( 'Global Styles (theme.json)', $labels );
+		$this->assertContains( 'Remote Block Patterns', $labels );
+		$this->assertContains( 'Editor Performance', $labels );
+		$this->assertContains( 'Classic Editor Override', $labels );
+	}
+
+	/**
+	 * Test that the Block Editor collector caching works.
+	 */
+	public function test_block_editor_caching() {
+		$collector = $this->collectors['block_editor'];
+
+		delete_transient( 'sr_block_editor' );
+
+		$data1 = $collector->get_cached_data();
+		$this->assertIsArray( $data1 );
+
+		$cached = get_transient( 'sr_block_editor' );
+		$this->assertNotFalse( $cached );
+
+		delete_transient( 'sr_block_editor' );
 	}
 }

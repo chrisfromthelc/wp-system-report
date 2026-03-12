@@ -127,6 +127,7 @@ class Plugin {
 			new Collectors\Performance(),
 			new Collectors\Update_Health(),
 			new Collectors\Network_Connectivity(),
+			new Collectors\Block_Editor(),
 		);
 
 		foreach ( $collectors as $collector ) {
