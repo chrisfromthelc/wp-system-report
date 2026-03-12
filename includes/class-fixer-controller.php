@@ -39,8 +39,6 @@ class Fixer_Controller extends \WP_REST_Controller {
 
 	/**
 	 * Fixer registry instance.
-	 *
-	 * @var Fixer_Registry
 	 */
 	private Fixer_Registry $registry;
 
