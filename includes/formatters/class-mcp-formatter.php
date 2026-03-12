@@ -60,24 +60,9 @@ class MCP_Formatter implements Formatter {
 	 * @return string JSON-encoded report.
 	 */
 	public function format( array $report_data ): string {
-		$issues = $this->extract_issues( $report_data );
+		$payload = $this->build_payload( $report_data );
 
-		$payload = array(
-			'site'     => $this->build_site_identity(),
-			'health'   => $this->build_health_summary( $report_data, $issues ),
-			'issues'   => $this->build_issues_list( $issues ),
-			'sections' => $this->build_sections( $report_data ),
-		);
-
-		/**
-		 * Filter the full MCP formatter payload before JSON encoding.
-		 *
-		 * @param array $payload     Structured report payload.
-		 * @param array $report_data Raw report data from Report_Generator.
-		 */
-		$payload = apply_filters( 'wp_system_report_mcp_payload', $payload, $report_data );
-
-		return (string) wp_json_encode( $payload, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES );
+		return (string) wp_json_encode( $payload, JSON_UNESCAPED_SLASHES );
 	}
 
 	/**
@@ -108,6 +93,19 @@ class MCP_Formatter implements Formatter {
 	 * @return array Structured report payload.
 	 */
 	public function format_array( array $report_data ): array {
+		return $this->build_payload( $report_data );
+	}
+
+	/**
+	 * Build the full report payload.
+	 *
+	 * Shared builder used by both format() and format_array() to ensure
+	 * the JSON and array variants stay in sync.
+	 *
+	 * @param array $report_data Full report data from Report_Generator::generate().
+	 * @return array Structured report payload.
+	 */
+	private function build_payload( array $report_data ): array {
 		$issues = $this->extract_issues( $report_data );
 
 		$payload = array(
@@ -117,7 +115,12 @@ class MCP_Formatter implements Formatter {
 			'sections' => $this->build_sections( $report_data ),
 		);
 
-		/** This filter is documented in format(). */
+		/**
+		 * Filter the full MCP formatter payload before encoding.
+		 *
+		 * @param array $payload     Structured report payload.
+		 * @param array $report_data Raw report data from Report_Generator.
+		 */
 		return (array) apply_filters( 'wp_system_report_mcp_payload', $payload, $report_data );
 	}
 
@@ -276,6 +279,7 @@ class MCP_Formatter implements Formatter {
 
 			foreach ( $fields as $field ) {
 				if ( ! empty( $field['private'] ) ) {
+					--$total_count;
 					continue;
 				}
 
@@ -317,9 +321,9 @@ class MCP_Formatter implements Formatter {
 			if ( ! empty( $notable_fields ) ) {
 				// Truncate if exceeding limit (safety valve for huge sections).
 				if ( count( $notable_fields ) > self::SECTION_FIELD_LIMIT ) {
-					$section_data['notable_fields']  = array_slice( $notable_fields, 0, self::SECTION_FIELD_LIMIT );
-					$section_data['truncated']       = true;
-					$section_data['truncated_count'] = count( $notable_fields );
+					$section_data['notable_fields']       = array_slice( $notable_fields, 0, self::SECTION_FIELD_LIMIT );
+					$section_data['truncated']            = true;
+					$section_data['total_notable_fields'] = count( $notable_fields );
 				} else {
 					$section_data['notable_fields'] = $notable_fields;
 				}
@@ -394,10 +398,13 @@ class MCP_Formatter implements Formatter {
 	 * @return string Compact description.
 	 */
 	private function compact_description( array|\ArrayAccess $field ): string {
-		$parts = array( $field['value'] );
+		$value = $field['value'] ?? '';
+		$value = is_scalar( $value ) ? (string) $value : (string) wp_json_encode( $value );
 
-		if ( ! empty( $field['description'] ) ) {
-			$parts[] = $field['description'];
+		$parts = array( $value );
+
+		if ( ! empty( $field['description'] ) && is_scalar( $field['description'] ) ) {
+			$parts[] = (string) $field['description'];
 		}
 
 		return implode( ' — ', $parts );
