@@ -303,7 +303,11 @@ class AI_Context_Generator {
 
 		foreach ( $key_items as $section_id => $labels ) {
 			$section = $report_data[ $section_id ] ?? null;
-			if ( ! $section || empty( $section['fields'] ) ) {
+			if ( ! $section ) {
+				continue;
+			}
+
+			if ( empty( $section['fields'] ) ) {
 				continue;
 			}
 
