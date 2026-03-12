@@ -23,14 +23,13 @@ enum Status: string {
 	case Info     = 'info';
 
 	/**
-	 * Create a Status from a legacy string value.
-	 *
-	 * Falls back to Info for unrecognised values, preserving backward
-	 * compatibility with third-party code that passes arbitrary strings.
-	 *
-	 * @param string $value Legacy status string.
-	 * @return self
-	 */
+ * Create a Status from a legacy string value.
+ *
+ * Falls back to Info for unrecognised values, preserving backward
+ * compatibility with third-party code that passes arbitrary strings.
+ *
+ * @param string $value Legacy status string.
+ */
 	public static function from_legacy( string $value ): self {
 		return self::tryFrom( $value ) ?? self::Info;
 	}

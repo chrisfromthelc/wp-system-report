@@ -19,66 +19,48 @@ defined( 'ABSPATH' ) || exit;
 class Field implements \ArrayAccess, \JsonSerializable {
 
 	/**
-	 * Display label.
-	 *
-	 * @var string
-	 */
+ * Display label.
+ */
 	public string $label;
 
 	/**
-	 * Formatted display value.
-	 *
-	 * @var string
-	 */
+ * Formatted display value.
+ */
 	public string $value;
 
 	/**
-	 * Raw/machine-readable value.
-	 *
-	 * @var mixed
-	 */
+ * Raw/machine-readable value.
+ */
 	public mixed $debug;
 
 	/**
-	 * Field status indicator.
-	 *
-	 * @var Status
-	 */
+ * Field status indicator.
+ */
 	public Status $status;
 
 	/**
-	 * Contextual description for AI export.
-	 *
-	 * @var string
-	 */
+ * Contextual description for AI export.
+ */
 	public string $description;
 
 	/**
-	 * Recommended value for AI export.
-	 *
-	 * @var string
-	 */
+ * Recommended value for AI export.
+ */
 	public string $recommended;
 
 	/**
-	 * Compact label for text export.
-	 *
-	 * @var string
-	 */
+ * Compact label for text export.
+ */
 	public string $export_label;
 
 	/**
-	 * Whether to exclude from exports.
-	 *
-	 * @var bool
-	 */
+ * Whether to exclude from exports.
+ */
 	public bool $private;
 
 	/**
-	 * Linked fixer identifier (Phase 3).
-	 *
-	 * @var string|null
-	 */
+ * Linked fixer identifier (Phase 3).
+ */
 	public ?string $fix_id;
 
 	/**
@@ -141,11 +123,10 @@ class Field implements \ArrayAccess, \JsonSerializable {
 	}
 
 	/**
-	 * Check whether an offset exists.
-	 *
-	 * @param mixed $offset Array key to check.
-	 * @return bool
-	 */
+ * Check whether an offset exists.
+ *
+ * @param mixed $offset Array key to check.
+ */
 	public function offsetExists( mixed $offset ): bool {
 		return in_array(
 			$offset,
@@ -155,14 +136,13 @@ class Field implements \ArrayAccess, \JsonSerializable {
 	}
 
 	/**
-	 * Retrieve a value by array key.
-	 *
-	 * The 'status' key returns the string value of the Status enum
-	 * for backward compatibility with existing code.
-	 *
-	 * @param mixed $offset Array key.
-	 * @return mixed
-	 */
+ * Retrieve a value by array key.
+ *
+ * The 'status' key returns the string value of the Status enum
+ * for backward compatibility with existing code.
+ *
+ * @param mixed $offset Array key.
+ */
 	public function offsetGet( mixed $offset ): mixed {
 		return match ( $offset ) {
 			'label'        => $this->label,
