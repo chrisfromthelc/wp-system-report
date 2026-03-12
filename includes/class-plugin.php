@@ -72,11 +72,6 @@ class Plugin {
 	private \SystemReport\AI_Context_Generator $ai_context_generator;
 
 	/**
-	 * Health score calculator instance.
-	 */
-	private \SystemReport\Health_Score $health_score;
-
-	/**
 	 * Health score controller instance.
 	 *
 	 * Null when the health score feature flag is disabled.
