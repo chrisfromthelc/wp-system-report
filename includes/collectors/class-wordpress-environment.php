@@ -57,19 +57,19 @@ class WordPress_Environment extends Abstract_Collector {
 		// Home URL.
 		$data[] = $this->make_field(
 			__( 'Home URL', 'wp-system-report' ),
-			get_option( 'home' ),
+			home_url(),
 			array( 'private' => true )
 		);
 
 		// Site URL.
 		$data[] = $this->make_field(
 			__( 'Site URL', 'wp-system-report' ),
-			get_option( 'siteurl' ),
+			site_url(),
 			array( 'private' => true )
 		);
 
 		// WordPress Version.
-		$wp_version        = get_bloginfo( 'version' );
+		$wp_version        = $GLOBALS['wp_version'];
 		$wp_version_status = Status::Info;
 		$latest_version    = $this->get_latest_wordpress_version();
 		if ( $latest_version && version_compare( $wp_version, $latest_version, '<' ) ) {
