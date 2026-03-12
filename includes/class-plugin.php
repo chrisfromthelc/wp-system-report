@@ -77,6 +77,13 @@ class Plugin {
 	private \SystemReport\Notification_Controller $notification_controller;
 
 	/**
+	 * Abilities API provider instance.
+	 *
+	 * Stored to prevent garbage collection; hooks are registered in the constructor.
+	 */
+	private ?\SystemReport\Abilities_Provider $abilities_provider = null;
+
+	/**
 	 * GitHub updater instance.
 	 *
 	 * Stored to prevent garbage collection; hooks are registered in the constructor.
@@ -132,6 +139,7 @@ class Plugin {
 		$this->register_hooks();
 		$this->ai_context_generator->register_hooks();
 		$this->notification_manager->register_hooks();
+		$this->maybe_register_abilities();
 	}
 
 	/**
@@ -200,6 +208,11 @@ class Plugin {
 		// Apply security hardening measures stored from previous fixer runs.
 		Fixers\Security_Hardener::apply_runtime_hardening();
 
+		// MCP Adapter recommendation notice.
+		if ( Features::has_abilities() ) {
+			add_action( 'admin_notices', array( $this, 'maybe_show_mcp_adapter_notice' ) );
+		}
+
 		// Cache invalidation hooks.
 		add_action( 'switch_theme', array( $this, 'clear_theme_cache' ) );
 		add_action( 'activate_plugin', array( $this, 'clear_plugin_cache' ) );
@@ -237,6 +250,62 @@ class Plugin {
 	 */
 	public function get_fixer_registry(): Fixer_Registry {
 		return $this->fixer_registry;
+	}
+
+	/**
+	 * Conditionally initialize the Abilities API provider.
+	 *
+	 * Only creates the provider when the Abilities API is available
+	 * (WordPress 6.9+) and the feature gate is enabled.
+	 */
+	private function maybe_register_abilities(): void {
+		if ( ! Features::has_abilities() ) {
+			return;
+		}
+
+		$this->abilities_provider = new Abilities_Provider(
+			$this->report_generator,
+			$this->error_log_reader,
+			$this->fixer_registry
+		);
+
+		$this->abilities_provider->register_hooks();
+	}
+
+	/**
+	 * Show an admin notice recommending the MCP Adapter plugin.
+	 *
+	 * Displayed only on the WP System Report admin page when the
+	 * MCP Adapter is not active and the notice has not been dismissed.
+	 */
+	public function maybe_show_mcp_adapter_notice(): void {
+		// Only show on our plugin page.
+		$screen = get_current_screen();
+		if ( null === $screen || 'tools_page_' . Admin_Page::MENU_SLUG !== $screen->id ) {
+			return;
+		}
+
+		// Don't show if the MCP Adapter is already active.
+		if ( Abilities_Provider::is_mcp_adapter_active() ) {
+			return;
+		}
+
+		// Allow permanent dismissal via user meta.
+		$user_id = get_current_user_id();
+		if ( get_user_meta( $user_id, 'sr_dismiss_mcp_notice', true ) ) {
+			return;
+		}
+
+		// Handle dismissal via query parameter with nonce verification.
+		if ( isset( $_GET['sr_dismiss_mcp_notice'], $_GET['_wpnonce'] )
+			&& '1' === $_GET['sr_dismiss_mcp_notice']
+			&& wp_verify_nonce( sanitize_text_field( wp_unslash( $_GET['_wpnonce'] ) ), 'sr_dismiss_mcp_notice' )
+		) {
+			update_user_meta( $user_id, 'sr_dismiss_mcp_notice', '1' );
+			return;
+		}
+
+		include WP_SYSTEM_REPORT_DIR . 'templates/mcp-adapter-notice.php';
 	}
 
 	/**

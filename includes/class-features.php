@@ -64,4 +64,20 @@ class Features {
 	public static function has_mcp(): bool {
 		return self::is_pro();
 	}
+
+	/**
+	 * Whether Abilities API integration is available.
+	 *
+	 * Abilities API integration exposes plugin capabilities as structured
+	 * abilities discoverable by AI agents via the WordPress Abilities API
+	 * and MCP Adapter. Gated behind the Pro tier and requires the
+	 * Abilities API to be present (WordPress 6.9+).
+	 *
+	 * @return bool True when Abilities API integration is available.
+	 */
+	public static function has_abilities(): bool {
+		return self::is_pro()
+			&& class_exists( Abilities_Provider::class )
+			&& Abilities_Provider::is_abilities_api_available();
+	}
 }
