@@ -30,7 +30,7 @@ class Report_History {
 	 *
 	 * @var string
 	 */
-	const SCHEMA_VERSION = '1.0.1';
+	const SCHEMA_VERSION = '1.0.2';
 
 	/**
 	 * Option key for tracking installed schema version.
@@ -82,6 +82,10 @@ class Report_History {
 	 *
 	 * Uses dbDelta() for safe schema creation and upgrades.
 	 * Should be called on plugin activation.
+	 *
+	 * Note: dbDelta() does not support non-literal defaults such as
+	 * CURRENT_TIMESTAMP (see WordPress Trac #28591). The created_at
+	 * timestamp is set explicitly in save_snapshot() instead.
 	 */
 	public static function create_table(): void {
 		global $wpdb;
@@ -97,7 +101,7 @@ class Report_History {
 			summary_warning smallint(5) unsigned NOT NULL DEFAULT 0,
 			summary_critical smallint(5) unsigned NOT NULL DEFAULT 0,
 			report_data longblob NOT NULL,
-			created_at datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
+			created_at datetime NOT NULL DEFAULT '0000-00-00 00:00:00',
 			PRIMARY KEY  (id),
 			KEY idx_created_at (created_at),
 			KEY idx_score (score)
@@ -117,7 +121,7 @@ class Report_History {
 	public static function drop_table(): void {
 		global $wpdb;
 		$table_name = self::get_table_name();
-		// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- Table name is a constant.
+		// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- Table name is derived from a class constant.
 		$wpdb->query( "DROP TABLE IF EXISTS {$table_name}" );
 		delete_option( self::SCHEMA_OPTION );
 	}
@@ -180,10 +184,21 @@ class Report_History {
 
 		$score_data = $this->health_score->calculate( $report );
 
-		$compressed = gzcompress( wp_json_encode( $report ), 6 );
+		$json = wp_json_encode( $report );
 
-		if ( false === $compressed ) {
+		if ( false === $json ) {
 			return false;
+		}
+
+		if ( function_exists( 'gzcompress' ) ) {
+			$compressed = gzcompress( $json, 6 );
+
+			if ( false === $compressed ) {
+				return false;
+			}
+		} else {
+			// Store raw JSON when zlib is not available.
+			$compressed = $json;
 		}
 
 		$result = $wpdb->insert(
@@ -255,13 +270,19 @@ class Report_History {
 		$values = array();
 
 		if ( '' !== $args['after'] ) {
-			$where[]  = 'created_at > %s';
-			$values[] = gmdate( 'Y-m-d H:i:s', strtotime( $args['after'] ) );
+			$after_ts = strtotime( $args['after'] );
+			if ( false !== $after_ts ) {
+				$where[]  = 'created_at > %s';
+				$values[] = gmdate( 'Y-m-d H:i:s', $after_ts );
+			}
 		}
 
 		if ( '' !== $args['before'] ) {
-			$where[]  = 'created_at < %s';
-			$values[] = gmdate( 'Y-m-d H:i:s', strtotime( $args['before'] ) );
+			$before_ts = strtotime( $args['before'] );
+			if ( false !== $before_ts ) {
+				$where[]  = 'created_at < %s';
+				$values[] = gmdate( 'Y-m-d H:i:s', $before_ts );
+			}
 		}
 
 		$where_clause = '';
@@ -323,10 +344,10 @@ class Report_History {
 	public function get_snapshot( int $id ): ?array {
 		global $wpdb;
 
-		$table = self::get_table_name();
-
-		// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- Table name is a constant.
-		$row = $wpdb->get_row( $wpdb->prepare( "SELECT * FROM {$table} WHERE id = %d", $id ), ARRAY_A );
+		$row = $wpdb->get_row(
+			$wpdb->prepare( 'SELECT * FROM %i WHERE id = %d', self::get_table_name(), $id ),
+			ARRAY_A
+		);
 
 		if ( null === $row ) {
 			return null;
@@ -367,24 +388,25 @@ class Report_History {
 			'after' => '',
 		);
 
-		$args  = wp_parse_args( $args, $defaults );
-		$table = self::get_table_name();
+		$args = wp_parse_args( $args, $defaults );
 
 		if ( '' !== $args['after'] ) {
-			$since = gmdate( 'Y-m-d H:i:s', strtotime( $args['after'] ) );
+			$after_ts = strtotime( $args['after'] );
+			$since    = false !== $after_ts
+				? gmdate( 'Y-m-d H:i:s', $after_ts )
+				: gmdate( 'Y-m-d H:i:s', strtotime( "-{$args['days']} days" ) );
 		} else {
 			$since = gmdate( 'Y-m-d H:i:s', strtotime( "-{$args['days']} days" ) );
 		}
 
-		// phpcs:disable WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- Table name is a constant.
 		$rows = $wpdb->get_results(
 			$wpdb->prepare(
-				"SELECT id, score, grade, summary_good, summary_warning, summary_critical, created_at FROM {$table} WHERE created_at >= %s ORDER BY created_at ASC",
+				'SELECT id, score, grade, summary_good, summary_warning, summary_critical, created_at FROM %i WHERE created_at >= %s ORDER BY created_at ASC',
+				self::get_table_name(),
 				$since
 			),
 			ARRAY_A
 		);
-		// phpcs:enable WordPress.DB.PreparedSQL.InterpolatedNotPrepared
 
 		if ( null === $rows ) {
 			return array();
@@ -431,10 +453,10 @@ class Report_History {
 	 */
 	public function delete_all(): int {
 		global $wpdb;
-		$table = self::get_table_name();
 
-		// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- Table name is a constant.
-		return (int) $wpdb->query( "DELETE FROM {$table}" );
+		return (int) $wpdb->query(
+			$wpdb->prepare( 'DELETE FROM %i', self::get_table_name() )
+		);
 	}
 
 	/**
@@ -453,8 +475,7 @@ class Report_History {
 
 		$table = self::get_table_name();
 		$count = (int) $wpdb->get_var(
-			// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- Table name is a constant.
-			"SELECT COUNT(*) FROM {$table}"
+			$wpdb->prepare( 'SELECT COUNT(*) FROM %i', $table )
 		);
 
 		if ( $count <= $limit ) {
@@ -466,8 +487,8 @@ class Report_History {
 		// Delete the oldest snapshots.
 		$wpdb->query(
 			$wpdb->prepare(
-				// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- Table name is a constant.
-				"DELETE FROM {$table} ORDER BY created_at ASC LIMIT %d",
+				'DELETE FROM %i ORDER BY created_at ASC LIMIT %d',
+				$table,
 				$excess
 			)
 		);
@@ -476,17 +497,25 @@ class Report_History {
 	/**
 	 * Decompress a stored report blob.
 	 *
-	 * @param string $data Compressed report data.
+	 * Falls back to treating data as raw JSON when zlib is unavailable
+	 * or when decompression fails (e.g. data was stored uncompressed).
+	 *
+	 * @param string $data Compressed (or raw JSON) report data.
 	 * @return array|null Decoded report array, or null on failure.
 	 */
 	private function decompress_report( string $data ): ?array {
-		$decompressed = gzuncompress( $data );
+		if ( function_exists( 'gzuncompress' ) ) {
+			// phpcs:ignore WordPress.PHP.NoSilencedErrors.Discouraged -- gzuncompress emits E_WARNING on malformed data; suppressed to allow JSON fallback.
+			$decompressed = @gzuncompress( $data );
 
-		if ( false === $decompressed ) {
-			return null;
+			if ( false !== $decompressed ) {
+				$decoded = json_decode( $decompressed, true );
+				return is_array( $decoded ) ? $decoded : null;
+			}
 		}
 
-		$decoded = json_decode( $decompressed, true );
+		// Fallback: try decoding as raw JSON (uncompressed storage).
+		$decoded = json_decode( $data, true );
 
 		return is_array( $decoded ) ? $decoded : null;
 	}
@@ -499,10 +528,13 @@ class Report_History {
 	public function get_latest(): ?array {
 		global $wpdb;
 
-		$table = self::get_table_name();
-
-		// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- Table name is a constant.
-		$row = $wpdb->get_row( "SELECT id, score, grade, summary_good, summary_warning, summary_critical, created_at FROM {$table} ORDER BY created_at DESC LIMIT 1", ARRAY_A );
+		$row = $wpdb->get_row(
+			$wpdb->prepare(
+				'SELECT id, score, grade, summary_good, summary_warning, summary_critical, created_at FROM %i ORDER BY created_at DESC LIMIT 1',
+				self::get_table_name()
+			),
+			ARRAY_A
+		);
 
 		if ( null === $row ) {
 			return null;
