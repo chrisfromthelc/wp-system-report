@@ -109,7 +109,17 @@ class REST_Controller extends \WP_REST_Controller {
 		$report = $this->report_generator->generate();
 
 		if ( 'json' === $format ) {
-			return rest_ensure_response( $report );
+			$collector_count = count( $report );
+			$fixes_available = Features::has_fixers();
+
+			return REST_Envelope::success(
+				$report,
+				array(
+					'format'          => 'json',
+					'collector_count' => $collector_count,
+					'fixes_available' => $fixes_available,
+				)
+			);
 		}
 
 		$formatter = $this->get_formatter( $format );

@@ -83,9 +83,9 @@ class RESTControllerTest extends WP_UnitTestCase {
 	}
 
 	/**
-	 * Test JSON format returns array data.
+	 * Test JSON format returns envelope structure.
 	 */
-	public function test_json_format_returns_data() {
+	public function test_json_format_returns_envelope() {
 		wp_set_current_user( $this->admin_id );
 
 		$request = new WP_REST_Request( 'GET', '/wp-system-report/v1/report' );
@@ -93,13 +93,17 @@ class RESTControllerTest extends WP_UnitTestCase {
 		$response = rest_get_server()->dispatch( $request );
 
 		$this->assertSame( 200, $response->get_status() );
-		$data = $response->get_data();
-		$this->assertIsArray( $data );
-		$this->assertNotEmpty( $data );
+		$envelope = $response->get_data();
+		$this->assertArrayHasKey( 'status', $envelope );
+		$this->assertArrayHasKey( 'data', $envelope );
+		$this->assertArrayHasKey( 'meta', $envelope );
+		$this->assertSame( 'success', $envelope['status'] );
+		$this->assertIsArray( $envelope['data'] );
+		$this->assertNotEmpty( $envelope['data'] );
 	}
 
 	/**
-	 * Test JSON format contains expected sections.
+	 * Test JSON format contains expected sections inside data.
 	 */
 	public function test_json_format_contains_sections() {
 		wp_set_current_user( $this->admin_id );
@@ -108,14 +112,14 @@ class RESTControllerTest extends WP_UnitTestCase {
 		$request->set_param( 'format', 'json' );
 		$response = rest_get_server()->dispatch( $request );
 
-		$data = $response->get_data();
+		$data = $response->get_data()['data'];
 		$this->assertArrayHasKey( 'wordpress_environment', $data );
 		$this->assertArrayHasKey( 'server_environment', $data );
 		$this->assertArrayHasKey( 'security', $data );
 	}
 
 	/**
-	 * Test JSON section structure.
+	 * Test JSON section structure inside envelope data.
 	 */
 	public function test_json_section_structure() {
 		wp_set_current_user( $this->admin_id );
@@ -124,7 +128,7 @@ class RESTControllerTest extends WP_UnitTestCase {
 		$request->set_param( 'format', 'json' );
 		$response = rest_get_server()->dispatch( $request );
 
-		$data    = $response->get_data();
+		$data    = $response->get_data()['data'];
 		$section = $data['wordpress_environment'];
 
 		$this->assertArrayHasKey( 'id', $section );
@@ -132,6 +136,26 @@ class RESTControllerTest extends WP_UnitTestCase {
 		$this->assertArrayHasKey( 'description', $section );
 		$this->assertArrayHasKey( 'fields', $section );
 		$this->assertIsArray( $section['fields'] );
+	}
+
+	/**
+	 * Test JSON envelope meta contains expected keys.
+	 */
+	public function test_json_envelope_meta() {
+		wp_set_current_user( $this->admin_id );
+
+		$request = new WP_REST_Request( 'GET', '/wp-system-report/v1/report' );
+		$request->set_param( 'format', 'json' );
+		$response = rest_get_server()->dispatch( $request );
+
+		$meta = $response->get_data()['meta'];
+		$this->assertArrayHasKey( 'generated_at', $meta );
+		$this->assertArrayHasKey( 'plugin_version', $meta );
+		$this->assertArrayHasKey( 'format', $meta );
+		$this->assertArrayHasKey( 'collector_count', $meta );
+		$this->assertArrayHasKey( 'fixes_available', $meta );
+		$this->assertSame( 'json', $meta['format'] );
+		$this->assertIsBool( $meta['fixes_available'] );
 	}
 
 	/**
@@ -200,7 +224,7 @@ class RESTControllerTest extends WP_UnitTestCase {
 	}
 
 	/**
-	 * Test default format is JSON.
+	 * Test default format is JSON with envelope.
 	 */
 	public function test_default_format_is_json() {
 		wp_set_current_user( $this->admin_id );
@@ -209,8 +233,10 @@ class RESTControllerTest extends WP_UnitTestCase {
 		$response = rest_get_server()->dispatch( $request );
 
 		$this->assertSame( 200, $response->get_status() );
-		$data = $response->get_data();
-		$this->assertIsArray( $data );
+		$envelope = $response->get_data();
+		$this->assertIsArray( $envelope );
+		$this->assertArrayHasKey( 'status', $envelope );
+		$this->assertSame( 'success', $envelope['status'] );
 	}
 
 	/**

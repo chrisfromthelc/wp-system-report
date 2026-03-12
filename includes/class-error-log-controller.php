@@ -218,7 +218,7 @@ class Error_Log_Controller extends \WP_REST_Controller {
 			return new \WP_REST_Response( null, 200 );
 		}
 
-		return rest_ensure_response(
+		return REST_Envelope::success(
 			array(
 				'lines' => $log_lines,
 				'count' => count( $log_lines ),
@@ -254,7 +254,7 @@ class Error_Log_Controller extends \WP_REST_Controller {
 		$cached = get_transient( self::STATUS_CACHE_KEY );
 
 		if ( false !== $cached && is_array( $cached ) ) {
-			return rest_ensure_response( $cached );
+			return REST_Envelope::success( $cached );
 		}
 
 		$status             = $this->reader->get_status();
@@ -263,7 +263,7 @@ class Error_Log_Controller extends \WP_REST_Controller {
 
 		set_transient( self::STATUS_CACHE_KEY, $status, self::STATUS_CACHE_TTL );
 
-		return rest_ensure_response( $status );
+		return REST_Envelope::success( $status );
 	}
 
 	/**
@@ -329,7 +329,7 @@ class Error_Log_Controller extends \WP_REST_Controller {
 		// Invalidate status cache after toggle.
 		delete_transient( self::STATUS_CACHE_KEY );
 
-		return rest_ensure_response(
+		return REST_Envelope::success(
 			array(
 				'success' => true,
 				'enabled' => $enable,
