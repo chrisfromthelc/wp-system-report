@@ -52,6 +52,7 @@ class CollectorsTest extends WP_UnitTestCase {
 			'wordpress_configuration',
 			'advanced_diagnostics',
 			'email_delivery',
+			'network_connectivity',
 		);
 
 		foreach ( $expected_ids as $id ) {
@@ -339,5 +340,42 @@ class CollectorsTest extends WP_UnitTestCase {
 		$this->assertNotFalse( $cached );
 
 		delete_transient( 'sr_email_delivery' );
+	}
+
+	/**
+	 * Test that the Network & Connectivity collector returns expected fields.
+	 */
+	public function test_network_connectivity_has_expected_fields() {
+		$collector = $this->collectors['network_connectivity'];
+		$fields    = $collector->collect();
+		$labels    = wp_list_pluck( $fields, 'label' );
+
+		$this->assertContains( 'WordPress.org API', $labels );
+		$this->assertContains( 'WordPress.org Downloads', $labels );
+		$this->assertContains( 'Loopback Request', $labels );
+		$this->assertContains( 'HTTP Proxy', $labels );
+		$this->assertContains( 'HTTP Transport', $labels );
+		$this->assertContains( 'SSL Certificate', $labels );
+		$this->assertContains( 'SSL Verification', $labels );
+		$this->assertContains( 'External HTTP Blocked', $labels );
+		$this->assertContains( 'DNS Resolution', $labels );
+		$this->assertContains( 'cURL Version', $labels );
+	}
+
+	/**
+	 * Test that the Network & Connectivity collector caching works.
+	 */
+	public function test_network_connectivity_caching() {
+		$collector = $this->collectors['network_connectivity'];
+
+		delete_transient( 'sr_network_connectivity' );
+
+		$data1 = $collector->get_cached_data();
+		$this->assertIsArray( $data1 );
+
+		$cached = get_transient( 'sr_network_connectivity' );
+		$this->assertNotFalse( $cached );
+
+		delete_transient( 'sr_network_connectivity' );
 	}
 }
