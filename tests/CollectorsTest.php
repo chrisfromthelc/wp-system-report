@@ -51,6 +51,7 @@ class CollectorsTest extends WP_UnitTestCase {
 			'custom_content_types',
 			'wordpress_configuration',
 			'advanced_diagnostics',
+			'email_delivery',
 			'media_uploads',
 		);
 
@@ -282,6 +283,63 @@ class CollectorsTest extends WP_UnitTestCase {
 		$this->assertSame( 300, $custom_ttl );
 
 		delete_transient( 'sr_active_plugins' );
+	}
+
+	/**
+	 * Test that the Email Delivery collector returns expected fields.
+	 */
+	public function test_email_delivery_has_expected_fields() {
+		$collector = $this->collectors['email_delivery'];
+		$fields    = $collector->collect();
+		$labels    = wp_list_pluck( $fields, 'label' );
+
+		$this->assertContains( 'Admin Email', $labels );
+		$this->assertContains( 'From Address', $labels );
+		$this->assertContains( 'From Name', $labels );
+		$this->assertContains( 'Mail Transport', $labels );
+		$this->assertContains( 'SMTP Host', $labels );
+		$this->assertContains( 'SMTP Port', $labels );
+		$this->assertContains( 'SMTP Encryption', $labels );
+		$this->assertContains( 'Mail Plugin', $labels );
+		$this->assertContains( 'PHPMailer Override', $labels );
+		$this->assertContains( 'Sendmail Path', $labels );
+		$this->assertContains( 'PHP mail() Disabled', $labels );
+	}
+
+	/**
+	 * Test that the Email Delivery collector marks admin email as private.
+	 */
+	public function test_email_delivery_admin_email_is_private() {
+		$collector = $this->collectors['email_delivery'];
+		$fields    = $collector->collect();
+
+		$admin_field = null;
+		foreach ( $fields as $field ) {
+			if ( 'Admin Email' === $field['label'] ) {
+				$admin_field = $field;
+				break;
+			}
+		}
+
+		$this->assertNotNull( $admin_field, 'Email Delivery should include Admin Email field.' );
+		$this->assertTrue( $admin_field['private'], 'Admin Email should be marked as private.' );
+	}
+
+	/**
+	 * Test that the Email Delivery collector caching works.
+	 */
+	public function test_email_delivery_caching() {
+		$collector = $this->collectors['email_delivery'];
+
+		delete_transient( 'sr_email_delivery' );
+
+		$data1 = $collector->get_cached_data();
+		$this->assertIsArray( $data1 );
+
+		$cached = get_transient( 'sr_email_delivery' );
+		$this->assertNotFalse( $cached );
+
+		delete_transient( 'sr_email_delivery' );
 	}
 
 	/**
