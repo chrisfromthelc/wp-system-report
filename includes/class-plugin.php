@@ -122,6 +122,7 @@ class Plugin {
 			new Collectors\Custom_Content_Types(),
 			new Collectors\WordPress_Configuration(),
 			new Collectors\Advanced_Diagnostics(),
+			new Collectors\Media_Uploads(),
 		);
 
 		foreach ( $collectors as $collector ) {
