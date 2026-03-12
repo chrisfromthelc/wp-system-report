@@ -76,8 +76,6 @@ class Health_Score {
 
 	/**
 	 * Report generator instance.
-	 *
-	 * @var Report_Generator
 	 */
 	private Report_Generator $report_generator;
 

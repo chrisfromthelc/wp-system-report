@@ -33,8 +33,6 @@ class Health_Score_Controller extends \WP_REST_Controller {
 
 	/**
 	 * Health score calculator instance.
-	 *
-	 * @var Health_Score
 	 */
 	private Health_Score $health_score;
 
