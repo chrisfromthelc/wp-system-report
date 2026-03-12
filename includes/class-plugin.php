@@ -123,6 +123,8 @@ class Plugin {
 			new Collectors\WordPress_Configuration(),
 			new Collectors\Advanced_Diagnostics(),
 			new Collectors\Email_Delivery(),
+			new Collectors\Media_Uploads(),
+			new Collectors\Performance(),
 			new Collectors\Update_Health(),
 		);
 
