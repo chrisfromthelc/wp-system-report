@@ -129,8 +129,12 @@ class CLI_Command extends \WP_CLI_Command {
 			'json' => wp_json_encode( $report, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES ),
 			'csv'  => $this->report_to_csv( $report ),
 			'md'   => ( new Formatters\GitHub_Formatter() )->format( $report ),
-			default => '',
+			default => null,
 		};
+
+		if ( null === $content ) {
+			\WP_CLI::error( "Unsupported export format: {$format}. Supported formats: json, csv, md." );
+		}
 
 		if ( null !== $output ) {
 			// phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_file_put_contents -- CLI context, no WP filesystem needed.
@@ -356,13 +360,21 @@ class CLI_Command extends \WP_CLI_Command {
 	 * Shows the aggregate health score (0–100), letter grade, and
 	 * optional per-section breakdown.
 	 *
+	 * The summary line (score, grade, and field counts) is always
+	 * rendered as plain text regardless of the --format value.
+	 * Passing --format=table only affects the per-section breakdown
+	 * table rendered when --breakdown is also supplied; without
+	 * --breakdown the flag has no effect on output.
+	 *
 	 * ## OPTIONS
 	 *
 	 * [--breakdown]
 	 * : Show per-section score breakdown.
 	 *
 	 * [--format=<format>]
-	 * : Output format.
+	 * : Controls the layout of the per-section breakdown table.
+	 * Only applies when --breakdown is also passed. The summary
+	 * is always displayed as text regardless of this option.
 	 * ---
 	 * default: text
 	 * options:
@@ -375,6 +387,7 @@ class CLI_Command extends \WP_CLI_Command {
 	 *
 	 *     $ wp system-report health
 	 *     $ wp system-report health --breakdown
+	 *     $ wp system-report health --breakdown --format=table
 	 *     $ wp system-report health --format=json
 	 *
 	 * @param array $args       Positional arguments.
@@ -607,20 +620,14 @@ class CLI_Command extends \WP_CLI_Command {
 	/**
 	 * Get the status string from a field.
 	 *
+	 * Delegates to Field::get_status_string() to avoid duplicating
+	 * the Field-or-array branching logic.
+	 *
 	 * @param Field|array $field A field value object or associative array.
 	 * @return string Status string.
 	 */
 	private function get_field_status_string( $field ): string {
-		if ( $field instanceof Field ) {
-			return $field->status->value;
-		}
-
-		if ( is_array( $field ) && isset( $field['status'] ) ) {
-			$status = $field['status'];
-			return $status instanceof Status ? $status->value : (string) $status;
-		}
-
-		return 'info';
+		return Field::get_status_string( $field );
 	}
 
 	/**
@@ -638,16 +645,26 @@ class CLI_Command extends \WP_CLI_Command {
 	}
 
 	/**
-	 * Get the value from a field.
+	 * Get the value from a field as a string.
+	 *
+	 * Non-scalar values (arrays, objects) are JSON-encoded so that
+	 * consumers such as CSV export receive machine-readable output
+	 * rather than an unhelpful "Array" or "Object" cast.
 	 *
 	 * @param Field|array $field A field value object or associative array.
 	 * @return string Field value.
 	 */
 	private function get_field_value( $field ): string {
 		if ( $field instanceof Field ) {
-			return $field->value;
+			$value = $field->value;
+		} else {
+			$value = is_array( $field ) ? ( $field['value'] ?? '' ) : '';
 		}
 
-		return is_array( $field ) ? (string) ( $field['value'] ?? '' ) : '';
+		if ( ! is_scalar( $value ) && null !== $value ) {
+			return (string) wp_json_encode( $value );
+		}
+
+		return (string) $value;
 	}
 }

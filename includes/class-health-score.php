@@ -254,27 +254,14 @@ class Health_Score {
 	/**
 	 * Get the status string from a field.
 	 *
-	 * Supports both Field objects and legacy associative arrays.
+	 * Delegates to Field::get_status_string() to avoid duplicating
+	 * the Field-or-array branching logic present in CLI_Command.
 	 *
 	 * @param Field|array $field A field value object or associative array.
 	 * @return string Status string: 'good', 'warning', 'critical', or 'info'.
 	 */
 	private function get_field_status( $field ): string {
-		if ( $field instanceof Field ) {
-			return $field->status->value;
-		}
-
-		if ( is_array( $field ) && isset( $field['status'] ) ) {
-			$status = $field['status'];
-
-			if ( $status instanceof Status ) {
-				return $status->value;
-			}
-
-			return is_string( $status ) ? $status : 'info';
-		}
-
-		return 'info';
+		return Field::get_status_string( $field );
 	}
 
 	/**
