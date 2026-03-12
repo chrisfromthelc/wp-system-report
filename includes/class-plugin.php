@@ -62,14 +62,14 @@ class Plugin {
 	private \SystemReport\Fixer_Controller $fixer_controller;
 
 	/**
-	 * AI context file generator instance.
-	 */
-	private \SystemReport\AI_Context_Generator $ai_context_generator;
-
-	/**
 	 * Health score calculator instance.
 	 */
 	private \SystemReport\Health_Score $health_score;
+
+	/**
+	 * AI context file generator instance.
+	 */
+	private \SystemReport\AI_Context_Generator $ai_context_generator;
 
 	/**
 	 * Health score controller instance.
