@@ -78,6 +78,18 @@ class Features {
 	}
 
 	/**
+	 * Whether the report history feature is available.
+	 *
+	 * Report history stores timestamped snapshots of system report data
+	 * for trending and comparison. Gated behind the Pro tier.
+	 *
+	 * @return bool True when report history is available.
+	 */
+	public static function has_report_history(): bool {
+		return self::is_pro();
+	}
+
+	/**
 	 * Whether Abilities API integration is available.
 	 *
 	 * Abilities API integration exposes plugin capabilities as structured

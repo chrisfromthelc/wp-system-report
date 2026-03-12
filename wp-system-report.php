@@ -80,6 +80,28 @@ function wp_system_report(): \SystemReport\Plugin {
 	return \SystemReport\Plugin::get_instance();
 }
 
+// Create/update database tables on activation.
+register_activation_hook( __FILE__, 'wp_system_report_activate' );
+
+/**
+ * Plugin activation callback.
+ *
+ * Creates custom database tables required by the plugin.
+ */
+function wp_system_report_activate(): void {
+	\SystemReport\Report_History::create_table();
+}
+
+// Ensure schema is up to date on admin init (handles upgrades without reactivation).
+add_action(
+	'admin_init',
+	static function (): void {
+		if ( \SystemReport\Report_History::needs_schema_update() ) {
+			\SystemReport\Report_History::create_table();
+		}
+	}
+);
+
 // Initialize the plugin.
 wp_system_report();
 

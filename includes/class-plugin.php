@@ -89,6 +89,16 @@ class Plugin {
 	private \SystemReport\Notification_Controller $notification_controller;
 
 	/**
+	 * Report history instance.
+	 */
+	private ?\SystemReport\Report_History $report_history = null;
+
+	/**
+	 * Report history controller instance.
+	 */
+	private ?\SystemReport\Report_History_Controller $report_history_controller = null;
+
+	/**
 	 * Abilities API provider instance.
 	 *
 	 * Stored to prevent garbage collection; hooks are registered in the constructor.
@@ -152,11 +162,21 @@ class Plugin {
 		$this->notification_controller = new Notification_Controller( $webhook_dispatcher );
 		$this->github_updater          = new GitHub_Updater( WP_SYSTEM_REPORT_FILE );
 
+		if ( Features::has_report_history() ) {
+			$this->report_history            = new Report_History( $this->report_generator, $this->health_score );
+			$this->report_history_controller = new Report_History_Controller( $this->report_history );
+		}
+
 		$this->register_default_collectors();
 		$this->register_default_fixers();
 		$this->register_hooks();
 		$this->ai_context_generator->register_hooks();
 		$this->notification_manager->register_hooks();
+
+		if ( null !== $this->report_history ) {
+			$this->report_history->register_hooks();
+		}
+
 		$this->maybe_register_abilities();
 	}
 
@@ -225,6 +245,10 @@ class Plugin {
 		if ( null !== $this->health_score_controller ) {
 			add_action( 'rest_api_init', array( $this->health_score_controller, 'register_routes' ) );
 		}
+
+		if ( null !== $this->report_history_controller ) {
+			add_action( 'rest_api_init', array( $this->report_history_controller, 'register_routes' ) );
+		}
 		add_action( 'admin_enqueue_scripts', array( $this->admin_page, 'enqueue_assets' ) );
 
 		// Apply security hardening measures stored from previous fixer runs.
@@ -281,6 +305,15 @@ class Plugin {
 	 */
 	public function get_health_score(): Health_Score {
 		return $this->health_score;
+	}
+
+	/**
+	 * Get the report history instance.
+	 *
+	 * @return Report_History|null The report history instance, or null if disabled.
+	 */
+	public function get_report_history(): ?Report_History {
+		return $this->report_history;
 	}
 
 	/**
