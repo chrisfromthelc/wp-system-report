@@ -80,9 +80,10 @@ class Report_History {
 	/**
 	 * Create or update the custom database table.
 	 *
-	 * Uses direct SQL for initial creation (dbDelta is unreliable with
-	 * longblob columns and datetime defaults) and dbDelta() only for
-	 * schema upgrades on an existing table.
+	 * Uses dbDelta() for both initial creation and schema upgrades, following
+	 * the same pattern as WordPress core table creation. The schema avoids
+	 * DEFAULT CURRENT_TIMESTAMP (not supported by dbDelta) and uses two spaces
+	 * after PRIMARY KEY (a dbDelta requirement).
 	 *
 	 * Should be called on plugin activation and checked via
 	 * needs_schema_update() on admin_init.
@@ -93,54 +94,39 @@ class Report_History {
 		$table_name      = self::get_table_name();
 		$charset_collate = $wpdb->get_charset_collate();
 
-		// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- Table name from class constant.
-		$table_exists = $wpdb->get_var(
+		require_once ABSPATH . 'wp-admin/includes/upgrade.php';
+
+		// Use the same schema format as WordPress core tables:
+		// - Two spaces after PRIMARY KEY (dbDelta requirement).
+		// - KEY (not INDEX) for secondary indexes.
+		// - Trailing semicolon.
+		// phpcs:disable WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- table name from constant, charset from $wpdb.
+		dbDelta(
+			"CREATE TABLE $table_name (
+ id bigint(20) unsigned NOT NULL AUTO_INCREMENT,
+ score smallint(3) unsigned NOT NULL DEFAULT 0,
+ grade varchar(2) NOT NULL DEFAULT 'F',
+ summary_good smallint(5) unsigned NOT NULL DEFAULT 0,
+ summary_warning smallint(5) unsigned NOT NULL DEFAULT 0,
+ summary_critical smallint(5) unsigned NOT NULL DEFAULT 0,
+ report_data longblob NOT NULL,
+ created_at datetime NOT NULL DEFAULT '0000-00-00 00:00:00',
+ PRIMARY KEY  (id),
+ KEY idx_created_at (created_at),
+ KEY idx_score (score)
+) $charset_collate;"
+		);
+		// phpcs:enable WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+
+		// Verify the table was actually created before updating schema version.
+		// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- table name from class constant.
+		$created = $wpdb->get_var(
 			$wpdb->prepare( 'SHOW TABLES LIKE %s', $table_name )
 		);
 
-		if ( null === $table_exists ) {
-			// Create the table with direct SQL — avoids dbDelta() quirks
-			// with longblob columns and non-literal DEFAULT values.
-			// phpcs:disable WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- table name from constant, charset from $wpdb.
-			$wpdb->query(
-				"CREATE TABLE {$table_name} (
-					id bigint(20) unsigned NOT NULL AUTO_INCREMENT,
-					score smallint(3) unsigned NOT NULL DEFAULT 0,
-					grade varchar(2) NOT NULL DEFAULT 'F',
-					summary_good smallint(5) unsigned NOT NULL DEFAULT 0,
-					summary_warning smallint(5) unsigned NOT NULL DEFAULT 0,
-					summary_critical smallint(5) unsigned NOT NULL DEFAULT 0,
-					report_data longblob NOT NULL,
-					created_at datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
-					PRIMARY KEY (id),
-					KEY idx_created_at (created_at),
-					KEY idx_score (score)
-				) {$charset_collate}"
-			);
-			// phpcs:enable WordPress.DB.PreparedSQL.InterpolatedNotPrepared
-		} else {
-			// Table exists — use dbDelta() for safe schema upgrades.
-			// phpcs:disable WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- table name from constant, charset from $wpdb.
-			$sql = "CREATE TABLE {$table_name} (
-				id bigint(20) unsigned NOT NULL AUTO_INCREMENT,
-				score smallint(3) unsigned NOT NULL DEFAULT 0,
-				grade varchar(2) NOT NULL DEFAULT 'F',
-				summary_good smallint(5) unsigned NOT NULL DEFAULT 0,
-				summary_warning smallint(5) unsigned NOT NULL DEFAULT 0,
-				summary_critical smallint(5) unsigned NOT NULL DEFAULT 0,
-				report_data longblob NOT NULL,
-				created_at datetime NOT NULL,
-				PRIMARY KEY  (id),
-				KEY idx_created_at (created_at),
-				KEY idx_score (score)
-			) {$charset_collate};";
-			// phpcs:enable WordPress.DB.PreparedSQL.InterpolatedNotPrepared
-
-			require_once ABSPATH . 'wp-admin/includes/upgrade.php';
-			dbDelta( $sql );
+		if ( null !== $created ) {
+			update_option( self::SCHEMA_OPTION, self::SCHEMA_VERSION );
 		}
-
-		update_option( self::SCHEMA_OPTION, self::SCHEMA_VERSION );
 	}
 
 	/**
