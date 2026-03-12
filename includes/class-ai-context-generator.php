@@ -60,7 +60,7 @@ class AI_Context_Generator {
 	 * Handle the report generated action.
 	 *
 	 * Called by the Report_Generator after a full report is produced.
-	 * Writes the context file asynchronously to avoid blocking the request.
+	 * Writes the context file synchronously during the current request.
 	 *
 	 * @param array $report_data Full report data.
 	 */
@@ -244,7 +244,7 @@ class AI_Context_Generator {
 
 		// Extract database version from report if available.
 		$db_section = $report_data['database'] ?? null;
-		if ( $db_section ) {
+		if ( $db_section && ! empty( $db_section['fields'] ) ) {
 			foreach ( $db_section['fields'] as $field ) {
 				if ( 'Server Version' === ( $field['export_label'] ?? $field['label'] ) ) {
 					$output .= '- **Database**: ' . $field['value'] . "\n";
@@ -255,7 +255,7 @@ class AI_Context_Generator {
 
 		// Extract web server from report.
 		$server_section = $report_data['server_environment'] ?? null;
-		if ( $server_section ) {
+		if ( $server_section && ! empty( $server_section['fields'] ) ) {
 			foreach ( $server_section['fields'] as $field ) {
 				if ( 'Web Server' === ( $field['export_label'] ?? $field['label'] ) ) {
 					$output .= '- **Web Server**: ' . $field['value'] . "\n";
@@ -303,7 +303,7 @@ class AI_Context_Generator {
 
 		foreach ( $key_items as $section_id => $labels ) {
 			$section = $report_data[ $section_id ] ?? null;
-			if ( ! $section ) {
+			if ( ! $section || empty( $section['fields'] ) ) {
 				continue;
 			}
 
