@@ -96,6 +96,16 @@ class Report_Generator {
 			);
 		}
 
+		/**
+		 * Fires after a full system report is generated.
+		 *
+		 * Allows other components (e.g. the AI context file generator) to
+		 * react to report generation without modifying the report data.
+		 *
+		 * @param array $report The complete report data.
+		 */
+		do_action( 'wp_system_report_generated', $report );
+
 		return $report;
 	}
 
