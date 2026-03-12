@@ -52,6 +52,9 @@ class CollectorsTest extends WP_UnitTestCase {
 			'wordpress_configuration',
 			'advanced_diagnostics',
 			'email_delivery',
+			'media_uploads',
+			'performance',
+			'update_health',
 			'network_connectivity',
 		);
 
@@ -340,6 +343,157 @@ class CollectorsTest extends WP_UnitTestCase {
 		$this->assertNotFalse( $cached );
 
 		delete_transient( 'sr_email_delivery' );
+	}
+
+	/**
+	 * Test that the Media & Uploads collector returns expected fields.
+	 */
+	public function test_media_uploads_has_expected_fields() {
+		$collector = $this->collectors['media_uploads'];
+		$fields    = $collector->collect();
+		$labels    = wp_list_pluck( $fields, 'label' );
+
+		$this->assertContains( 'Upload Directory', $labels );
+		$this->assertContains( 'Upload Dir Writable', $labels );
+		$this->assertContains( 'Upload Directory Size', $labels );
+		$this->assertContains( 'Total Attachments', $labels );
+		$this->assertContains( 'Media by Type', $labels );
+		$this->assertContains( 'Orphaned Attachments', $labels );
+		$this->assertContains( 'Upload / Post Max Alignment', $labels );
+		$this->assertContains( 'WP Max Upload Size', $labels );
+		$this->assertContains( 'Image Editor', $labels );
+		$this->assertContains( 'Registered Image Sizes', $labels );
+		$this->assertContains( 'Big Image Threshold', $labels );
+	}
+
+	/**
+	 * Test that the Media & Uploads collector reports correct upload directory.
+	 */
+	public function test_media_uploads_upload_directory_matches() {
+		$collector  = $this->collectors['media_uploads'];
+		$fields     = $collector->collect();
+		$upload_dir = wp_upload_dir();
+
+		$dir_field = null;
+		foreach ( $fields as $field ) {
+			if ( 'Upload Directory' === $field['label'] ) {
+				$dir_field = $field;
+				break;
+			}
+		}
+
+		$this->assertNotNull( $dir_field, 'Media & Uploads should include Upload Directory field.' );
+		$this->assertSame( $upload_dir['basedir'], $dir_field['value'] );
+	}
+
+	/**
+	 * Test that the Media & Uploads collector caching works.
+	 */
+	public function test_media_uploads_caching() {
+		$collector = $this->collectors['media_uploads'];
+
+		delete_transient( 'sr_media_uploads' );
+
+		$data1 = $collector->get_cached_data();
+		$this->assertIsArray( $data1 );
+
+		$cached = get_transient( 'sr_media_uploads' );
+		$this->assertNotFalse( $cached );
+
+		delete_transient( 'sr_media_uploads' );
+	}
+
+	/**
+	 * Test that the Performance collector returns expected fields.
+	 */
+	public function test_performance_has_expected_fields() {
+		$collector = $this->collectors['performance'];
+		$fields    = $collector->collect();
+		$labels    = wp_list_pluck( $fields, 'label' );
+
+		$this->assertContains( 'Object Cache Backend', $labels );
+		$this->assertContains( 'Object Cache Drop-in', $labels );
+		$this->assertContains( 'Page Cache Plugin', $labels );
+		$this->assertContains( 'OPcache', $labels );
+		$this->assertContains( 'Total wp_options Rows', $labels );
+		$this->assertContains( 'wp_options Table Size', $labels );
+		$this->assertContains( 'Expired Transients', $labels );
+		$this->assertContains( 'Database Overhead', $labels );
+		$this->assertContains( 'Top Autoloaded Options', $labels );
+		$this->assertContains( 'Persistent Object Cache', $labels );
+	}
+
+	/**
+	 * Test that the Performance collector marks Top Autoloaded Options as private.
+	 */
+	public function test_performance_autoloaded_options_is_private() {
+		$collector = $this->collectors['performance'];
+		$fields    = $collector->collect();
+
+		$target_field = null;
+		foreach ( $fields as $field ) {
+			if ( 'Top Autoloaded Options' === $field['label'] ) {
+				$target_field = $field;
+				break;
+			}
+		}
+
+		$this->assertNotNull( $target_field, 'Performance should include Top Autoloaded Options field.' );
+		$this->assertTrue( $target_field['private'], 'Top Autoloaded Options should be marked as private.' );
+	}
+
+	/**
+	 * Test that the Performance collector caching works.
+	 */
+	public function test_performance_caching() {
+		$collector = $this->collectors['performance'];
+
+		delete_transient( 'sr_performance' );
+
+		$data1 = $collector->get_cached_data();
+		$this->assertIsArray( $data1 );
+
+		$cached = get_transient( 'sr_performance' );
+		$this->assertNotFalse( $cached );
+
+		delete_transient( 'sr_performance' );
+	}
+
+	/**
+	 * Test that the Update Health collector returns expected fields.
+	 */
+	public function test_update_health_has_expected_fields() {
+		$collector = $this->collectors['update_health'];
+		$fields    = $collector->collect();
+		$labels    = wp_list_pluck( $fields, 'label' );
+
+		$this->assertContains( 'Core Update Status', $labels );
+		$this->assertContains( 'Core Update Channel', $labels );
+		$this->assertContains( 'Core Auto-Updates', $labels );
+		$this->assertContains( 'Plugin Updates Available', $labels );
+		$this->assertContains( 'Plugin Auto-Updates', $labels );
+		$this->assertContains( 'Theme Updates Available', $labels );
+		$this->assertContains( 'Theme Auto-Updates', $labels );
+		$this->assertContains( 'Last Update Check', $labels );
+		$this->assertContains( 'Failed Updates', $labels );
+		$this->assertContains( 'Translation Updates', $labels );
+	}
+
+	/**
+	 * Test that the Update Health collector caching works.
+	 */
+	public function test_update_health_caching() {
+		$collector = $this->collectors['update_health'];
+
+		delete_transient( 'sr_update_health' );
+
+		$data1 = $collector->get_cached_data();
+		$this->assertIsArray( $data1 );
+
+		$cached = get_transient( 'sr_update_health' );
+		$this->assertNotFalse( $cached );
+
+		delete_transient( 'sr_update_health' );
 	}
 
 	/**
