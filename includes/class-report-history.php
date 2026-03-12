@@ -80,10 +80,9 @@ class Report_History {
 	/**
 	 * Create or update the custom database table.
 	 *
-	 * Uses dbDelta() for both initial creation and schema upgrades, following
-	 * the same pattern as WordPress core table creation. The schema avoids
-	 * DEFAULT CURRENT_TIMESTAMP (not supported by dbDelta) and uses two spaces
-	 * after PRIMARY KEY (a dbDelta requirement).
+	 * Uses dbDelta() following the same pattern as WordPress core table
+	 * creation in wp-admin/includes/schema.php. The schema uses two spaces
+	 * after PRIMARY KEY (a dbDelta requirement) and KEY for secondary indexes.
 	 *
 	 * Should be called on plugin activation and checked via
 	 * needs_schema_update() on admin_init.
@@ -96,10 +95,6 @@ class Report_History {
 
 		require_once ABSPATH . 'wp-admin/includes/upgrade.php';
 
-		// Use the same schema format as WordPress core tables:
-		// - Two spaces after PRIMARY KEY (dbDelta requirement).
-		// - KEY (not INDEX) for secondary indexes.
-		// - Trailing semicolon.
 		// phpcs:disable WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- table name from constant, charset from $wpdb.
 		dbDelta(
 			"CREATE TABLE $table_name (
@@ -118,15 +113,7 @@ class Report_History {
 		);
 		// phpcs:enable WordPress.DB.PreparedSQL.InterpolatedNotPrepared
 
-		// Verify the table was actually created before updating schema version.
-		// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- table name from class constant.
-		$created = $wpdb->get_var(
-			$wpdb->prepare( 'SHOW TABLES LIKE %s', $table_name )
-		);
-
-		if ( null !== $created ) {
-			update_option( self::SCHEMA_OPTION, self::SCHEMA_VERSION );
-		}
+		update_option( self::SCHEMA_OPTION, self::SCHEMA_VERSION );
 	}
 
 	/**
@@ -321,7 +308,7 @@ class Report_History {
 		$select_values[] = $offset;
 
 		// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- Table name is constant; ORDER direction is validated.
-		$query = "SELECT id, score, grade, summary_good, summary_warning, summary_critical, created_at FROM {$table} {$where_clause} ORDER BY created_at {$order} LIMIT %d OFFSET %d";
+		$query = "SELECT id, score, grade, summary_good, summary_warning, summary_critical, created_at FROM {$table} {$where_clause} ORDER BY created_at {$order}, id {$order} LIMIT %d OFFSET %d";
 
 		// phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared -- Query is constructed above with interpolated constants.
 		$items = $wpdb->get_results( $wpdb->prepare( $query, ...$select_values ), ARRAY_A );
@@ -417,7 +404,7 @@ class Report_History {
 
 		$rows = $wpdb->get_results(
 			$wpdb->prepare(
-				'SELECT id, score, grade, summary_good, summary_warning, summary_critical, created_at FROM %i WHERE created_at >= %s ORDER BY created_at ASC',
+				'SELECT id, score, grade, summary_good, summary_warning, summary_critical, created_at FROM %i WHERE created_at >= %s ORDER BY created_at ASC, id ASC',
 				self::get_table_name(),
 				$since
 			),
@@ -546,7 +533,7 @@ class Report_History {
 
 		$row = $wpdb->get_row(
 			$wpdb->prepare(
-				'SELECT id, score, grade, summary_good, summary_warning, summary_critical, created_at FROM %i ORDER BY created_at DESC LIMIT 1',
+				'SELECT id, score, grade, summary_good, summary_warning, summary_critical, created_at FROM %i ORDER BY created_at DESC, id DESC LIMIT 1',
 				self::get_table_name()
 			),
 			ARRAY_A

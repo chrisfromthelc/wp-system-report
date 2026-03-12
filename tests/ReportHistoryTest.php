@@ -103,9 +103,15 @@ class ReportHistoryTest extends WP_UnitTestCase {
 
 		$table = Report_History::get_table_name();
 
+		// Use information_schema with exact match instead of SHOW TABLES LIKE,
+		// which is unreliable in MySQL 8.0 under the WP test suite's transaction
+		// isolation (autocommit = 0).
 		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery,WordPress.DB.DirectDatabaseQuery.NoCaching
 		$exists = $wpdb->get_var(
-			$wpdb->prepare( 'SHOW TABLES LIKE %s', $table )
+			$wpdb->prepare(
+				'SELECT TABLE_NAME FROM information_schema.TABLES WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = %s',
+				$table
+			)
 		);
 
 		$this->assertSame( $table, $exists );
