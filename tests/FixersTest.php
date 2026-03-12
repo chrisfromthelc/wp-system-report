@@ -10,6 +10,7 @@ use SystemReport\Fixer_Registry;
 use SystemReport\Fixers\Autoload_Optimizer;
 use SystemReport\Fixers\Database_Optimizer;
 use SystemReport\Fixers\Security_Hardener;
+use SystemReport\Fixers\Cron_Repair;
 use SystemReport\Risk_Level;
 
 /**
@@ -913,5 +914,237 @@ class FixersTest extends WP_UnitTestCase {
 		}
 
 		wp_cache_flush();
+	}
+
+	// ---------------------------------------------------------------
+	// Cron Repair — metadata
+	// ---------------------------------------------------------------
+
+	/**
+	 * Test Cron Repair fixer metadata.
+	 */
+	public function test_cron_repair_metadata(): void {
+		$fixer = new Cron_Repair();
+
+		$this->assertSame( 'cron_repair', $fixer->get_id() );
+		$this->assertSame( 'Cron Repair', $fixer->get_label() );
+		$this->assertNotEmpty( $fixer->get_description() );
+		$this->assertSame( 'cron', $fixer->get_category() );
+		$this->assertSame( Risk_Level::Medium, $fixer->get_risk_level() );
+	}
+
+	/**
+	 * Test Cron Repair requires confirmation (medium risk).
+	 */
+	public function test_cron_repair_requires_confirmation(): void {
+		$fixer = new Cron_Repair();
+		$this->assertTrue( $fixer->get_risk_level()->requires_confirmation() );
+	}
+
+	// ---------------------------------------------------------------
+	// Cron Repair — stuck lock
+	// ---------------------------------------------------------------
+
+	/**
+	 * Test can_fix detects a stuck cron lock.
+	 */
+	public function test_cron_repair_detects_stuck_lock(): void {
+		// Simulate a stuck doing_cron transient (15 minutes old).
+		set_transient( 'doing_cron', time() - 900 );
+
+		$fixer = new Cron_Repair();
+		$this->assertTrue( $fixer->can_fix() );
+
+		delete_transient( 'doing_cron' );
+	}
+
+	/**
+	 * Test fix clears a stuck cron lock.
+	 */
+	public function test_cron_repair_clears_stuck_lock(): void {
+		set_transient( 'doing_cron', time() - 900 );
+
+		$fixer  = new Cron_Repair();
+		$result = $fixer->fix();
+
+		$this->assertTrue( $result->success );
+		$this->assertStringContainsString( 'cron lock', $result->message );
+		$this->assertFalse( get_transient( 'doing_cron' ) );
+	}
+
+	/**
+	 * Test a recent cron lock is not considered stuck.
+	 */
+	public function test_cron_repair_ignores_fresh_lock(): void {
+		// Lock set 30 seconds ago — not stuck.
+		set_transient( 'doing_cron', time() - 30 );
+
+		$fixer = new Cron_Repair();
+		// The lock alone should not trigger can_fix since it's fresh.
+		// Other issues may still trigger it, so we test the lock specifically
+		// by checking the state capture.
+		$result = $fixer->fix();
+
+		// The message should NOT mention clearing the cron lock.
+		$this->assertStringNotContainsString( 'cron lock', $result->message );
+
+		delete_transient( 'doing_cron' );
+	}
+
+	// ---------------------------------------------------------------
+	// Cron Repair — orphaned events
+	// ---------------------------------------------------------------
+
+	/**
+	 * Test can_fix detects orphaned cron events.
+	 */
+	public function test_cron_repair_detects_orphaned_events(): void {
+		// Schedule an event with a hook that has no registered callback.
+		wp_schedule_single_event( time() + 3600, 'sr_test_orphaned_hook_never_registered' );
+
+		$fixer = new Cron_Repair();
+		$this->assertTrue( $fixer->can_fix() );
+
+		// Cleanup.
+		wp_unschedule_event(
+			wp_next_scheduled( 'sr_test_orphaned_hook_never_registered' ),
+			'sr_test_orphaned_hook_never_registered'
+		);
+	}
+
+	/**
+	 * Test fix removes orphaned cron events.
+	 */
+	public function test_cron_repair_removes_orphaned_events(): void {
+		wp_schedule_single_event( time() + 3600, 'sr_test_orphan_alpha' );
+		wp_schedule_single_event( time() + 7200, 'sr_test_orphan_beta' );
+
+		$fixer  = new Cron_Repair();
+		$result = $fixer->fix();
+
+		$this->assertTrue( $result->success );
+		$this->assertStringContainsString( 'orphaned', $result->message );
+
+		// Events should be gone.
+		$this->assertFalse( wp_next_scheduled( 'sr_test_orphan_alpha' ) );
+		$this->assertFalse( wp_next_scheduled( 'sr_test_orphan_beta' ) );
+	}
+
+	/**
+	 * Test fix does not remove events that have callbacks.
+	 */
+	public function test_cron_repair_preserves_events_with_callbacks(): void {
+		$callback = function () {};
+		add_action( 'sr_test_with_callback', $callback );
+		wp_schedule_single_event( time() + 3600, 'sr_test_with_callback' );
+
+		$fixer  = new Cron_Repair();
+		$result = $fixer->fix();
+
+		// The event with a callback should still be scheduled.
+		$this->assertNotFalse( wp_next_scheduled( 'sr_test_with_callback' ) );
+
+		// Cleanup.
+		wp_unschedule_event(
+			wp_next_scheduled( 'sr_test_with_callback' ),
+			'sr_test_with_callback'
+		);
+		remove_action( 'sr_test_with_callback', $callback );
+	}
+
+	// ---------------------------------------------------------------
+	// Cron Repair — noop and snapshots
+	// ---------------------------------------------------------------
+
+	/**
+	 * Test fix returns success noop when everything is healthy.
+	 */
+	public function test_cron_repair_noop_when_healthy(): void {
+		// Ensure no stuck lock.
+		delete_transient( 'doing_cron' );
+
+		$fixer  = new Cron_Repair();
+		$result = $fixer->fix();
+
+		$this->assertTrue( $result->success );
+		// Should either say "healthy" or report actions taken for any detected issues.
+		$this->assertNotEmpty( $result->message );
+	}
+
+	/**
+	 * Test fix returns before/after snapshots.
+	 */
+	public function test_cron_repair_returns_snapshots(): void {
+		set_transient( 'doing_cron', time() - 900 );
+
+		$fixer  = new Cron_Repair();
+		$result = $fixer->fix();
+
+		$this->assertTrue( $result->success );
+		$this->assertArrayHasKey( 'has_stuck_lock', $result->before );
+		$this->assertTrue( $result->before['has_stuck_lock'] );
+		$this->assertArrayHasKey( 'has_stuck_lock', $result->after );
+		$this->assertFalse( $result->after['has_stuck_lock'] );
+	}
+
+	// ---------------------------------------------------------------
+	// Cron Repair — registration
+	// ---------------------------------------------------------------
+
+	/**
+	 * Test Cron Repair is registered in the Plugin's default fixers.
+	 */
+	public function test_cron_repair_registered_in_plugin(): void {
+		$plugin   = SystemReport\Plugin::get_instance();
+		$registry = $plugin->get_fixer_registry();
+		$fixer    = $registry->get( 'cron_repair' );
+
+		$this->assertNotNull( $fixer );
+		$this->assertInstanceOf( Cron_Repair::class, $fixer );
+	}
+
+	/**
+	 * Test Cron Repair appears under the 'cron' category.
+	 */
+	public function test_registry_cron_category(): void {
+		$by_category = $this->registry->get_by_category( 'cron' );
+		$ids         = array_map(
+			fn( $f ) => $f->get_id(),
+			$by_category
+		);
+
+		$this->assertContains( 'cron_repair', $ids );
+	}
+
+	/**
+	 * Test the core cron hooks filter works.
+	 */
+	public function test_cron_repair_core_hooks_filter(): void {
+		// Verify the filter exists and doesn't fatal.
+		$fixer = new Cron_Repair();
+		$this->assertNotNull( $fixer );
+
+		// The filter should be usable to protect additional hooks.
+		add_filter(
+			'wp_system_report_core_cron_hooks',
+			function ( $hooks ) {
+				$hooks[] = 'sr_test_custom_core_hook';
+				return $hooks;
+			}
+		);
+
+		// Schedule an orphaned event with the custom core hook.
+		wp_schedule_single_event( time() + 3600, 'sr_test_custom_core_hook' );
+
+		$result = $fixer->fix();
+
+		// The event should NOT be removed because it's protected by the filter.
+		$this->assertNotFalse( wp_next_scheduled( 'sr_test_custom_core_hook' ) );
+
+		// Cleanup.
+		wp_unschedule_event(
+			wp_next_scheduled( 'sr_test_custom_core_hook' ),
+			'sr_test_custom_core_hook'
+		);
 	}
 }
