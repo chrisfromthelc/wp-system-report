@@ -1107,13 +1107,12 @@ class FixersTest extends WP_UnitTestCase {
 	 * Test Cron Repair appears under the 'cron' category.
 	 */
 	public function test_registry_cron_category(): void {
-		$by_category = $this->registry->get_by_category( 'cron' );
-		$ids         = array_map(
-			fn( $f ) => $f->get_id(),
-			$by_category
-		);
+		$fixer = new Cron_Repair();
+		$this->registry->register( $fixer );
 
-		$this->assertContains( 'cron_repair', $ids );
+		$cron = $this->registry->get_by_category( 'cron' );
+		$this->assertCount( 1, $cron );
+		$this->assertSame( $fixer, $cron['cron_repair'] );
 	}
 
 	/**
