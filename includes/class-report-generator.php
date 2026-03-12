@@ -52,7 +52,7 @@ class Report_Generator {
 		uasort(
 			$collectors,
 			function ( Collector $a, Collector $b ): int {
-				return $a->get_priority() - $b->get_priority();
+				return $a->get_priority() <=> $b->get_priority();
 			}
 		);
 
