@@ -161,14 +161,30 @@ class ErrorLogControllerTest extends WP_UnitTestCase {
 	// ---------------------------------------------------------------
 
 	/**
-	 * Test status response structure.
+	 * Test status response has envelope structure.
+	 */
+	public function test_status_response_envelope(): void {
+		wp_set_current_user( $this->admin_id );
+
+		$request  = new WP_REST_Request( 'GET', '/wp-system-report/v1/error-log/status' );
+		$response = rest_get_server()->dispatch( $request );
+		$envelope = $response->get_data();
+
+		$this->assertArrayHasKey( 'status', $envelope );
+		$this->assertArrayHasKey( 'data', $envelope );
+		$this->assertArrayHasKey( 'meta', $envelope );
+		$this->assertSame( 'success', $envelope['status'] );
+	}
+
+	/**
+	 * Test status response data structure.
 	 */
 	public function test_status_response_structure(): void {
 		wp_set_current_user( $this->admin_id );
 
 		$request  = new WP_REST_Request( 'GET', '/wp-system-report/v1/error-log/status' );
 		$response = rest_get_server()->dispatch( $request );
-		$data     = $response->get_data();
+		$data     = $response->get_data()['data'];
 
 		$this->assertArrayHasKey( 'file', $data );
 		$this->assertArrayHasKey( 'constants', $data );
@@ -184,7 +200,7 @@ class ErrorLogControllerTest extends WP_UnitTestCase {
 
 		$request  = new WP_REST_Request( 'GET', '/wp-system-report/v1/error-log/status' );
 		$response = rest_get_server()->dispatch( $request );
-		$data     = $response->get_data();
+		$data     = $response->get_data()['data'];
 
 		$this->assertArrayHasKey( 'can_modify', $data['toggle'] );
 		$this->assertArrayHasKey( 'wp_debug', $data['toggle'] );
@@ -198,7 +214,7 @@ class ErrorLogControllerTest extends WP_UnitTestCase {
 
 		$request  = new WP_REST_Request( 'GET', '/wp-system-report/v1/error-log/status' );
 		$response = rest_get_server()->dispatch( $request );
-		$data     = $response->get_data();
+		$data     = $response->get_data()['data'];
 
 		$this->assertArrayHasKey( 'error_log_lines', $data['settings'] );
 	}
@@ -378,7 +394,8 @@ class ErrorLogControllerTest extends WP_UnitTestCase {
 
 		$request  = new WP_REST_Request( 'GET', '/wp-system-report/v1/error-log/status' );
 		$response = rest_get_server()->dispatch( $request );
-		$data     = $response->get_data();
+		$envelope = $response->get_data();
+		$data     = $envelope['data'];
 
 		$this->assertArrayHasKey( 'file', $data );
 		$file_path = $data['file']['path'];
@@ -492,7 +509,8 @@ class ErrorLogControllerTest extends WP_UnitTestCase {
 
 		$this->assertSame( 200, $response->get_status() );
 
-		$data = $response->get_data();
+		$envelope = $response->get_data();
+		$data     = $envelope['data'];
 		$this->assertTrue( $data['success'] );
 
 		// Cooldown transient should now be set.
@@ -561,7 +579,8 @@ class ErrorLogControllerTest extends WP_UnitTestCase {
 
 		$request  = new WP_REST_Request( 'GET', '/wp-system-report/v1/error-log/status' );
 		$response = rest_get_server()->dispatch( $request );
-		$data     = $response->get_data();
+		$envelope = $response->get_data();
+		$data     = $envelope['data'];
 
 		// Should return the cached data.
 		$this->assertSame( 'cached.log', $data['file']['path'] );
