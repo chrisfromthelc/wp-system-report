@@ -52,6 +52,7 @@ class CollectorsTest extends WP_UnitTestCase {
 			'wordpress_configuration',
 			'advanced_diagnostics',
 			'email_delivery',
+			'media_uploads',
 		);
 
 		foreach ( $expected_ids as $id ) {
@@ -339,5 +340,63 @@ class CollectorsTest extends WP_UnitTestCase {
 		$this->assertNotFalse( $cached );
 
 		delete_transient( 'sr_email_delivery' );
+	}
+
+	/**
+	 * Test that the Media & Uploads collector returns expected fields.
+	 */
+	public function test_media_uploads_has_expected_fields() {
+		$collector = $this->collectors['media_uploads'];
+		$fields    = $collector->collect();
+		$labels    = wp_list_pluck( $fields, 'label' );
+
+		$this->assertContains( 'Upload Directory', $labels );
+		$this->assertContains( 'Upload Dir Writable', $labels );
+		$this->assertContains( 'Upload Directory Size', $labels );
+		$this->assertContains( 'Total Attachments', $labels );
+		$this->assertContains( 'Media by Type', $labels );
+		$this->assertContains( 'Orphaned Attachments', $labels );
+		$this->assertContains( 'Upload / Post Max Alignment', $labels );
+		$this->assertContains( 'WP Max Upload Size', $labels );
+		$this->assertContains( 'Image Editor', $labels );
+		$this->assertContains( 'Registered Image Sizes', $labels );
+		$this->assertContains( 'Big Image Threshold', $labels );
+	}
+
+	/**
+	 * Test that the Media & Uploads collector reports correct upload directory.
+	 */
+	public function test_media_uploads_upload_directory_matches() {
+		$collector  = $this->collectors['media_uploads'];
+		$fields     = $collector->collect();
+		$upload_dir = wp_upload_dir();
+
+		$dir_field = null;
+		foreach ( $fields as $field ) {
+			if ( 'Upload Directory' === $field['label'] ) {
+				$dir_field = $field;
+				break;
+			}
+		}
+
+		$this->assertNotNull( $dir_field, 'Media & Uploads should include Upload Directory field.' );
+		$this->assertSame( $upload_dir['basedir'], $dir_field['value'] );
+	}
+
+	/**
+	 * Test that the Media & Uploads collector caching works.
+	 */
+	public function test_media_uploads_caching() {
+		$collector = $this->collectors['media_uploads'];
+
+		delete_transient( 'sr_media_uploads' );
+
+		$data1 = $collector->get_cached_data();
+		$this->assertIsArray( $data1 );
+
+		$cached = get_transient( 'sr_media_uploads' );
+		$this->assertNotFalse( $cached );
+
+		delete_transient( 'sr_media_uploads' );
 	}
 }
