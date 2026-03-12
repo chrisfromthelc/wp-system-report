@@ -349,10 +349,10 @@ class AI_Formatter implements Formatter {
 	/**
 	 * Format a field's status as a readable string.
 	 *
-	 * @param array $field Field data.
+	 * @param array|\ArrayAccess $field Field data.
 	 * @return string Status indicator.
 	 */
-	private function format_status( array $field ): string {
+	private function format_status( array|\ArrayAccess $field ): string {
 		$status = ! empty( $field['status'] ) ? $field['status'] : 'info';
 
 		return match ( $status ) {
@@ -467,10 +467,10 @@ class AI_Formatter implements Formatter {
 	/**
 	 * Build a descriptive issue message from a field.
 	 *
-	 * @param array $field Field data.
+	 * @param array|\ArrayAccess $field Field data.
 	 * @return string Issue description.
 	 */
-	private function build_issue_description( array $field ): string {
+	private function build_issue_description( array|\ArrayAccess $field ): string {
 		$desc = 'Current value: ' . $field['value'] . '.';
 
 		if ( ! empty( $field['recommended'] ) ) {
