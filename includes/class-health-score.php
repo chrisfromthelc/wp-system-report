@@ -104,6 +104,16 @@ class Health_Score {
 			$report = $this->report_generator->generate();
 		}
 
+		/**
+		 * Filter the category weights for health score calculation.
+		 *
+		 * Filtered once here so that the filter callback is not invoked on
+		 * every individual section lookup inside the loop.
+		 *
+		 * @param array<string, float> $weights Map of section ID to weight.
+		 */
+		$weights = (array) apply_filters( 'wp_system_report_health_score_weights', self::CATEGORY_WEIGHTS );
+
 		$breakdown    = array();
 		$total_weight = 0.0;
 		$weighted_sum = 0.0;
@@ -135,7 +145,7 @@ class Health_Score {
 
 			// Only include sections with scored (non-info) fields.
 			if ( $section_result['scored_count'] > 0 ) {
-				$weight        = $this->get_weight( $section_id );
+				$weight        = $this->get_weight( $section_id, $weights );
 				$total_weight += $weight;
 				$weighted_sum += $section_result['score'] * $weight;
 
@@ -154,7 +164,7 @@ class Health_Score {
 			? (int) round( $weighted_sum / $total_weight )
 			: 100;
 
-		// Clamp to 0-100.
+		// Clamp to 0-100 before passing to the filter.
 		$score = max( 0, min( 100, $score ) );
 
 		/**
@@ -165,6 +175,9 @@ class Health_Score {
 		 * @param array $report    The raw report data.
 		 */
 		$score = (int) apply_filters( 'wp_system_report_health_score', $score, $breakdown, $report );
+
+		// Clamp again after the filter to prevent out-of-range values from filter callbacks.
+		$score = max( 0, min( 100, $score ) );
 
 		return array(
 			'score'     => $score,
@@ -198,7 +211,15 @@ class Health_Score {
 				continue;
 			}
 
-			$points        = self::STATUS_POINTS[ $status ] ?? 100;
+			$points = self::STATUS_POINTS[ $status ] ?? null;
+
+			// Unknown statuses are treated as non-scoring (like 'info') to prevent
+			// typos or unrecognised status values from artificially inflating the score.
+			if ( null === $points ) {
+				++$info;
+				continue;
+			}
+
 			$total_points += $points;
 			++$scored_count;
 
@@ -259,19 +280,15 @@ class Health_Score {
 	/**
 	 * Get the weight for a collector section.
 	 *
-	 * @param string $section_id The collector ID.
+	 * Accepts the pre-filtered weights array so that the
+	 * 'wp_system_report_health_score_weights' filter is only applied once
+	 * per calculate() call rather than on every section lookup.
+	 *
+	 * @param string               $section_id The collector ID.
+	 * @param array<string, float> $weights    Pre-filtered map of section ID to weight.
 	 * @return float Weight multiplier.
 	 */
-	private function get_weight( string $section_id ): float {
-		$weights = self::CATEGORY_WEIGHTS;
-
-		/**
-		 * Filter the category weights for health score calculation.
-		 *
-		 * @param array<string, float> $weights Map of section ID to weight.
-		 */
-		$weights = apply_filters( 'wp_system_report_health_score_weights', $weights );
-
+	private function get_weight( string $section_id, array $weights ): float {
 		return $weights[ $section_id ] ?? self::DEFAULT_WEIGHT;
 	}
 

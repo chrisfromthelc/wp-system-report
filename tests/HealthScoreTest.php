@@ -255,6 +255,31 @@ class HealthScoreTest extends WP_UnitTestCase {
 	}
 
 	/**
+	 * Test that unknown status values are treated as non-scoring (like info).
+	 *
+	 * An unrecognised status should not inflate the score by defaulting to 100 pts.
+	 */
+	public function test_unknown_status_treated_as_non_scoring(): void {
+		$report = $this->build_report( array(
+			'security' => array(
+				$this->make_field( 'Good', 'OK', Status::Good ),
+				// Inject a raw-array field with an unrecognised status string.
+				array(
+					'label'  => 'Unknown',
+					'value'  => 'mystery',
+					'status' => 'future_status',
+				),
+			),
+		) );
+
+		$result = $this->health_score->calculate( $report );
+
+		// Only the Good field scores; unknown is treated as info.
+		$this->assertSame( 100, $result['score'] );
+		$this->assertSame( 1, $result['summary']['info'] );
+	}
+
+	/**
 	 * Test that sections with only info fields are excluded from breakdown.
 	 */
 	public function test_info_only_sections_excluded_from_breakdown(): void {

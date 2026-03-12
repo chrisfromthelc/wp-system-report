@@ -73,8 +73,10 @@ class Plugin {
 
 	/**
 	 * Health score controller instance.
+	 *
+	 * Null when the health score feature flag is disabled.
 	 */
-	private \SystemReport\Health_Score_Controller $health_score_controller;
+	private ?\SystemReport\Health_Score_Controller $health_score_controller = null;
 
 	/**
 	 * Notification manager instance.
@@ -130,16 +132,20 @@ class Plugin {
 	 * Constructor.
 	 */
 	private function __construct() {
-		$this->report_generator        = new Report_Generator();
-		$this->fixer_registry          = new Fixer_Registry();
-		$this->admin_page              = new Admin_Page( $this->report_generator );
-		$this->rest_controller         = new REST_Controller( $this->report_generator );
-		$this->error_log_reader        = new Error_Log_Reader();
-		$this->debug_toggle            = new Debug_Toggle();
-		$this->error_log_controller    = new Error_Log_Controller( $this->error_log_reader, $this->debug_toggle );
-		$this->fixer_controller        = new Fixer_Controller( $this->fixer_registry );
-		$this->health_score            = new Health_Score( $this->report_generator );
-		$this->health_score_controller = new Health_Score_Controller( $this->health_score );
+		$this->report_generator     = new Report_Generator();
+		$this->fixer_registry       = new Fixer_Registry();
+		$this->admin_page           = new Admin_Page( $this->report_generator );
+		$this->rest_controller      = new REST_Controller( $this->report_generator );
+		$this->error_log_reader     = new Error_Log_Reader();
+		$this->debug_toggle         = new Debug_Toggle();
+		$this->error_log_controller = new Error_Log_Controller( $this->error_log_reader, $this->debug_toggle );
+		$this->fixer_controller     = new Fixer_Controller( $this->fixer_registry );
+		$this->health_score         = new Health_Score( $this->report_generator );
+
+		if ( Features::has_health_score() ) {
+			$this->health_score_controller = new Health_Score_Controller( $this->health_score );
+		}
+
 		$this->ai_context_generator    = new AI_Context_Generator( $this->report_generator );
 		$webhook_dispatcher            = new Webhook_Dispatcher();
 		$this->notification_manager    = new Notification_Manager( $webhook_dispatcher );
@@ -215,7 +221,10 @@ class Plugin {
 		add_action( 'rest_api_init', array( $this->error_log_controller, 'register_routes' ) );
 		add_action( 'rest_api_init', array( $this->fixer_controller, 'register_routes' ) );
 		add_action( 'rest_api_init', array( $this->notification_controller, 'register_routes' ) );
-		add_action( 'rest_api_init', array( $this->health_score_controller, 'register_routes' ) );
+
+		if ( null !== $this->health_score_controller ) {
+			add_action( 'rest_api_init', array( $this->health_score_controller, 'register_routes' ) );
+		}
 		add_action( 'admin_enqueue_scripts', array( $this->admin_page, 'enqueue_assets' ) );
 
 		// Apply security hardening measures stored from previous fixer runs.
