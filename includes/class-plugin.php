@@ -126,6 +126,7 @@ class Plugin {
 			new Collectors\Media_Uploads(),
 			new Collectors\Performance(),
 			new Collectors\Update_Health(),
+			new Collectors\Block_Editor(),
 		);
 
 		foreach ( $collectors as $collector ) {
