@@ -7,6 +7,8 @@
 
 namespace SystemReport\Collectors;
 
+use SystemReport\Status;
+
 defined( 'ABSPATH' ) || exit;
 
 /**
@@ -58,7 +60,7 @@ class WordPress_Configuration extends Abstract_Collector {
 			__( 'Permalink Structure', 'wp-system-report' ),
 			! empty( $permalink_structure ) ? $permalink_structure : __( 'Plain (default)', 'wp-system-report' ),
 			array(
-				'status' => empty( $permalink_structure ) ? 'warning' : 'good',
+				'status' => empty( $permalink_structure ) ? Status::Warning : Status::Good,
 			)
 		);
 

@@ -7,6 +7,8 @@
 
 namespace SystemReport\Collectors;
 
+use SystemReport\Status;
+
 defined( 'ABSPATH' ) || exit;
 
 /**
@@ -73,14 +75,14 @@ class Theme_Info extends Abstract_Collector {
 			$theme->get( 'Name' ),
 			array(
 				'export_label' => 'Theme Name',
-				'status'       => 'info',
+				'status'       => Status::Info,
 			)
 		);
 
 		// Theme Version with update check.
 		$version        = $theme->get( 'Version' );
 		$version_value  = $version;
-		$version_status = 'info';
+		$version_status = Status::Info;
 
 		$theme_updates = get_theme_updates();
 		$stylesheet    = $theme->get_stylesheet();
@@ -94,7 +96,7 @@ class Theme_Info extends Abstract_Collector {
 					__( ' (update available: %s)', 'wp-system-report' ),
 					$new_version
 				);
-				$version_status = 'warning';
+				$version_status = Status::Warning;
 			}
 		}
 
@@ -114,7 +116,7 @@ class Theme_Info extends Abstract_Collector {
 			$author,
 			array(
 				'export_label' => 'Theme Author',
-				'status'       => 'info',
+				'status'       => Status::Info,
 			)
 		);
 
@@ -126,7 +128,7 @@ class Theme_Info extends Abstract_Collector {
 				$author_uri,
 				array(
 					'export_label' => 'Theme Author URL',
-					'status'       => 'info',
+					'status'       => Status::Info,
 				)
 			);
 		}
@@ -138,7 +140,7 @@ class Theme_Info extends Abstract_Collector {
 			$this->format_boolean( $is_child_theme ),
 			array(
 				'export_label' => 'Is Child Theme',
-				'status'       => 'info',
+				'status'       => Status::Info,
 			)
 		);
 
@@ -149,7 +151,7 @@ class Theme_Info extends Abstract_Collector {
 			$this->format_boolean( $is_block_theme ),
 			array(
 				'export_label' => 'Is Block Theme',
-				'status'       => 'info',
+				'status'       => Status::Info,
 			)
 		);
 
@@ -163,7 +165,7 @@ class Theme_Info extends Abstract_Collector {
 				$parent_theme->get( 'Name' ),
 				array(
 					'export_label' => 'Parent Theme Name',
-					'status'       => 'info',
+					'status'       => Status::Info,
 				)
 			);
 
@@ -173,7 +175,7 @@ class Theme_Info extends Abstract_Collector {
 				$parent_theme->get( 'Version' ),
 				array(
 					'export_label' => 'Parent Theme Version',
-					'status'       => 'info',
+					'status'       => Status::Info,
 				)
 			);
 
@@ -184,7 +186,7 @@ class Theme_Info extends Abstract_Collector {
 				$parent_author,
 				array(
 					'export_label' => 'Parent Theme Author',
-					'status'       => 'info',
+					'status'       => Status::Info,
 				)
 			);
 		}

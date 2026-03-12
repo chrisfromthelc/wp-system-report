@@ -49,17 +49,19 @@ interface Collector {
 	/**
 	 * Collect and return the data fields.
 	 *
-	 * Each field is an associative array with keys:
-	 * - 'label'        (string) Display label.
-	 * - 'value'        (string) Formatted display value.
-	 * - 'debug'        (mixed)  Raw value for machine-readable export.
-	 * - 'private'      (bool)   Whether to exclude from exports. Default false.
-	 * - 'status'       (string) One of: 'good', 'warning', 'critical', 'info'. Default 'info'.
-	 * - 'description'  (string) Contextual description for AI. Default ''.
-	 * - 'recommended'  (string) Recommended value/range for AI. Default ''.
-	 * - 'export_label' (string) Compact label for text export. Default same as 'label'.
+	 * Returns an array of Field value objects (or associative arrays for
+	 * backward compatibility). Each field contains:
+	 * - label        (string)      Display label.
+	 * - value        (string)      Formatted display value.
+	 * - debug        (mixed)       Raw value for machine-readable export.
+	 * - status       (Status)      Status enum: Good, Warning, Critical, Info.
+	 * - description  (string)      Contextual description for AI export.
+	 * - recommended  (string)      Recommended value/range for AI export.
+	 * - export_label (string)      Compact label for text export.
+	 * - private      (bool)        Whether to exclude from exports.
+	 * - fix_id       (string|null) Linked fixer identifier.
 	 *
-	 * @return array Array of field arrays.
+	 * @return \SystemReport\Field[] Array of Field objects.
 	 */
 	public function collect();
 }

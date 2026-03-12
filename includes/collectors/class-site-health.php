@@ -7,6 +7,8 @@
 
 namespace SystemReport\Collectors;
 
+use SystemReport\Status;
+
 defined( 'ABSPATH' ) || exit;
 
 /**
@@ -118,13 +120,12 @@ class Site_Health extends Abstract_Collector {
 
 						// Map Site Health status to our status.
 						$status_map = array(
-							'good'        => 'good',
-							'recommended' => 'warning',
-							'critical'    => 'critical',
+							'good'        => Status::Good,
+							'recommended' => Status::Warning,
+							'critical'    => Status::Critical,
 						);
 
-						$field_status = isset( $status_map[ $test_result['status'] ] ) ?
-							$status_map[ $test_result['status'] ] : 'info';
+						$field_status = $status_map[ $test_result['status'] ] ?? Status::Info;
 
 						// Add the test result as a field.
 						$fields[] = $this->make_field(
@@ -158,7 +159,7 @@ class Site_Health extends Abstract_Collector {
 						$critical_count
 					),
 					array(
-						'status' => $critical_count > 0 ? 'critical' : ( $recommended_count > 0 ? 'warning' : 'good' ),
+						'status' => $critical_count > 0 ? Status::Critical : ( $recommended_count > 0 ? Status::Warning : Status::Good ),
 						'debug'  => array(
 							'good'        => $good_count,
 							'recommended' => $recommended_count,
@@ -174,7 +175,7 @@ class Site_Health extends Abstract_Collector {
 				__( 'Site Health Status', 'wp-system-report' ),
 				__( 'Unable to retrieve Site Health data', 'wp-system-report' ),
 				array(
-					'status'      => 'warning',
+					'status'      => Status::Warning,
 					'description' => $e->getMessage(),
 				)
 			);

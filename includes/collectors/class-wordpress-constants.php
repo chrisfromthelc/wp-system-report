@@ -7,6 +7,8 @@
 
 namespace SystemReport\Collectors;
 
+use SystemReport\Status;
+
 defined( 'ABSPATH' ) || exit;
 
 /**
@@ -162,36 +164,36 @@ class WordPress_Constants extends Abstract_Collector {
 			}
 
 			// Determine field status based on constant value and environment.
-			$status = 'info';
+			$status = Status::Info;
 
 			// WP_DEBUG checks.
 			if ( 'WP_DEBUG' === $constant && $value && $is_production ) {
-				$status = 'warning';
+				$status = Status::Warning;
 			}
 
 			// WP_DEBUG_DISPLAY is critical if enabled on production.
 			if ( 'WP_DEBUG_DISPLAY' === $constant && $value && $is_production ) {
-				$status = 'critical';
+				$status = Status::Critical;
 			}
 
 			// WP_CACHE is good when enabled.
 			if ( 'WP_CACHE' === $constant && $value ) {
-				$status = 'good';
+				$status = Status::Good;
 			}
 
 			// DISALLOW_FILE_EDIT is good when enabled.
 			if ( 'DISALLOW_FILE_EDIT' === $constant && $value ) {
-				$status = 'good';
+				$status = Status::Good;
 			}
 
 			// DISABLE_WP_CRON is warning when enabled.
 			if ( 'DISABLE_WP_CRON' === $constant && $value ) {
-				$status = 'warning';
+				$status = Status::Warning;
 			}
 
 			// FORCE_SSL_ADMIN is good when enabled.
 			if ( 'FORCE_SSL_ADMIN' === $constant && $value ) {
-				$status = 'good';
+				$status = Status::Good;
 			}
 
 			$field_options = array(

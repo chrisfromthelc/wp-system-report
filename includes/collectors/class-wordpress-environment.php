@@ -7,6 +7,8 @@
 
 namespace SystemReport\Collectors;
 
+use SystemReport\Status;
+
 defined( 'ABSPATH' ) || exit;
 
 /**
@@ -68,12 +70,12 @@ class WordPress_Environment extends Abstract_Collector {
 
 		// WordPress Version.
 		$wp_version        = get_bloginfo( 'version' );
-		$wp_version_status = 'info';
+		$wp_version_status = Status::Info;
 		$latest_version    = $this->get_latest_wordpress_version();
 		if ( $latest_version && version_compare( $wp_version, $latest_version, '<' ) ) {
-			$wp_version_status = 'warning';
+			$wp_version_status = Status::Warning;
 		} elseif ( $latest_version && version_compare( $wp_version, $latest_version, '>=' ) ) {
-			$wp_version_status = 'good';
+			$wp_version_status = Status::Good;
 		}
 
 		$data[] = $this->make_field(
@@ -98,9 +100,9 @@ class WordPress_Environment extends Abstract_Collector {
 
 		// WordPress Debug Mode.
 		$debug_mode        = $this->get_constant_value( 'WP_DEBUG', false );
-		$debug_mode_status = 'info';
+		$debug_mode_status = Status::Info;
 		if ( $debug_mode && wp_get_environment_type() === 'production' ) {
-			$debug_mode_status = 'warning';
+			$debug_mode_status = Status::Warning;
 		}
 
 		$data[] = $this->make_field(
@@ -112,7 +114,7 @@ class WordPress_Environment extends Abstract_Collector {
 		// WordPress Cron.
 		$cron_disabled = $this->get_constant_value( 'DISABLE_WP_CRON', false );
 		$cron_enabled  = ! $cron_disabled;
-		$cron_status   = $cron_disabled ? 'warning' : 'good';
+		$cron_status   = $cron_disabled ? Status::Warning : Status::Good;
 
 		$data[] = $this->make_field(
 			__( 'WordPress Cron', 'wp-system-report' ),
@@ -140,7 +142,7 @@ class WordPress_Environment extends Abstract_Collector {
 
 		// Search Engine Visibility.
 		$blog_public       = get_option( 'blog_public' );
-		$visibility_status = ( '0' === $blog_public ) ? 'warning' : 'good';
+		$visibility_status = ( '0' === $blog_public ) ? Status::Warning : Status::Good;
 
 		$data[] = $this->make_field(
 			__( 'Search Engine Visibility', 'wp-system-report' ),

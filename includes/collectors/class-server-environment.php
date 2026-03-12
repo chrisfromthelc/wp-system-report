@@ -7,6 +7,8 @@
 
 namespace SystemReport\Collectors;
 
+use SystemReport\Status;
+
 defined( 'ABSPATH' ) || exit;
 
 /**
@@ -63,13 +65,13 @@ class Server_Environment extends Abstract_Collector {
 
 		// PHP Version.
 		$php_version        = phpversion();
-		$php_version_status = 'info';
+		$php_version_status = Status::Info;
 		if ( version_compare( $php_version, '8.0', '<' ) ) {
-			$php_version_status = 'critical';
+			$php_version_status = Status::Critical;
 		} elseif ( version_compare( $php_version, '8.1', '<' ) ) {
-			$php_version_status = 'warning';
+			$php_version_status = Status::Warning;
 		} else {
-			$php_version_status = 'good';
+			$php_version_status = Status::Good;
 		}
 
 		$data[] = $this->make_field(
@@ -124,7 +126,7 @@ class Server_Environment extends Abstract_Collector {
 		// cURL Version.
 		$curl_available = function_exists( 'curl_version' );
 		$curl_version   = $curl_available ? curl_version()['version'] : __( 'Not available', 'wp-system-report' );
-		$curl_status    = $curl_available ? 'good' : 'warning';
+		$curl_status    = $curl_available ? Status::Good : Status::Warning;
 
 		$data[] = $this->make_field(
 			__( 'cURL Version', 'wp-system-report' ),
@@ -137,7 +139,7 @@ class Server_Environment extends Abstract_Collector {
 		$data[]        = $this->make_field(
 			__( 'DOMDocument', 'wp-system-report' ),
 			$this->format_boolean( $dom_available ),
-			array( 'status' => $dom_available ? 'good' : 'warning' )
+			array( 'status' => $dom_available ? Status::Good : Status::Warning )
 		);
 
 		// GZip.
@@ -145,7 +147,7 @@ class Server_Environment extends Abstract_Collector {
 		$data[]         = $this->make_field(
 			__( 'GZip', 'wp-system-report' ),
 			$this->format_boolean( $gzip_available ),
-			array( 'status' => $gzip_available ? 'good' : 'warning' )
+			array( 'status' => $gzip_available ? Status::Good : Status::Warning )
 		);
 
 		// Multibyte String.
@@ -153,7 +155,7 @@ class Server_Environment extends Abstract_Collector {
 		$data[]             = $this->make_field(
 			__( 'Multibyte String', 'wp-system-report' ),
 			$this->format_boolean( $mbstring_available ),
-			array( 'status' => $mbstring_available ? 'good' : 'warning' )
+			array( 'status' => $mbstring_available ? Status::Good : Status::Warning )
 		);
 
 		// OpenSSL.
@@ -161,7 +163,7 @@ class Server_Environment extends Abstract_Collector {
 		$data[]            = $this->make_field(
 			__( 'OpenSSL', 'wp-system-report' ),
 			$this->format_boolean( $openssl_available ),
-			array( 'status' => $openssl_available ? 'good' : 'warning' )
+			array( 'status' => $openssl_available ? Status::Good : Status::Warning )
 		);
 
 		// Imagick.

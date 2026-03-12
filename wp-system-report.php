@@ -58,12 +58,15 @@ function wp_system_report_autoloader( $class_name ): void {
 	// Determine file prefix based on type.
 	$reflection_name = strtolower( str_replace( '_', '-', $class_file ) );
 
-	// Check for interface first, then class.
+	// Check for interface first, then enum, then class.
 	$interface_file = $path . 'interface-' . $reflection_name . '.php';
+	$enum_file      = $path . 'enum-' . $reflection_name . '.php';
 	$class_file     = $path . 'class-' . $reflection_name . '.php';
 
 	if ( file_exists( $interface_file ) ) {
 		require_once $interface_file;
+	} elseif ( file_exists( $enum_file ) ) {
+		require_once $enum_file;
 	} elseif ( file_exists( $class_file ) ) {
 		require_once $class_file;
 	}

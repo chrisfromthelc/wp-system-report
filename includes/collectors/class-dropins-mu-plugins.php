@@ -7,6 +7,8 @@
 
 namespace SystemReport\Collectors;
 
+use SystemReport\Status;
+
 defined( 'ABSPATH' ) || exit;
 
 /**
@@ -84,7 +86,7 @@ class Dropins_MU_Plugins extends Abstract_Collector {
 					array(
 						'export_label' => $dropin_file,
 						'description'  => $description,
-						'status'       => 'info',
+						'status'       => Status::Info,
 					)
 				);
 			}
@@ -126,7 +128,7 @@ class Dropins_MU_Plugins extends Abstract_Collector {
 					array(
 						'export_label' => $plugin_name,
 						'description'  => $description,
-						'status'       => 'info',
+						'status'       => Status::Info,
 					)
 				);
 			}
@@ -137,7 +139,7 @@ class Dropins_MU_Plugins extends Abstract_Collector {
 			$fields[] = $this->make_field(
 				__( 'No Drop-ins or MU Plugins', 'wp-system-report' ),
 				__( 'No drop-ins or must-use plugins installed.', 'wp-system-report' ),
-				array( 'status' => 'info' )
+				array( 'status' => Status::Info )
 			);
 		}
 
