@@ -25,7 +25,17 @@ class Settings {
  * Default settings values.
  */
 	private static array $defaults = array(
-		'error_log_lines' => 100,
+		'error_log_lines'           => 100,
+		'notifications_enabled'     => false,
+		'notify_email_enabled'      => false,
+		'notify_email_recipients'   => '',
+		'notify_slack_enabled'      => false,
+		'slack_webhook_url'         => '',
+		'webhook_urls'              => '',
+		'webhook_secret'            => '',
+		'notify_critical_threshold' => 1,
+		'notify_warning_threshold'  => 5,
+		'notification_cooldown'     => 3600,
 	);
 
 	/**
@@ -112,6 +122,30 @@ class Settings {
 			case 'error_log_lines':
 				$value = absint( $value );
 				return max( 1, min( 10000, $value ) );
+
+			case 'notifications_enabled':
+			case 'notify_email_enabled':
+			case 'notify_slack_enabled':
+				return (bool) $value;
+
+			case 'notify_email_recipients':
+			case 'webhook_urls':
+				return sanitize_textarea_field( (string) $value );
+
+			case 'slack_webhook_url':
+				return esc_url_raw( (string) $value );
+
+			case 'webhook_secret':
+				return sanitize_text_field( (string) $value );
+
+			case 'notify_critical_threshold':
+			case 'notify_warning_threshold':
+				$value = absint( $value );
+				return max( 1, min( 100, $value ) );
+
+			case 'notification_cooldown':
+				$value = absint( $value );
+				return max( 60, min( 86400, $value ) );
 
 			default:
 				return $value;

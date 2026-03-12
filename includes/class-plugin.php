@@ -67,6 +67,16 @@ class Plugin {
 	private \SystemReport\AI_Context_Generator $ai_context_generator;
 
 	/**
+	 * Notification manager instance.
+	 */
+	private \SystemReport\Notification_Manager $notification_manager;
+
+	/**
+	 * Notification controller instance.
+	 */
+	private \SystemReport\Notification_Controller $notification_controller;
+
+	/**
 	 * GitHub updater instance.
 	 *
 	 * Stored to prevent garbage collection; hooks are registered in the constructor.
@@ -103,21 +113,25 @@ class Plugin {
 	 * Constructor.
 	 */
 	private function __construct() {
-		$this->report_generator     = new Report_Generator();
-		$this->fixer_registry       = new Fixer_Registry();
-		$this->admin_page           = new Admin_Page( $this->report_generator );
-		$this->rest_controller      = new REST_Controller( $this->report_generator );
-		$this->error_log_reader     = new Error_Log_Reader();
-		$this->debug_toggle         = new Debug_Toggle();
-		$this->error_log_controller = new Error_Log_Controller( $this->error_log_reader, $this->debug_toggle );
-		$this->fixer_controller     = new Fixer_Controller( $this->fixer_registry );
-		$this->ai_context_generator = new AI_Context_Generator( $this->report_generator );
-		$this->github_updater       = new GitHub_Updater( WP_SYSTEM_REPORT_FILE );
+		$this->report_generator        = new Report_Generator();
+		$this->fixer_registry          = new Fixer_Registry();
+		$this->admin_page              = new Admin_Page( $this->report_generator );
+		$this->rest_controller         = new REST_Controller( $this->report_generator );
+		$this->error_log_reader        = new Error_Log_Reader();
+		$this->debug_toggle            = new Debug_Toggle();
+		$this->error_log_controller    = new Error_Log_Controller( $this->error_log_reader, $this->debug_toggle );
+		$this->fixer_controller        = new Fixer_Controller( $this->fixer_registry );
+		$this->ai_context_generator    = new AI_Context_Generator( $this->report_generator );
+		$webhook_dispatcher            = new Webhook_Dispatcher();
+		$this->notification_manager    = new Notification_Manager( $webhook_dispatcher );
+		$this->notification_controller = new Notification_Controller( $webhook_dispatcher );
+		$this->github_updater          = new GitHub_Updater( WP_SYSTEM_REPORT_FILE );
 
 		$this->register_default_collectors();
 		$this->register_default_fixers();
 		$this->register_hooks();
 		$this->ai_context_generator->register_hooks();
+		$this->notification_manager->register_hooks();
 	}
 
 	/**
@@ -180,6 +194,7 @@ class Plugin {
 		add_action( 'rest_api_init', array( $this->rest_controller, 'register_routes' ) );
 		add_action( 'rest_api_init', array( $this->error_log_controller, 'register_routes' ) );
 		add_action( 'rest_api_init', array( $this->fixer_controller, 'register_routes' ) );
+		add_action( 'rest_api_init', array( $this->notification_controller, 'register_routes' ) );
 		add_action( 'admin_enqueue_scripts', array( $this->admin_page, 'enqueue_assets' ) );
 
 		// Apply security hardening measures stored from previous fixer runs.
