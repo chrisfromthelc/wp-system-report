@@ -44,7 +44,7 @@ class Fixer_Registry {
 	 * @return Fixer|null The fixer instance, or null if not found.
 	 */
 	public function get( string $id ): ?Fixer {
-		return $this->fixers[ $id ] ?? null;
+		return $this->get_all()[ $id ] ?? null;
 	}
 
 	/**
@@ -86,6 +86,6 @@ class Fixer_Registry {
 	 * @return bool True if a fixer with that ID exists.
 	 */
 	public function has( string $id ): bool {
-		return isset( $this->fixers[ $id ] );
+		return isset( $this->get_all()[ $id ] );
 	}
 }

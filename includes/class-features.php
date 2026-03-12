@@ -27,7 +27,7 @@ class Features {
 	 * Always returns true in the current release. When the Pro split
 	 * is introduced, this will perform a license key check.
 	 *
-	 * Filterable via 'system_report_is_pro' to allow automated testing
+	 * Filterable via 'wp_system_report_is_pro' to allow automated testing
 	 * and third-party integrations to control feature availability.
 	 *
 	 * @return bool True when Pro features are available.

@@ -51,7 +51,7 @@ interface Fixer {
 	 * Used by the UI to determine whether a confirmation prompt is
 	 * required before executing the fix.
 	 *
-	 * @return RiskLevel Risk level enum case.
+	 * @return Risk_Level Risk level enum case.
 	 */
 	public function get_risk_level();
 

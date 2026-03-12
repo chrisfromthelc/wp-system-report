@@ -16,7 +16,7 @@ defined( 'ABSPATH' ) || exit;
  * the UI can prompt for appropriate user confirmation before
  * executing destructive or irreversible changes.
  */
-enum RiskLevel: string {
+enum Risk_Level: string {
 
 	/**
 	 * Safe, easily reversible operation.
