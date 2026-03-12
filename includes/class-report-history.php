@@ -30,7 +30,7 @@ class Report_History {
 	 *
 	 * @var string
 	 */
-	const SCHEMA_VERSION = '1.0.2';
+	const SCHEMA_VERSION = '1.0.3';
 
 	/**
 	 * Option key for tracking installed schema version.
@@ -83,9 +83,11 @@ class Report_History {
 	 * Uses dbDelta() for safe schema creation and upgrades.
 	 * Should be called on plugin activation.
 	 *
-	 * Note: dbDelta() does not support non-literal defaults such as
-	 * CURRENT_TIMESTAMP (see WordPress Trac #28591). The created_at
-	 * timestamp is set explicitly in save_snapshot() instead.
+	 * Note: The created_at column intentionally omits a DEFAULT clause.
+	 * MySQL 8+ strict mode rejects DEFAULT '0000-00-00 00:00:00' via
+	 * NO_ZERO_DATE, and dbDelta() does not support DEFAULT CURRENT_TIMESTAMP
+	 * (WordPress Trac #28591). The timestamp is set explicitly in
+	 * save_snapshot() instead.
 	 */
 	public static function create_table(): void {
 		global $wpdb;
@@ -101,7 +103,7 @@ class Report_History {
 			summary_warning smallint(5) unsigned NOT NULL DEFAULT 0,
 			summary_critical smallint(5) unsigned NOT NULL DEFAULT 0,
 			report_data longblob NOT NULL,
-			created_at datetime NOT NULL DEFAULT '0000-00-00 00:00:00',
+			created_at datetime NOT NULL,
 			PRIMARY KEY  (id),
 			KEY idx_created_at (created_at),
 			KEY idx_score (score)

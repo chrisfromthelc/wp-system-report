@@ -47,7 +47,14 @@ class ReportHistoryTest extends WP_UnitTestCase {
 		$this->health_score = new Health_Score( $this->generator );
 		$this->history      = new Report_History( $this->generator, $this->health_score );
 
-		// Create table for tests.
+		// Remove the Plugin singleton's hook to prevent it from saving
+		// extra snapshots (consuming auto-increment IDs) when other
+		// tests trigger report generation.
+		remove_all_actions( 'wp_system_report_generated' );
+
+		// Drop and recreate the table so the auto-increment counter
+		// resets to 1 for each test, ensuring predictable IDs.
+		Report_History::drop_table();
 		Report_History::create_table();
 	}
 
