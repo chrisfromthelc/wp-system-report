@@ -148,6 +148,7 @@ class Plugin {
 	private function register_default_fixers(): void {
 		$fixers = array(
 			new Fixers\Autoload_Optimizer(),
+			new Fixers\Database_Optimizer(),
 		);
 
 		foreach ( $fixers as $fixer ) {
