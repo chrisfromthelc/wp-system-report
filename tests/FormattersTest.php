@@ -416,4 +416,216 @@ class FormattersTest extends WP_UnitTestCase {
 			$this->assertStringContainsString( 'No issues detected', $output );
 		}
 	}
+
+	/**
+	 * Test AI format includes executive summary.
+	 */
+	public function test_ai_format_includes_executive_summary() {
+		$formatter = new AI_Formatter();
+		$output    = $formatter->format( $this->sample_report );
+
+		$this->assertStringContainsString( '## Executive Summary', $output );
+		$this->assertStringContainsString( 'Health Score:', $output );
+	}
+
+	/**
+	 * Test AI executive summary health score reflects issues.
+	 */
+	public function test_ai_executive_summary_health_score() {
+		// Report with 1 critical issue = 10 points deducted, score = 90.
+		$report = array(
+			'section' => array(
+				'id'          => 'section',
+				'label'       => 'Section',
+				'description' => '',
+				'fields'      => array(
+					array(
+						'label'   => 'HTTPS',
+						'value'   => 'No',
+						'debug'   => false,
+						'private' => false,
+						'status'  => 'critical',
+					),
+				),
+			),
+		);
+
+		$formatter = new AI_Formatter();
+		$output    = $formatter->format( $report );
+
+		$this->assertStringContainsString( 'Health Score: 90/100', $output );
+	}
+
+	/**
+	 * Test AI format perfect health score for clean report.
+	 */
+	public function test_ai_perfect_health_score() {
+		$clean_report = array(
+			'clean' => array(
+				'id'          => 'clean',
+				'label'       => 'Clean',
+				'description' => '',
+				'fields'      => array(
+					array(
+						'label'   => 'Status',
+						'value'   => 'OK',
+						'debug'   => 'ok',
+						'private' => false,
+						'status'  => 'good',
+					),
+				),
+			),
+		);
+
+		$formatter = new AI_Formatter();
+		$output    = $formatter->format( $clean_report );
+
+		if ( version_compare( phpversion(), '8.1', '>=' ) ) {
+			$this->assertStringContainsString( 'Health Score: 100/100', $output );
+			$this->assertStringContainsString( 'Excellent', $output );
+		}
+	}
+
+	/**
+	 * Test AI format includes severity scores in issues.
+	 */
+	public function test_ai_format_includes_severity_scores() {
+		$formatter = new AI_Formatter();
+		$output    = $formatter->format( $this->sample_report );
+
+		// The HTTPS critical issue should have severity: 10.
+		$this->assertStringContainsString( '(severity: 10)', $output );
+	}
+
+	/**
+	 * Test AI format categorizes issues.
+	 */
+	public function test_ai_format_categorizes_issues() {
+		$formatter = new AI_Formatter();
+		$output    = $formatter->format( $this->sample_report );
+
+		// HTTPS is categorized under Security.
+		$this->assertStringContainsString( '### Security', $output );
+	}
+
+	/**
+	 * Test AI format includes top priorities.
+	 */
+	public function test_ai_format_includes_top_priorities() {
+		$formatter = new AI_Formatter();
+		$output    = $formatter->format( $this->sample_report );
+
+		$this->assertStringContainsString( 'Top Priorities:', $output );
+	}
+
+	/**
+	 * Test AI format shows fix_id when present.
+	 */
+	public function test_ai_format_shows_fix_id() {
+		$report = array(
+			'section' => array(
+				'id'          => 'section',
+				'label'       => 'Section',
+				'description' => '',
+				'fields'      => array(
+					array(
+						'label'   => 'File Editor',
+						'value'   => 'Enabled',
+						'debug'   => true,
+						'private' => false,
+						'status'  => 'warning',
+						'fix_id'  => 'disable_file_editor',
+					),
+				),
+			),
+		);
+
+		$formatter = new AI_Formatter();
+		$output    = $formatter->format( $report );
+
+		$this->assertStringContainsString( '[fix: disable_file_editor]', $output );
+	}
+
+	/**
+	 * Test AI executive summary filter.
+	 */
+	public function test_ai_executive_summary_filter() {
+		add_filter(
+			'wp_system_report_ai_executive_summary',
+			function ( $output ) {
+				return $output . "Custom summary note.\n";
+			}
+		);
+
+		$formatter = new AI_Formatter();
+		$output    = $formatter->format( $this->sample_report );
+
+		$this->assertStringContainsString( 'Custom summary note.', $output );
+	}
+
+	/**
+	 * Test AI format includes issue counts in executive summary.
+	 */
+	public function test_ai_executive_summary_issue_counts() {
+		$formatter = new AI_Formatter();
+		$output    = $formatter->format( $this->sample_report );
+
+		// Should report 1 critical issue (HTTPS).
+		$this->assertStringContainsString( '1 critical issue(s)', $output );
+	}
+
+	/**
+	 * Test AI format email heuristic detects PHP mail.
+	 */
+	public function test_ai_email_heuristic_detects_php_mail() {
+		$report = array(
+			'email_delivery' => array(
+				'id'          => 'email_delivery',
+				'label'       => 'Email Delivery',
+				'description' => '',
+				'fields'      => array(
+					array(
+						'label'   => 'Mail Transport',
+						'value'   => 'PHP mail()',
+						'debug'   => 'php_mail',
+						'private' => false,
+						'status'  => 'good',
+					),
+				),
+			),
+		);
+
+		$formatter = new AI_Formatter();
+		$output    = $formatter->format( $report );
+
+		$this->assertStringContainsString( 'default PHP mail()', $output );
+		$this->assertStringContainsString( 'SMTP plugin', $output );
+	}
+
+	/**
+	 * Test AI format block editor heuristic detects excessive blocks.
+	 */
+	public function test_ai_editor_bloat_heuristic() {
+		$report = array(
+			'block_editor' => array(
+				'id'          => 'block_editor',
+				'label'       => 'Block Editor',
+				'description' => '',
+				'fields'      => array(
+					array(
+						'label'   => 'Registered Block Types',
+						'value'   => '550',
+						'debug'   => 550,
+						'private' => false,
+						'status'  => 'good',
+					),
+				),
+			),
+		);
+
+		$formatter = new AI_Formatter();
+		$output    = $formatter->format( $report );
+
+		$this->assertStringContainsString( '550 block types registered', $output );
+	}
 }

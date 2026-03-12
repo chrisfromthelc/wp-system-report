@@ -12,11 +12,63 @@ defined( 'ABSPATH' ) || exit;
 /**
  * Formats the report as structured markdown optimized for AI analysis.
  *
- * Produces a detailed report with contextual descriptions, status indicators,
- * recommended values, and a proactive issues summary. Designed for consumption
- * by AI agents like Claude, ChatGPT, or similar LLMs.
+ * Produces a detailed report with an executive summary, severity-scored issues,
+ * contextual descriptions, status indicators, recommended values, and a
+ * prioritized issues list. Designed for consumption by AI agents like Claude,
+ * ChatGPT, or similar LLMs.
  */
 class AI_Formatter implements Formatter {
+
+	/**
+	 * Severity score for critical issues.
+	 *
+	 * @var int
+	 */
+	private const SEVERITY_CRITICAL = 10;
+
+	/**
+	 * Severity score for warning issues.
+	 *
+	 * @var int
+	 */
+	private const SEVERITY_WARNING = 5;
+
+	/**
+	 * Issue category mappings.
+	 *
+	 * Maps field labels/keywords to categories for grouping in the issues summary.
+	 *
+	 * @var array<string, string>
+	 */
+	private const CATEGORY_KEYWORDS = array(
+		'security'      => 'Security',
+		'ssl'           => 'Security',
+		'https'         => 'Security',
+		'permission'    => 'Security',
+		'debug'         => 'Security',
+		'file editor'   => 'Security',
+		'xml-rpc'       => 'Security',
+		'performance'   => 'Performance',
+		'cache'         => 'Performance',
+		'autoload'      => 'Performance',
+		'memory'        => 'Performance',
+		'object cache'  => 'Performance',
+		'innodb'        => 'Performance',
+		'block types'   => 'Performance',
+		'dynamic block' => 'Performance',
+		'update'        => 'Updates',
+		'version'       => 'Updates',
+		'php'           => 'Configuration',
+		'mysql'         => 'Configuration',
+		'email'         => 'Email',
+		'smtp'          => 'Email',
+		'upload'        => 'Media',
+		'media'         => 'Media',
+		'cron'          => 'Cron & Scheduling',
+		'loopback'      => 'Connectivity',
+		'connectivity'  => 'Connectivity',
+		'rest api'      => 'REST API',
+	);
 
 	/**
 	 * Format the report data as AI-optimized markdown.
@@ -25,22 +77,33 @@ class AI_Formatter implements Formatter {
 	 * @return string Formatted markdown report.
 	 */
 	public function format( array $report_data ): string {
+		$issues = $this->detect_issues( $report_data );
+
+		/**
+		 * Filter the detected issues for the AI report.
+		 *
+		 * @param array $issues      Array of issue arrays with 'severity', 'title', 'description', 'score', 'category' keys.
+		 * @param array $report_data The full report data.
+		 */
+		$issues = apply_filters( 'wp_system_report_ai_issues', $issues, $report_data );
+
 		$output  = $this->build_header();
-		$output .= $this->build_issues_summary( $report_data );
+		$output .= $this->build_executive_summary( $report_data, $issues );
+		$output .= $this->build_issues_summary( $issues );
 
 		return $output . $this->build_sections( $report_data );
 	}
 
 	/**
- * Get the content type.
- */
+	 * Get the content type.
+	 */
 	public function get_content_type(): string {
 		return 'text/markdown; charset=utf-8';
 	}
 
 	/**
- * Get the file extension.
- */
+	 * Get the file extension.
+	 */
 	public function get_file_extension(): string {
 		return 'md';
 	}
@@ -50,7 +113,7 @@ class AI_Formatter implements Formatter {
 	 *
 	 * @return string Header markdown.
 	 */
-	private function build_header() {
+	private function build_header(): string {
 		$site_url = get_option( 'home' );
 		$host     = wp_parse_url( $site_url, PHP_URL_HOST );
 		$wp_ver   = get_bloginfo( 'version' );
@@ -62,66 +125,159 @@ class AI_Formatter implements Formatter {
 		 *
 		 * @param string $header The markdown header string.
 		 */
-		$header = apply_filters(
+		return apply_filters(
 			'wp_system_report_ai_header',
 			"# WP System Report for {$host}\n"
 			. "Generated: {$now} | WP {$wp_ver} | PHP {$php_ver}\n"
 			. 'Report Version: ' . WP_SYSTEM_REPORT_VERSION . "\n\n"
 			. "---\n\n"
 		);
+	}
 
-		return $header;
+	/**
+	 * Build the executive summary for non-technical stakeholders.
+	 *
+	 * Provides a high-level overview of site health with a numerical score,
+	 * issue counts by severity, and the top three priorities.
+	 *
+	 * @param array $report_data Full report data.
+	 * @param array $issues      Detected issues.
+	 * @return string Executive summary markdown.
+	 */
+	private function build_executive_summary( array $report_data, array $issues ): string {
+		$critical_count = 0;
+		$warning_count  = 0;
+		$total_score    = 0;
+
+		foreach ( $issues as $issue ) {
+			if ( 'critical' === $issue['severity'] ) {
+				++$critical_count;
+				$total_score += $issue['score'] ?? self::SEVERITY_CRITICAL;
+			} elseif ( 'warning' === $issue['severity'] ) {
+				++$warning_count;
+				$total_score += $issue['score'] ?? self::SEVERITY_WARNING;
+			}
+		}
+
+		// Compute health score: start at 100, deduct for issues, floor at 0.
+		$health_score = max( 0, 100 - $total_score );
+
+		// Determine health rating label.
+		if ( $health_score >= 90 ) {
+			$rating = __( 'Excellent', 'wp-system-report' );
+		} elseif ( $health_score >= 70 ) {
+			$rating = __( 'Good', 'wp-system-report' );
+		} elseif ( $health_score >= 50 ) {
+			$rating = __( 'Fair', 'wp-system-report' );
+		} else {
+			$rating = __( 'Needs Attention', 'wp-system-report' );
+		}
+
+		// Count total sections and fields for context.
+		$section_count = 0;
+		$field_count   = 0;
+		foreach ( $report_data as $section ) {
+			if ( ! empty( $section['fields'] ) ) {
+				++$section_count;
+				$field_count += count( $section['fields'] );
+			}
+		}
+
+		$output  = "## Executive Summary\n\n";
+		$output .= "**Health Score: {$health_score}/100 ({$rating})**\n\n";
+
+		$output .= sprintf(
+			/* translators: 1: number of critical issues, 2: number of warning issues, 3: number of sections, 4: number of fields */
+			__( 'Found %1$d critical issue(s) and %2$d warning(s) across %3$d diagnostic sections (%4$d checks).', 'wp-system-report' ),
+			$critical_count,
+			$warning_count,
+			$section_count,
+			$field_count
+		) . "\n\n";
+
+		// Top priorities (up to 3).
+		if ( ! empty( $issues ) ) {
+			$sorted = $issues;
+			usort(
+				$sorted,
+				function ( array $a, array $b ): int {
+					return ( $b['score'] ?? 0 ) <=> ( $a['score'] ?? 0 );
+				}
+			);
+
+			$output .= "**Top Priorities:**\n";
+			$top     = array_slice( $sorted, 0, 3 );
+			$i       = 1;
+			foreach ( $top as $issue ) {
+				$icon    = 'critical' === $issue['severity'] ? '🔴' : '🟡';
+				$output .= "{$i}. {$icon} {$issue['title']}\n";
+				++$i;
+			}
+			$output .= "\n";
+		}
+
+		/**
+		 * Filter the executive summary section.
+		 *
+		 * @param string $output      The executive summary markdown.
+		 * @param int    $health_score Computed health score (0-100).
+		 * @param array  $issues       All detected issues.
+		 * @param array  $report_data  Full report data.
+		 */
+		$output = apply_filters( 'wp_system_report_ai_executive_summary', $output, $health_score, $issues, $report_data );
+
+		return $output . "---\n\n";
 	}
 
 	/**
 	 * Build the issues summary section.
 	 *
-	 * Scans all report data for warnings and critical issues, producing
-	 * a prioritized list at the top of the report.
+	 * Produces a severity-scored, categorized, prioritized list of all
+	 * detected issues at the top of the report.
 	 *
-	 * @param array $report_data Full report data.
+	 * @param array $issues Detected issues.
 	 * @return string Issues summary markdown.
 	 */
-	private function build_issues_summary( array $report_data ): string {
-		$issues = $this->detect_issues( $report_data );
-
-		/**
-		 * Filter the detected issues for the AI report.
-		 *
-		 * @param array $issues      Array of issue arrays with 'severity', 'title', 'description' keys.
-		 * @param array $report_data The full report data.
-		 */
-		$issues = apply_filters( 'wp_system_report_ai_issues', $issues, $report_data );
-
+	private function build_issues_summary( array $issues ): string {
 		if ( empty( $issues ) ) {
 			return "## Potential Issues Detected\n\nNo issues detected. The site appears to be well-configured.\n\n---\n\n";
 		}
 
 		$output = "## Potential Issues Detected\n\n";
 
-		// Sort by severity: critical first, then warning.
+		// Sort by score descending (highest priority first).
 		usort(
 			$issues,
 			function ( array $a, array $b ): int {
-				$order   = array(
-					'critical' => 0,
-					'warning'  => 1,
-					'info'     => 2,
-				);
-				$a_order = isset( $order[ $a['severity'] ] ) ? $order[ $a['severity'] ] : 2;
-				$b_order = isset( $order[ $b['severity'] ] ) ? $order[ $b['severity'] ] : 2;
-				return $a_order - $b_order;
+				return ( $b['score'] ?? 0 ) <=> ( $a['score'] ?? 0 );
 			}
 		);
 
-		$i = 1;
+		// Group by category.
+		$categorized = array();
 		foreach ( $issues as $issue ) {
-			$icon    = 'critical' === $issue['severity'] ? '🔴' : '🟡';
-			$output .= "{$i}. {$icon} **{$issue['title']}** - {$issue['description']}\n";
-			++$i;
+			$category                   = $issue['category'] ?? __( 'General', 'wp-system-report' );
+			$categorized[ $category ][] = $issue;
 		}
 
-		return $output . "\n---\n\n";
+		// Output categorized issues.
+		foreach ( $categorized as $category => $cat_issues ) {
+			$output .= "### {$category}\n\n";
+			foreach ( $cat_issues as $issue ) {
+				$icon    = 'critical' === $issue['severity'] ? '🔴' : '🟡';
+				$score   = $issue['score'] ?? 0;
+				$output .= "- {$icon} **{$issue['title']}** (severity: {$score}) — {$issue['description']}";
+
+				if ( ! empty( $issue['fix_id'] ) ) {
+					$output .= " `[fix: {$issue['fix_id']}]`";
+				}
+
+				$output .= "\n";
+			}
+			$output .= "\n";
+		}
+
+		return $output . "---\n\n";
 	}
 
 	/**
@@ -196,19 +352,15 @@ class AI_Formatter implements Formatter {
 	 * @param array $field Field data.
 	 * @return string Status indicator.
 	 */
-	private function format_status( $field ): string {
+	private function format_status( array $field ): string {
 		$status = ! empty( $field['status'] ) ? $field['status'] : 'info';
 
-		switch ( $status ) {
-			case 'good':
-				return 'OK';
-			case 'warning':
-				return 'WARNING';
-			case 'critical':
-				return 'CRITICAL';
-			default:
-				return '-';
-		}
+		return match ( $status ) {
+			'good'     => 'OK',
+			'warning'  => 'WARNING',
+			'critical' => 'CRITICAL',
+			default    => '-',
+		};
 	}
 
 	/**
@@ -221,18 +373,17 @@ class AI_Formatter implements Formatter {
 		// Replace pipe characters which break table formatting.
 		$text = str_replace( '|', '\\|', $text );
 		// Replace newlines with spaces for table cells.
-		$text = str_replace( array( "\r\n", "\r", "\n" ), ' ', $text );
-		return $text;
+		return str_replace( array( "\r\n", "\r", "\n" ), ' ', $text );
 	}
 
 	/**
 	 * Detect issues from the report data.
 	 *
-	 * Scans all fields for warnings and critical statuses, and runs
-	 * additional heuristic checks for common problems.
+	 * Scans all fields for warnings and critical statuses, assigns severity
+	 * scores and categories, and runs additional heuristic checks.
 	 *
 	 * @param array $report_data Full report data.
-	 * @return array Array of issue arrays with 'severity', 'title', 'description' keys.
+	 * @return array Array of issue arrays with 'severity', 'title', 'description', 'score', 'category', and optional 'fix_id' keys.
 	 */
 	private function detect_issues( array $report_data ): array {
 		$issues = array();
@@ -257,18 +408,60 @@ class AI_Formatter implements Formatter {
 					continue;
 				}
 
-				$issues[] = array(
-					'severity'    => $field['status'],
+				$severity = $field['status'];
+				$score    = 'critical' === $severity ? self::SEVERITY_CRITICAL : self::SEVERITY_WARNING;
+
+				$issue = array(
+					'severity'    => $severity,
 					'title'       => $field['label'],
 					'description' => $this->build_issue_description( $field ),
+					'score'       => $score,
+					'category'    => $this->categorize_issue( $field['label'], $section['id'] ?? '' ),
 				);
+
+				if ( ! empty( $field['fix_id'] ) ) {
+					$issue['fix_id'] = $field['fix_id'];
+				}
+
+				$issues[] = $issue;
 			}
 		}
 
 		// Run additional heuristic checks.
-		$issues = array_merge( $issues, $this->run_heuristic_checks( $report_data ) );
+		return array_merge( $issues, $this->run_heuristic_checks( $report_data ) );
+	}
 
-		return $issues;
+	/**
+	 * Categorize an issue based on its label and section.
+	 *
+	 * @param string $label      Field label.
+	 * @param string $section_id Section ID.
+	 * @return string Issue category.
+	 */
+	private function categorize_issue( string $label, string $section_id ): string {
+		$lower_label = strtolower( $label );
+
+		foreach ( self::CATEGORY_KEYWORDS as $keyword => $category ) {
+			if ( str_contains( $lower_label, $keyword ) ) {
+				return $category;
+			}
+		}
+
+		// Fall back to section-based categorization.
+		$section_map = array(
+			'security'             => 'Security',
+			'performance'          => 'Performance',
+			'database'             => 'Database',
+			'update_health'        => 'Updates',
+			'email_delivery'       => 'Email',
+			'media_uploads'        => 'Media',
+			'cron_health'          => 'Cron & Scheduling',
+			'network_connectivity' => 'Connectivity',
+			'block_editor'         => 'Block Editor',
+			'rest_api_info'        => 'REST API',
+		);
+
+		return $section_map[ $section_id ] ?? __( 'General', 'wp-system-report' );
 	}
 
 	/**
@@ -277,7 +470,7 @@ class AI_Formatter implements Formatter {
 	 * @param array $field Field data.
 	 * @return string Issue description.
 	 */
-	private function build_issue_description( $field ): string {
+	private function build_issue_description( array $field ): string {
 		$desc = 'Current value: ' . $field['value'] . '.';
 
 		if ( ! empty( $field['recommended'] ) ) {
@@ -294,51 +487,125 @@ class AI_Formatter implements Formatter {
 	/**
 	 * Run additional heuristic checks beyond field-level statuses.
 	 *
+	 * Includes checks for PHP EOL, object cache usage, non-InnoDB tables,
+	 * and cross-section diagnostics from newer collectors.
+	 *
 	 * @param array $report_data Full report data.
 	 * @return array Additional issues found.
 	 */
 	private function run_heuristic_checks( array $report_data ): array {
 		$issues = array();
 
-		// Check PHP version EOL.
+		$issues = array_merge( $issues, $this->check_php_eol() );
+		$issues = array_merge( $issues, $this->check_object_cache() );
+		$issues = array_merge( $issues, $this->check_non_innodb_tables( $report_data ) );
+		$issues = array_merge( $issues, $this->check_email_configuration( $report_data ) );
+		$issues = array_merge( $issues, $this->check_update_posture( $report_data ) );
+		return array_merge( $issues, $this->check_editor_bloat( $report_data ) );
+	}
+
+	/**
+	 * Check for end-of-life PHP version.
+	 *
+	 * @return array Issues found.
+	 */
+	private function check_php_eol(): array {
 		$php_version = phpversion();
 		if ( version_compare( $php_version, '8.1', '<' ) ) {
-			$issues[] = array(
-				'severity'    => 'critical',
-				'title'       => 'PHP version ' . $php_version . ' is end-of-life',
-				'description' => 'This PHP version no longer receives security updates. Upgrade to PHP 8.1 or newer.',
+			return array(
+				array(
+					'severity'    => 'critical',
+					'title'       => 'PHP version ' . $php_version . ' is end-of-life',
+					'description' => 'This PHP version no longer receives security updates. Upgrade to PHP 8.1 or newer.',
+					'score'       => self::SEVERITY_CRITICAL,
+					'category'    => 'Configuration',
+				),
 			);
 		}
+		return array();
+	}
 
-		// Check if object cache is in use when many plugins are active.
-		if ( ! wp_using_ext_object_cache() ) {
-			$active_plugins = get_option( 'active_plugins', array() );
-			if ( count( $active_plugins ) > 15 ) {
-				$issues[] = array(
+	/**
+	 * Check for missing object cache with many active plugins.
+	 *
+	 * @return array Issues found.
+	 */
+	private function check_object_cache(): array {
+		if ( wp_using_ext_object_cache() ) {
+			return array();
+		}
+
+		$active_plugins = get_option( 'active_plugins', array() );
+		if ( count( $active_plugins ) > 15 ) {
+			return array(
+				array(
 					'severity'    => 'warning',
 					'title'       => 'No external object cache with ' . count( $active_plugins ) . ' active plugins',
 					'description' => 'Sites with many active plugins benefit significantly from an object cache (Redis, Memcached).',
-				);
+					'score'       => self::SEVERITY_WARNING,
+					'category'    => 'Performance',
+				),
+			);
+		}
+		return array();
+	}
+
+	/**
+	 * Check for non-InnoDB database tables.
+	 *
+	 * @param array $report_data Full report data.
+	 * @return array Issues found.
+	 */
+	private function check_non_innodb_tables( array $report_data ): array {
+		$database_section = $report_data['database'] ?? null;
+		if ( ! $database_section ) {
+			return array();
+		}
+
+		$non_innodb_count = 0;
+		foreach ( $database_section['fields'] as $field ) {
+			if ( str_contains( $field['value'], 'Engine:' ) && ! str_contains( $field['value'], 'InnoDB' ) ) {
+				++$non_innodb_count;
 			}
 		}
 
-		// Autoloaded options size is already reported by the collector with field-level
-		// status. The detect_issues() method captures it automatically — no duplicate needed.
-
-		// Check for non-InnoDB tables from existing report data (Database section).
-		$database_section = $this->find_section_by_id( $report_data, 'database' );
-		if ( $database_section ) {
-			$non_innodb_count = 0;
-			foreach ( $database_section['fields'] as $field ) {
-				if ( false !== strpos( $field['value'], 'Engine:' ) && false === strpos( $field['value'], 'InnoDB' ) ) {
-					++$non_innodb_count;
-				}
-			}
-			if ( $non_innodb_count > 0 ) {
-				$issues[] = array(
+		if ( $non_innodb_count > 0 ) {
+			return array(
+				array(
 					'severity'    => 'warning',
 					'title'       => $non_innodb_count . ' database table(s) not using InnoDB engine',
 					'description' => 'InnoDB is the recommended storage engine for WordPress. Non-InnoDB tables may have performance or reliability issues.',
+					'score'       => self::SEVERITY_WARNING,
+					'category'    => 'Database',
+				),
+			);
+		}
+		return array();
+	}
+
+	/**
+	 * Check email delivery configuration from the Email Delivery collector.
+	 *
+	 * @param array $report_data Full report data.
+	 * @return array Issues found.
+	 */
+	private function check_email_configuration( array $report_data ): array {
+		$section = $report_data['email_delivery'] ?? null;
+		if ( ! $section ) {
+			return array();
+		}
+
+		$issues = array();
+
+		foreach ( $section['fields'] as $field ) {
+			// Detect default PHP mailer without SMTP plugin.
+			if ( 'Mail Transport' === $field['label'] && str_contains( strtolower( $field['value'] ), 'php mail' ) ) {
+				$issues[] = array(
+					'severity'    => 'warning',
+					'title'       => 'Email using default PHP mail()',
+					'description' => 'Default PHP mail() is unreliable. Consider using an SMTP plugin (WP Mail SMTP, FluentSMTP) for better deliverability.',
+					'score'       => self::SEVERITY_WARNING,
+					'category'    => 'Email',
 				);
 			}
 		}
@@ -347,13 +614,68 @@ class AI_Formatter implements Formatter {
 	}
 
 	/**
-	 * Find a section by ID.
+	 * Check update posture from the Update Health collector.
 	 *
-	 * @param array  $report_data Full report data.
-	 * @param string $section_id  Section ID to find.
-	 * @return array|null Section data or null.
+	 * @param array $report_data Full report data.
+	 * @return array Issues found.
 	 */
-	private function find_section_by_id( array $report_data, string $section_id ) {
-		return $report_data[ $section_id ] ?? null;
+	private function check_update_posture( array $report_data ): array {
+		$section = $report_data['update_health'] ?? null;
+		if ( ! $section ) {
+			return array();
+		}
+
+		$issues = array();
+
+		foreach ( $section['fields'] as $field ) {
+			// Flag sites with many pending plugin updates.
+			if ( 'Plugin Updates Available' === $field['label'] ) {
+				$count = (int) $field['debug'];
+				if ( $count >= 5 ) {
+					$issues[] = array(
+						'severity'    => 'warning',
+						'title'       => $count . ' plugin updates pending',
+						'description' => 'Multiple pending updates increase security risk. Review and apply updates regularly.',
+						'score'       => self::SEVERITY_WARNING,
+						'category'    => 'Updates',
+					);
+				}
+			}
+		}
+
+		return $issues;
+	}
+
+	/**
+	 * Check for editor bloat from the Block Editor collector.
+	 *
+	 * @param array $report_data Full report data.
+	 * @return array Issues found.
+	 */
+	private function check_editor_bloat( array $report_data ): array {
+		$section = $report_data['block_editor'] ?? null;
+		if ( ! $section ) {
+			return array();
+		}
+
+		$issues = array();
+
+		foreach ( $section['fields'] as $field ) {
+			// Flag excessive block registrations.
+			if ( 'Registered Block Types' === $field['label'] ) {
+				$count = (int) str_replace( ',', '', $field['debug'] );
+				if ( $count > 500 ) {
+					$issues[] = array(
+						'severity'    => 'warning',
+						'title'       => $count . ' block types registered',
+						'description' => 'An excessive number of registered block types can degrade editor performance. Review installed block plugins.',
+						'score'       => self::SEVERITY_WARNING,
+						'category'    => 'Performance',
+					);
+				}
+			}
+		}
+
+		return $issues;
 	}
 }
