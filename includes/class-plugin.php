@@ -149,6 +149,7 @@ class Plugin {
 		$fixers = array(
 			new Fixers\Autoload_Optimizer(),
 			new Fixers\Database_Optimizer(),
+			new Fixers\Security_Hardener(),
 		);
 
 		foreach ( $fixers as $fixer ) {
@@ -165,6 +166,9 @@ class Plugin {
 		add_action( 'rest_api_init', array( $this->rest_controller, 'register_routes' ) );
 		add_action( 'rest_api_init', array( $this->error_log_controller, 'register_routes' ) );
 		add_action( 'admin_enqueue_scripts', array( $this->admin_page, 'enqueue_assets' ) );
+
+		// Apply security hardening measures stored from previous fixer runs.
+		Fixers\Security_Hardener::apply_runtime_hardening();
 
 		// Cache invalidation hooks.
 		add_action( 'switch_theme', array( $this, 'clear_theme_cache' ) );
