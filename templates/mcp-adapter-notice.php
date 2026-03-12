@@ -14,7 +14,7 @@ defined( 'ABSPATH' ) || exit;
 // phpcs:disable WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedVariableFound
 $sr_dismiss_url = wp_nonce_url(
 	add_query_arg( 'sr_dismiss_mcp_notice', '1' ),
-	-1
+	'sr_dismiss_mcp_notice'
 );
 ?>
 <div class="notice notice-info is-dismissible sr-mcp-notice">
