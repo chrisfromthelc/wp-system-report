@@ -54,6 +54,7 @@ class CollectorsTest extends WP_UnitTestCase {
 			'email_delivery',
 			'media_uploads',
 			'performance',
+			'update_health',
 		);
 
 		foreach ( $expected_ids as $id ) {
@@ -455,5 +456,42 @@ class CollectorsTest extends WP_UnitTestCase {
 		$this->assertNotFalse( $cached );
 
 		delete_transient( 'sr_performance' );
+	}
+
+	/**
+	 * Test that the Update Health collector returns expected fields.
+	 */
+	public function test_update_health_has_expected_fields() {
+		$collector = $this->collectors['update_health'];
+		$fields    = $collector->collect();
+		$labels    = wp_list_pluck( $fields, 'label' );
+
+		$this->assertContains( 'Core Update Status', $labels );
+		$this->assertContains( 'Core Update Channel', $labels );
+		$this->assertContains( 'Core Auto-Updates', $labels );
+		$this->assertContains( 'Plugin Updates Available', $labels );
+		$this->assertContains( 'Plugin Auto-Updates', $labels );
+		$this->assertContains( 'Theme Updates Available', $labels );
+		$this->assertContains( 'Theme Auto-Updates', $labels );
+		$this->assertContains( 'Last Update Check', $labels );
+		$this->assertContains( 'Failed Updates', $labels );
+		$this->assertContains( 'Translation Updates', $labels );
+	}
+
+	/**
+	 * Test that the Update Health collector caching works.
+	 */
+	public function test_update_health_caching() {
+		$collector = $this->collectors['update_health'];
+
+		delete_transient( 'sr_update_health' );
+
+		$data1 = $collector->get_cached_data();
+		$this->assertIsArray( $data1 );
+
+		$cached = get_transient( 'sr_update_health' );
+		$this->assertNotFalse( $cached );
+
+		delete_transient( 'sr_update_health' );
 	}
 }

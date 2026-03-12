@@ -125,6 +125,7 @@ class Plugin {
 			new Collectors\Email_Delivery(),
 			new Collectors\Media_Uploads(),
 			new Collectors\Performance(),
+			new Collectors\Update_Health(),
 		);
 
 		foreach ( $collectors as $collector ) {
