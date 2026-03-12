@@ -25,6 +25,12 @@ defined( 'ABSPATH' ) || exit;
 			class="nav-tab <?php echo 'error-log' === $sr_current_tab ? 'nav-tab-active' : ''; ?>">
 			<?php esc_html_e( 'Error Log', 'wp-system-report' ); ?>
 		</a>
+		<?php if ( \SystemReport\Features::has_fixers() ) : ?>
+			<a href="<?php echo esc_url( admin_url( 'tools.php?page=wp-system-report&tab=fixes' ) ); ?>"
+				class="nav-tab <?php echo 'fixes' === $sr_current_tab ? 'nav-tab-active' : ''; ?>">
+				<?php esc_html_e( 'Fixes', 'wp-system-report' ); ?>
+			</a>
+		<?php endif; ?>
 	</nav>
 
 	<?php if ( 'report' === $sr_current_tab ) : ?>
@@ -119,9 +125,13 @@ defined( 'ABSPATH' ) || exit;
 			</table>
 		<?php endforeach; ?>
 
-	<?php else : ?>
+	<?php elseif ( 'error-log' === $sr_current_tab ) : ?>
 
 		<?php include WP_SYSTEM_REPORT_DIR . 'templates/error-log-tab.php'; ?>
+
+	<?php elseif ( 'fixes' === $sr_current_tab ) : ?>
+
+		<?php include WP_SYSTEM_REPORT_DIR . 'templates/fixes-tab.php'; ?>
 
 	<?php endif; ?>
 </div>

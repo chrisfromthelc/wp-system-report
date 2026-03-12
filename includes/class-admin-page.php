@@ -22,6 +22,13 @@ class Admin_Page {
 	const MENU_SLUG = 'wp-system-report';
 
 	/**
+	 * Valid tab identifiers.
+	 *
+	 * @var array<int, string>
+	 */
+	private const VALID_TABS = array( 'report', 'error-log', 'fixes' );
+
+	/**
 	 * Report generator instance.
 	 */
 	private \SystemReport\Report_Generator $report_generator;
@@ -95,6 +102,48 @@ class Admin_Page {
 			);
 		}
 
+		if ( 'fixes' === $current_tab && Features::has_fixers() ) {
+			wp_enqueue_script(
+				'wp-system-report-fixes',
+				WP_SYSTEM_REPORT_URL . 'assets/js/wp-system-report-fixes.js',
+				array(),
+				WP_SYSTEM_REPORT_VERSION,
+				true
+			);
+
+			wp_localize_script(
+				'wp-system-report-fixes',
+				'systemReportFixes',
+				array(
+					'fixesUrl'  => rest_url( 'wp-system-report/v1/fixes' ),
+					'restNonce' => wp_create_nonce( 'wp_rest' ),
+					'i18n'      => array(
+						'loading'        => __( 'Loading...', 'wp-system-report' ),
+						'loadFailed'     => __( 'Failed to load fixers.', 'wp-system-report' ),
+						'running'        => __( 'Running...', 'wp-system-report' ),
+						'runFix'         => __( 'Run Fix', 'wp-system-report' ),
+						'confirmTitle'   => __( 'Confirm Fix', 'wp-system-report' ),
+						'confirmMessage' => __( 'This operation may modify your site. Are you sure you want to proceed?', 'wp-system-report' ),
+						'confirmRun'     => __( 'Yes, run fix', 'wp-system-report' ),
+						'cancel'         => __( 'Cancel', 'wp-system-report' ),
+						'success'        => __( 'Success', 'wp-system-report' ),
+						'failed'         => __( 'Failed', 'wp-system-report' ),
+						'nothingToFix'   => __( 'No issues detected', 'wp-system-report' ),
+						'executeFailed'  => __( 'Failed to execute fix.', 'wp-system-report' ),
+						'noFixesFound'   => __( 'No fixers are available.', 'wp-system-report' ),
+						'riskLow'        => __( 'Low Risk', 'wp-system-report' ),
+						'riskMedium'     => __( 'Medium Risk', 'wp-system-report' ),
+						'riskHigh'       => __( 'High Risk', 'wp-system-report' ),
+						'issuesDetected' => __( 'Issues detected', 'wp-system-report' ),
+						'noIssues'       => __( 'All clear', 'wp-system-report' ),
+						'before'         => __( 'Before', 'wp-system-report' ),
+						'after'          => __( 'After', 'wp-system-report' ),
+						'resultDetails'  => __( 'Result Details', 'wp-system-report' ),
+					),
+				)
+			);
+		}
+
 		if ( 'error-log' === $current_tab ) {
 			wp_enqueue_script(
 				'wp-system-report-error-log',
@@ -153,13 +202,18 @@ class Admin_Page {
 	/**
 	 * Get the current active tab.
 	 *
-	 * @return string Tab identifier: 'report' or 'error-log'.
+	 * @return string Tab identifier: 'report', 'error-log', or 'fixes'.
 	 */
 	private function get_current_tab(): string {
 		// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Tab navigation, no state change.
 		$tab = isset( $_GET['tab'] ) ? sanitize_key( $_GET['tab'] ) : 'report';
 
-		if ( ! in_array( $tab, array( 'report', 'error-log' ), true ) ) {
+		if ( ! in_array( $tab, self::VALID_TABS, true ) ) {
+			return 'report';
+		}
+
+		// The fixes tab requires the feature gate.
+		if ( 'fixes' === $tab && ! Features::has_fixers() ) {
 			return 'report';
 		}
 

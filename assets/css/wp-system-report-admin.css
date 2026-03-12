@@ -408,3 +408,261 @@
 		word-break: break-all;
 	}
 }
+
+/* ============================================
+ * Fixes Tab
+ * ============================================ */
+
+/* Wrap */
+.sr-fixes-wrap {
+	max-width: 1200px;
+}
+
+/* Loading / empty / error states */
+.sr-fixes-wrap .sr-loading {
+	margin-top: 20px;
+}
+
+.sr-fixes-empty {
+	margin-top: 20px;
+	padding: 30px;
+	text-align: center;
+	background: #f6f7f7;
+	border: 1px solid #dcdcde;
+	border-radius: 3px;
+	color: #8c8f94;
+}
+
+.sr-fixes-empty p {
+	margin: 0;
+}
+
+/* Category sections */
+.sr-fixes-category {
+	margin-bottom: 24px;
+}
+
+.sr-fixes-category-heading {
+	margin: 20px 0 8px;
+	font-size: 14px;
+	font-weight: 600;
+	color: #1d2327;
+}
+
+/* Fixer cards */
+.sr-fixer-card {
+	max-width: none;
+	padding: 16px 24px 20px;
+	margin-bottom: 12px;
+}
+
+.sr-fixer-card-header {
+	display: flex;
+	align-items: center;
+	gap: 10px;
+	flex-wrap: wrap;
+}
+
+.sr-fixer-card-title {
+	margin: 0;
+	font-size: 14px;
+	font-weight: 600;
+	color: #1d2327;
+}
+
+.sr-fixer-card-description {
+	margin: 6px 0 12px;
+	font-size: 13px;
+	color: #50575e;
+	line-height: 1.5;
+}
+
+/* Card actions row */
+.sr-fixer-card-actions {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: 12px;
+	flex-wrap: wrap;
+}
+
+/* Risk badges */
+.sr-risk-badge {
+	font-size: 11px;
+	padding: 1px 8px;
+}
+
+.sr-risk-low {
+	background: #edfaef;
+	color: #00a32a;
+	border: 1px solid #00a32a;
+}
+
+.sr-risk-medium {
+	background: #fcf9e8;
+	color: #996800;
+	border: 1px solid #dba617;
+}
+
+.sr-risk-high {
+	background: #fcf0f1;
+	color: #d63638;
+	border: 1px solid #d63638;
+}
+
+/* Fixer status indicator */
+.sr-fixer-status {
+	display: flex;
+	align-items: center;
+	gap: 4px;
+	font-size: 13px;
+}
+
+.sr-fixer-status .dashicons {
+	font-size: 18px;
+	width: 18px;
+	height: 18px;
+}
+
+.sr-fixer-status-warning {
+	color: #dba617;
+}
+
+.sr-fixer-status-good {
+	color: #00a32a;
+}
+
+/* Result area */
+.sr-fixer-result {
+	margin-top: 12px;
+	padding-top: 12px;
+	border-top: 1px solid #f0f0f1;
+}
+
+.sr-result-notice {
+	margin: 0 0 8px;
+}
+
+/* Result details (collapsible) */
+.sr-result-details {
+	margin-top: 8px;
+}
+
+.sr-result-details summary {
+	cursor: pointer;
+	font-size: 12px;
+	font-weight: 500;
+	color: #50575e;
+	padding: 4px 0;
+}
+
+.sr-result-details-content {
+	padding: 8px 0;
+}
+
+.sr-result-snapshot {
+	margin-bottom: 8px;
+}
+
+.sr-result-snapshot strong {
+	display: block;
+	margin-bottom: 4px;
+	font-size: 12px;
+	color: #50575e;
+}
+
+.sr-result-snapshot pre {
+	background: #2c3338;
+	color: #f0f0f1;
+	padding: 10px 14px;
+	border-radius: 4px;
+	font-family: monospace;
+	font-size: 11px;
+	line-height: 1.5;
+	overflow-x: auto;
+	max-height: 300px;
+	overflow-y: auto;
+	white-space: pre;
+	margin: 0;
+}
+
+/* Confirmation modal */
+.sr-confirm-modal {
+	display: none;
+	position: fixed;
+	top: 0;
+	left: 0;
+	right: 0;
+	bottom: 0;
+	z-index: 100050;
+}
+
+.sr-confirm-modal-backdrop {
+	position: absolute;
+	top: 0;
+	left: 0;
+	right: 0;
+	bottom: 0;
+	background: rgba(0, 0, 0, 0.7);
+}
+
+.sr-confirm-modal-content {
+	position: absolute;
+	top: 50%;
+	left: 50%;
+	transform: translate(-50%, -50%);
+	background: #fff;
+	border-radius: 4px;
+	padding: 24px 32px;
+	max-width: 500px;
+	width: 90%;
+	box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+}
+
+.sr-confirm-modal-content h3 {
+	margin: 0 0 12px;
+	font-size: 16px;
+	font-weight: 600;
+	color: #1d2327;
+}
+
+.sr-confirm-modal-content p {
+	font-size: 13px;
+	color: #50575e;
+	line-height: 1.5;
+}
+
+.sr-confirm-modal-actions {
+	display: flex;
+	justify-content: flex-end;
+	gap: 8px;
+	margin-top: 20px;
+}
+
+/* Fixes responsive */
+@media screen and (max-width: 782px) {
+	.sr-fixer-card {
+		padding: 12px 16px 16px;
+	}
+
+	.sr-fixer-card-actions {
+		flex-direction: column;
+		align-items: stretch;
+	}
+
+	.sr-fixer-card-actions button {
+		width: 100%;
+	}
+
+	.sr-confirm-modal-content {
+		padding: 20px 24px;
+	}
+
+	.sr-confirm-modal-actions {
+		flex-direction: column;
+	}
+
+	.sr-confirm-modal-actions button {
+		width: 100%;
+	}
+}
