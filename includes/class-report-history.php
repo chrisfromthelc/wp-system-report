@@ -80,14 +80,12 @@ class Report_History {
 	/**
 	 * Create or update the custom database table.
 	 *
-	 * Uses dbDelta() for safe schema creation and upgrades.
-	 * Should be called on plugin activation.
+	 * Uses direct SQL for initial creation (dbDelta is unreliable with
+	 * longblob columns and datetime defaults) and dbDelta() only for
+	 * schema upgrades on an existing table.
 	 *
-	 * Note: The created_at column intentionally omits a DEFAULT clause.
-	 * MySQL 8+ strict mode rejects DEFAULT '0000-00-00 00:00:00' via
-	 * NO_ZERO_DATE, and dbDelta() does not support DEFAULT CURRENT_TIMESTAMP
-	 * (WordPress Trac #28591). The timestamp is set explicitly in
-	 * save_snapshot() instead.
+	 * Should be called on plugin activation and checked via
+	 * needs_schema_update() on admin_init.
 	 */
 	public static function create_table(): void {
 		global $wpdb;
@@ -95,22 +93,52 @@ class Report_History {
 		$table_name      = self::get_table_name();
 		$charset_collate = $wpdb->get_charset_collate();
 
-		$sql = "CREATE TABLE {$table_name} (
-			id bigint(20) unsigned NOT NULL AUTO_INCREMENT,
-			score smallint(3) unsigned NOT NULL DEFAULT 0,
-			grade varchar(2) NOT NULL DEFAULT 'F',
-			summary_good smallint(5) unsigned NOT NULL DEFAULT 0,
-			summary_warning smallint(5) unsigned NOT NULL DEFAULT 0,
-			summary_critical smallint(5) unsigned NOT NULL DEFAULT 0,
-			report_data longblob NOT NULL,
-			created_at datetime NOT NULL,
-			PRIMARY KEY  (id),
-			KEY idx_created_at (created_at),
-			KEY idx_score (score)
-		) {$charset_collate};";
+		// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- Table name from class constant.
+		$table_exists = $wpdb->get_var(
+			$wpdb->prepare( 'SHOW TABLES LIKE %s', $table_name )
+		);
 
-		require_once ABSPATH . 'wp-admin/includes/upgrade.php';
-		dbDelta( $sql );
+		if ( null === $table_exists ) {
+			// Create the table with direct SQL — avoids dbDelta() quirks
+			// with longblob columns and non-literal DEFAULT values.
+			// phpcs:disable WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- table name from constant, charset from $wpdb.
+			$wpdb->query(
+				"CREATE TABLE {$table_name} (
+					id bigint(20) unsigned NOT NULL AUTO_INCREMENT,
+					score smallint(3) unsigned NOT NULL DEFAULT 0,
+					grade varchar(2) NOT NULL DEFAULT 'F',
+					summary_good smallint(5) unsigned NOT NULL DEFAULT 0,
+					summary_warning smallint(5) unsigned NOT NULL DEFAULT 0,
+					summary_critical smallint(5) unsigned NOT NULL DEFAULT 0,
+					report_data longblob NOT NULL,
+					created_at datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
+					PRIMARY KEY (id),
+					KEY idx_created_at (created_at),
+					KEY idx_score (score)
+				) {$charset_collate}"
+			);
+			// phpcs:enable WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+		} else {
+			// Table exists — use dbDelta() for safe schema upgrades.
+			// phpcs:disable WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- table name from constant, charset from $wpdb.
+			$sql = "CREATE TABLE {$table_name} (
+				id bigint(20) unsigned NOT NULL AUTO_INCREMENT,
+				score smallint(3) unsigned NOT NULL DEFAULT 0,
+				grade varchar(2) NOT NULL DEFAULT 'F',
+				summary_good smallint(5) unsigned NOT NULL DEFAULT 0,
+				summary_warning smallint(5) unsigned NOT NULL DEFAULT 0,
+				summary_critical smallint(5) unsigned NOT NULL DEFAULT 0,
+				report_data longblob NOT NULL,
+				created_at datetime NOT NULL,
+				PRIMARY KEY  (id),
+				KEY idx_created_at (created_at),
+				KEY idx_score (score)
+			) {$charset_collate};";
+			// phpcs:enable WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+
+			require_once ABSPATH . 'wp-admin/includes/upgrade.php';
+			dbDelta( $sql );
+		}
 
 		update_option( self::SCHEMA_OPTION, self::SCHEMA_VERSION );
 	}

@@ -104,7 +104,7 @@ class ReportHistoryTest extends WP_UnitTestCase {
 			$wpdb->prepare( 'SHOW TABLES LIKE %s', $table )
 		);
 
-		$this->assertSame( $table, $exists );
+		$this->assertSame( $table, $exists, 'Table not created. Last DB error: ' . $wpdb->last_error );
 	}
 
 	/**
