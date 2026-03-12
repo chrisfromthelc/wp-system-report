@@ -54,6 +54,16 @@ class MCP_Formatter implements Formatter {
 	private const SECTION_FIELD_LIMIT = 50;
 
 	/**
+	 * Maximum character length for compact description values.
+	 *
+	 * Prevents non-scalar field values (JSON-encoded arrays/objects) from
+	 * producing excessively long strings that defeat token-efficiency goals.
+	 *
+	 * @var int
+	 */
+	private const MAX_DESCRIPTION_VALUE_LENGTH = 200;
+
+	/**
 	 * Format the report data as structured MCP JSON.
 	 *
 	 * @param array $report_data Full report data from Report_Generator::generate().
@@ -189,13 +199,17 @@ class MCP_Formatter implements Formatter {
 			$rating = 'needs_attention';
 		}
 
-		// Count sections and checks.
+		// Count sections and visible (non-private) checks.
 		$section_count = 0;
 		$check_count   = 0;
 		foreach ( $report_data as $section ) {
 			if ( ! empty( $section['fields'] ) ) {
 				++$section_count;
-				$check_count += count( $section['fields'] );
+				foreach ( $section['fields'] as $field ) {
+					if ( empty( $field['private'] ) ) {
+						++$check_count;
+					}
+				}
 			}
 		}
 
@@ -400,6 +414,10 @@ class MCP_Formatter implements Formatter {
 	private function compact_description( array|\ArrayAccess $field ): string {
 		$value = $field['value'] ?? '';
 		$value = is_scalar( $value ) ? (string) $value : (string) wp_json_encode( $value );
+
+		if ( strlen( $value ) > self::MAX_DESCRIPTION_VALUE_LENGTH ) {
+			$value = substr( $value, 0, self::MAX_DESCRIPTION_VALUE_LENGTH ) . '...';
+		}
 
 		$parts = array( $value );
 
