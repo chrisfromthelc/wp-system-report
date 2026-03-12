@@ -104,3 +104,8 @@ add_action(
 
 // Initialize the plugin.
 wp_system_report();
+
+// Register WP-CLI commands when running in CLI context.
+if ( defined( 'WP_CLI' ) && WP_CLI ) {
+	\WP_CLI::add_command( 'system-report', \SystemReport\CLI_Command::class );
+}

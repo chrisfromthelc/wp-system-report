@@ -30,7 +30,7 @@ class Report_History {
 	 *
 	 * @var string
 	 */
-	const SCHEMA_VERSION = '1.0.0';
+	const SCHEMA_VERSION = '1.0.1';
 
 	/**
 	 * Option key for tracking installed schema version.
@@ -48,15 +48,11 @@ class Report_History {
 
 	/**
 	 * Report generator instance.
-	 *
-	 * @var Report_Generator
 	 */
 	private Report_Generator $report_generator;
 
 	/**
 	 * Health score calculator instance.
-	 *
-	 * @var Health_Score
 	 */
 	private Health_Score $health_score;
 
@@ -101,7 +97,7 @@ class Report_History {
 			summary_warning smallint(5) unsigned NOT NULL DEFAULT 0,
 			summary_critical smallint(5) unsigned NOT NULL DEFAULT 0,
 			report_data longblob NOT NULL,
-			created_at datetime NOT NULL DEFAULT '0000-00-00 00:00:00',
+			created_at datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
 			PRIMARY KEY  (id),
 			KEY idx_created_at (created_at),
 			KEY idx_score (score)
@@ -196,8 +192,8 @@ class Report_History {
 				'score'            => $score_data['score'],
 				'grade'            => $score_data['grade'],
 				'summary_good'     => $score_data['summary']['good'] ?? 0,
-				'summary_warning'  => $score_data['summary']['warning'] ?? 0,
-				'summary_critical' => $score_data['summary']['critical'] ?? 0,
+				'summary_warning'  => $score_data['summary']['warnings'] ?? 0,
+				'summary_critical' => $score_data['summary']['criticals'] ?? 0,
 				'report_data'      => $compressed,
 				'created_at'       => current_time( 'mysql', true ),
 			),

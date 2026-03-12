@@ -218,4 +218,30 @@ class Field implements \ArrayAccess, \JsonSerializable {
 	public function jsonSerialize(): array {
 		return $this->to_array();
 	}
+
+	/**
+	 * Extract the status string from a Field object or legacy array.
+	 *
+	 * Centralises status extraction so that CLI_Command and Health_Score
+	 * share a single, consistent implementation rather than duplicating
+	 * the same Field-or-array branching logic.
+	 *
+	 * Returns one of the canonical status strings: 'good', 'warning',
+	 * 'critical', or 'info'. Falls back to 'info' for unrecognised input.
+	 *
+	 * @param Field|array $field A Field value object or associative array.
+	 * @return string Status string.
+	 */
+	public static function get_status_string( $field ): string {
+		if ( $field instanceof self ) {
+			return $field->status->value;
+		}
+
+		if ( is_array( $field ) && isset( $field['status'] ) ) {
+			$status = $field['status'];
+			return $status instanceof Status ? $status->value : (string) $status;
+		}
+
+		return 'info';
+	}
 }

@@ -68,8 +68,8 @@ class Features {
 	/**
 	 * Whether the health score feature is available.
 	 *
-	 * Health scoring computes an aggregate 0–100 score from all collector
-	 * results and is gated behind the Pro tier.
+	 * Health score aggregates all collector results into a single
+	 * 0–100 score with a letter grade. Gated behind the Pro tier.
 	 *
 	 * @return bool True when health score is available.
 	 */
@@ -78,10 +78,10 @@ class Features {
 	}
 
 	/**
-	 * Whether report history and trending is available.
+	 * Whether the report history feature is available.
 	 *
-	 * Report history stores periodic snapshots of the system report
-	 * and enables trend analysis over time. Gated behind the Pro tier.
+	 * Report history stores timestamped snapshots of system report data
+	 * for trending and comparison. Gated behind the Pro tier.
 	 *
 	 * @return bool True when report history is available.
 	 */
