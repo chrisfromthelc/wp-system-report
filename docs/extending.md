@@ -139,11 +139,17 @@ add_filter( 'wp_system_report_collectors', function ( array $collectors ): array
 
 ### Change Collector Priority
 
+Collector priority is determined by each collector's `get_priority()` method. To reorder an existing collector, replace it with an anonymous subclass that overrides the priority:
+
 ```php
 add_filter( 'wp_system_report_collectors', function ( array $collectors ): array {
     if ( isset( $collectors['security'] ) ) {
-        // Make security the first section.
-        $collectors['security']->priority_override = 5;
+        // Replace with a subclass that runs first in the report.
+        $collectors['security'] = new class extends \SystemReport\Collectors\Security {
+            public function get_priority(): int {
+                return 5; // Before WordPress Environment (10).
+            }
+        };
     }
     return $collectors;
 } );

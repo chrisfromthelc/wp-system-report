@@ -22,4 +22,3 @@ Welcome to the WP System Report developer and user documentation.
 ## Project
 
 - **[Changelog](changelog.md)** - Release history
-- **[Architecture Decision Records](adr/)** - Significant design decisions and rationale
