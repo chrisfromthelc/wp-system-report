@@ -57,6 +57,11 @@ class Plugin {
 	private \SystemReport\Error_Log_Controller $error_log_controller;
 
 	/**
+	 * Fixer controller instance.
+	 */
+	private \SystemReport\Fixer_Controller $fixer_controller;
+
+	/**
 	 * GitHub updater instance.
 	 *
 	 * Stored to prevent garbage collection; hooks are registered in the constructor.
@@ -100,6 +105,7 @@ class Plugin {
 		$this->error_log_reader     = new Error_Log_Reader();
 		$this->debug_toggle         = new Debug_Toggle();
 		$this->error_log_controller = new Error_Log_Controller( $this->error_log_reader, $this->debug_toggle );
+		$this->fixer_controller     = new Fixer_Controller( $this->fixer_registry );
 		$this->github_updater       = new GitHub_Updater( WP_SYSTEM_REPORT_FILE );
 
 		$this->register_default_collectors();
@@ -166,6 +172,7 @@ class Plugin {
 		add_action( 'admin_menu', array( $this->admin_page, 'register_menu' ) );
 		add_action( 'rest_api_init', array( $this->rest_controller, 'register_routes' ) );
 		add_action( 'rest_api_init', array( $this->error_log_controller, 'register_routes' ) );
+		add_action( 'rest_api_init', array( $this->fixer_controller, 'register_routes' ) );
 		add_action( 'admin_enqueue_scripts', array( $this->admin_page, 'enqueue_assets' ) );
 
 		// Apply security hardening measures stored from previous fixer runs.
