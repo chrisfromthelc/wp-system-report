@@ -31,7 +31,6 @@ class REST_Envelope {
 	 *
 	 * @param mixed $data Payload to return under the `data` key.
 	 * @param array $meta Optional extra metadata merged into the `meta` key.
-	 * @return \WP_REST_Response
 	 */
 	public static function success( $data, array $meta = array() ): \WP_REST_Response {
 		$envelope = array(
@@ -47,7 +46,6 @@ class REST_Envelope {
 	 * Build the meta block with default values.
 	 *
 	 * @param array $extra Extra keys to merge.
-	 * @return array
 	 */
 	private static function build_meta( array $extra = array() ): array {
 		$defaults = array(
