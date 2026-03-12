@@ -100,11 +100,32 @@ class ReportHistoryTest extends WP_UnitTestCase {
 		global $wpdb;
 
 		$table = Report_History::get_table_name();
+
+		// Diagnostic: attempt a minimal direct CREATE TABLE to verify
+		// the MySQL connection and permissions work for DDL statements.
+		$charset = $wpdb->get_charset_collate();
+		// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+		$result = $wpdb->query( "CREATE TABLE IF NOT EXISTS {$table}_diag ( id int PRIMARY KEY ) {$charset}" );
+		// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+		$diag_exists = $wpdb->get_var( "SHOW TABLES LIKE '{$table}_diag'" );
+		// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+		$wpdb->query( "DROP TABLE IF EXISTS {$table}_diag" );
+
 		$exists = $wpdb->get_var(
 			$wpdb->prepare( 'SHOW TABLES LIKE %s', $table )
 		);
 
-		$this->assertSame( $table, $exists, 'Table not created. Last DB error: ' . $wpdb->last_error );
+		$debug = sprintf(
+			'Table: %s | exists: %s | diag_result: %s | diag_exists: %s | last_error: %s | prefix: %s',
+			$table,
+			var_export( $exists, true ),
+			var_export( $result, true ),
+			var_export( $diag_exists, true ),
+			$wpdb->last_error,
+			$wpdb->prefix
+		);
+
+		$this->assertSame( $table, $exists, $debug );
 	}
 
 	/**
