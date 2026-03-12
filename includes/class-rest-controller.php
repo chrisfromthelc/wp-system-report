@@ -58,7 +58,7 @@ class REST_Controller extends \WP_REST_Controller {
 						'format' => array(
 							'description'       => __( 'Output format.', 'wp-system-report' ),
 							'type'              => 'string',
-							'enum'              => array( 'json', 'plain', 'github', 'ai' ),
+							'enum'              => array( 'json', 'plain', 'github', 'ai', 'mcp' ),
 							'default'           => 'json',
 							'sanitize_callback' => 'sanitize_text_field',
 						),
@@ -119,6 +119,16 @@ class REST_Controller extends \WP_REST_Controller {
 					'collector_count' => $collector_count,
 					'fixes_available' => $fixes_available,
 				)
+			);
+		}
+
+		// MCP format returns structured JSON wrapped in the standard envelope.
+		if ( 'mcp' === $format ) {
+			$mcp_formatter = new Formatters\MCP_Formatter();
+
+			return REST_Envelope::success(
+				$mcp_formatter->format_array( $report ),
+				array( 'format' => 'mcp' )
 			);
 		}
 
