@@ -77,7 +77,7 @@ class Database extends Abstract_Collector {
 		);
 
 		// Database Charset.
-		$charset = $this->get_constant_value( 'DB_CHARSET', 'utf8' );
+		$charset = $this->get_constant_value( 'DB_CHARSET', 'utf8mb4' );
 		$data[]  = $this->make_field(
 			__( 'Database Charset', 'wp-system-report' ),
 			$charset
