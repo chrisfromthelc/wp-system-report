@@ -36,7 +36,7 @@ return RectorConfig::configure()
 			),
 		)
 	)
-	->withPhpVersion( Rector\ValueObject\PhpVersion::PHP_74 )
+	->withPhpVersion( Rector\ValueObject\PhpVersion::PHP_81 )
 	->withSets(
 		array(
 			SetList::DEAD_CODE,
