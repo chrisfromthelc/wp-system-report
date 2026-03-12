@@ -123,6 +123,7 @@ class Plugin {
 			new Collectors\WordPress_Configuration(),
 			new Collectors\Advanced_Diagnostics(),
 			new Collectors\Email_Delivery(),
+			new Collectors\Update_Health(),
 		);
 
 		foreach ( $collectors as $collector ) {
