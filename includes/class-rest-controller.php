@@ -147,7 +147,7 @@ class REST_Controller extends \WP_REST_Controller {
 	 * @param string $format Format identifier.
 	 * @return Formatters\Formatter|null Formatter instance or null.
 	 */
-	private function get_formatter( $format ) {
+	private function get_formatter( string $format ): ?Formatters\Formatter {
 		switch ( $format ) {
 			case 'plain':
 				return new Formatters\Plain_Text_Formatter();

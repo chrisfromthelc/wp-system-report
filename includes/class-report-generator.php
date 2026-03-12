@@ -51,8 +51,8 @@ class Report_Generator {
 		// Sort by priority.
 		uasort(
 			$collectors,
-			function ( Collector $a, Collector $b ) {
-				return $a->get_priority() - $b->get_priority();
+			function ( Collector $a, Collector $b ): int {
+				return $a->get_priority() <=> $b->get_priority();
 			}
 		);
 

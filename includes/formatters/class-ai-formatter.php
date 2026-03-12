@@ -217,7 +217,7 @@ class AI_Formatter implements Formatter {
 	 * @param string $text Text to escape.
 	 * @return string Escaped text.
 	 */
-	private function escape_markdown( $text ) {
+	private function escape_markdown( string $text ): string {
 		// Replace pipe characters which break table formatting.
 		$text = str_replace( '|', '\\|', $text );
 		// Replace newlines with spaces for table cells.

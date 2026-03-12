@@ -18,7 +18,7 @@ jobs:
       - name: Setup PHP
         uses: shivammathur/setup-php@d59004228537ca90c8dca680592a08a675bf52b6 # v2
         with:
-          php-version: '8.2'
+          php-version: '8.3'
           tools: composer
           coverage: none
 
