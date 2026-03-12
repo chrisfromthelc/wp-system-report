@@ -62,6 +62,11 @@ class Plugin {
 	private \SystemReport\Fixer_Controller $fixer_controller;
 
 	/**
+	 * AI context file generator instance.
+	 */
+	private \SystemReport\AI_Context_Generator $ai_context_generator;
+
+	/**
 	 * GitHub updater instance.
 	 *
 	 * Stored to prevent garbage collection; hooks are registered in the constructor.
@@ -106,11 +111,13 @@ class Plugin {
 		$this->debug_toggle         = new Debug_Toggle();
 		$this->error_log_controller = new Error_Log_Controller( $this->error_log_reader, $this->debug_toggle );
 		$this->fixer_controller     = new Fixer_Controller( $this->fixer_registry );
+		$this->ai_context_generator = new AI_Context_Generator( $this->report_generator );
 		$this->github_updater       = new GitHub_Updater( WP_SYSTEM_REPORT_FILE );
 
 		$this->register_default_collectors();
 		$this->register_default_fixers();
 		$this->register_hooks();
+		$this->ai_context_generator->register_hooks();
 	}
 
 	/**
