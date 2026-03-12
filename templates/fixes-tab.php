@@ -36,8 +36,17 @@ defined( 'ABSPATH' ) || exit;
 	<div id="sr-fixes-list" style="display: none;"></div>
 
 	<!-- Confirmation Modal -->
-	<div id="sr-confirm-modal" class="sr-confirm-modal" style="display: none;">
-		<div class="sr-confirm-modal-backdrop"></div>
+	<div
+		id="sr-confirm-modal"
+		class="sr-confirm-modal"
+		style="display: none;"
+		role="dialog"
+		aria-modal="true"
+		aria-labelledby="sr-confirm-modal-title"
+		aria-describedby="sr-confirm-modal-description"
+		tabindex="-1"
+	>
+		<div class="sr-confirm-modal-backdrop" aria-hidden="true"></div>
 		<div class="sr-confirm-modal-content">
 			<h3 id="sr-confirm-modal-title"></h3>
 			<p id="sr-confirm-modal-message"></p>

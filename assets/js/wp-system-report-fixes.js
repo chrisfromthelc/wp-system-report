@@ -8,6 +8,7 @@
 
 	var config = window.systemReportFixes || {};
 	var pendingFixId = null;
+	var lastFocusedElement = null;
 
 	/**
 	 * Fetch wrapper with nonce header.
@@ -17,11 +18,66 @@
 	 * @return {Promise} Fetch promise.
 	 */
 	function apiFetch( url, options ) {
+		if ( ! config.fixesUrl || ! config.restNonce ) {
+			return Promise.reject( new Error( config.i18n.loadFailed || 'Configuration error.' ) );
+		}
 		options = options || {};
 		options.headers = options.headers || {};
 		options.headers[ 'X-WP-Nonce' ] = config.restNonce;
 		options.credentials = 'same-origin';
 		return fetch( url, options );
+	}
+
+	/**
+	 * Safely parse a JSON response, falling back to a text-based error.
+	 *
+	 * @param {Response} response Fetch response.
+	 * @param {string}   fallback Fallback error message.
+	 * @return {Promise} Rejects with an Error containing the parsed or fallback message.
+	 */
+	function rejectWithResponseError( response, fallback ) {
+		return response.json()
+			.then( function ( err ) {
+				throw new Error( err.message || fallback );
+			} )
+			.catch( function ( parseErr ) {
+				if ( parseErr instanceof SyntaxError ) {
+					throw new Error( fallback );
+				}
+				throw parseErr;
+			} );
+	}
+
+	/**
+	 * Create a <span> element with a dashicon and text.
+	 *
+	 * @param {string} iconClass Dashicon class name (e.g. "dashicons-warning").
+	 * @param {string} text      Text to display beside the icon.
+	 * @return {DocumentFragment} Fragment containing the icon span and text node.
+	 */
+	function createIconText( iconClass, text ) {
+		var fragment = document.createDocumentFragment();
+		var icon = document.createElement( 'span' );
+		icon.className = 'dashicons ' + iconClass;
+		fragment.appendChild( icon );
+		fragment.appendChild( document.createTextNode( ' ' + text ) );
+		return fragment;
+	}
+
+	/**
+	 * Create a label element with a <strong> prefix and text content.
+	 *
+	 * @param {string} label   The bold label text (will be escaped via textContent).
+	 * @param {string} message The message text (will be escaped via textContent).
+	 * @return {DocumentFragment} Fragment containing the strong element and text.
+	 */
+	function createStrongMessage( label, message ) {
+		var fragment = document.createDocumentFragment();
+		var strong = document.createElement( 'strong' );
+		strong.textContent = label;
+		fragment.appendChild( strong );
+		fragment.appendChild( document.createTextNode( ' ' + message ) );
+		return fragment;
 	}
 
 	/**
@@ -141,12 +197,10 @@
 		var statusEl = document.createElement( 'span' );
 		statusEl.className = 'sr-fixer-status';
 		if ( fixer.can_fix ) {
-			statusEl.innerHTML = '<span class="dashicons dashicons-warning"></span> ' +
-				config.i18n.issuesDetected;
+			statusEl.appendChild( createIconText( 'dashicons-warning', config.i18n.issuesDetected ) );
 			statusEl.classList.add( 'sr-fixer-status-warning' );
 		} else {
-			statusEl.innerHTML = '<span class="dashicons dashicons-yes-alt"></span> ' +
-				config.i18n.noIssues;
+			statusEl.appendChild( createIconText( 'dashicons-yes-alt', config.i18n.noIssues ) );
 			statusEl.classList.add( 'sr-fixer-status-good' );
 		}
 		actions.appendChild( statusEl );
@@ -198,6 +252,7 @@
 	 */
 	function showConfirmModal( fixer ) {
 		pendingFixId = fixer.id;
+		lastFocusedElement = document.activeElement;
 
 		var modal = document.getElementById( 'sr-confirm-modal' );
 		var titleEl = document.getElementById( 'sr-confirm-modal-title' );
@@ -215,11 +270,18 @@
 		}
 		if ( modal ) {
 			modal.style.display = 'block';
+			// Move focus into the dialog.
+			var confirmBtn = document.getElementById( 'sr-confirm-run' );
+			if ( confirmBtn ) {
+				confirmBtn.focus();
+			} else {
+				modal.focus();
+			}
 		}
 	}
 
 	/**
-	 * Hide the confirmation modal.
+	 * Hide the confirmation modal and restore focus.
 	 */
 	function hideConfirmModal() {
 		pendingFixId = null;
@@ -227,6 +289,11 @@
 		if ( modal ) {
 			modal.style.display = 'none';
 		}
+		// Restore focus to the element that opened the modal.
+		if ( lastFocusedElement && typeof lastFocusedElement.focus === 'function' ) {
+			lastFocusedElement.focus();
+		}
+		lastFocusedElement = null;
 	}
 
 	/**
@@ -240,6 +307,7 @@
 		var card = document.querySelector( '[data-fix-id="' + fixId + '"].sr-fixer-card' );
 		var btn = card ? card.querySelector( '.sr-run-fix-btn' ) : null;
 		var resultArea = document.getElementById( 'sr-result-' + fixId );
+		var succeeded = false;
 
 		if ( btn ) {
 			btn.disabled = true;
@@ -249,7 +317,7 @@
 		// Clear previous result.
 		if ( resultArea ) {
 			resultArea.style.display = 'none';
-			resultArea.innerHTML = '';
+			resultArea.textContent = '';
 		}
 
 		apiFetch( config.fixesUrl + '/' + fixId, {
@@ -258,15 +326,14 @@
 		} )
 			.then( function ( response ) {
 				if ( ! response.ok ) {
-					return response.json().then( function ( err ) {
-						throw new Error( err.message || config.i18n.executeFailed );
-					} );
+					return rejectWithResponseError( response, config.i18n.executeFailed );
 				}
 				return response.json();
 			} )
 			.then( function ( envelope ) {
 				var data = envelope.data || {};
 				var result = data.result || {};
+				succeeded = true;
 
 				showResult( fixId, result, data.applied );
 
@@ -274,8 +341,8 @@
 				if ( card ) {
 					var statusEl = card.querySelector( '.sr-fixer-status' );
 					if ( statusEl ) {
-						statusEl.innerHTML = '<span class="dashicons dashicons-yes-alt"></span> ' +
-							config.i18n.noIssues;
+						statusEl.textContent = '';
+						statusEl.appendChild( createIconText( 'dashicons-yes-alt', config.i18n.noIssues ) );
 						statusEl.className = 'sr-fixer-status sr-fixer-status-good';
 					}
 				}
@@ -288,8 +355,9 @@
 			} )
 			.finally( function () {
 				if ( btn ) {
-					btn.disabled = true; // Keep disabled after execution.
 					btn.textContent = config.i18n.runFix;
+					// Keep disabled only on success; re-enable on failure for retry.
+					btn.disabled = succeeded;
 				}
 			} );
 	}
@@ -307,7 +375,7 @@
 			return;
 		}
 
-		resultArea.innerHTML = '';
+		resultArea.textContent = '';
 		resultArea.style.display = 'block';
 
 		// Status notice.
@@ -318,17 +386,17 @@
 			notice.className = 'notice notice-error inline sr-result-notice';
 		}
 
-		var statusIcon = result.success ? config.i18n.success : config.i18n.failed;
+		var statusLabel = result.success ? config.i18n.success : config.i18n.failed;
 		var p = document.createElement( 'p' );
-		p.innerHTML = '<strong>' + statusIcon + ':</strong> ' + escapeHtml( result.message || '' );
+		p.appendChild( createStrongMessage( statusLabel + ':', result.message || '' ) );
 		notice.appendChild( p );
 		resultArea.appendChild( notice );
 
 		// If not applied (nothing to fix), mark it differently.
 		if ( ! applied && result.success ) {
 			notice.className = 'notice notice-info inline sr-result-notice';
-			p.innerHTML = '<strong>' + config.i18n.nothingToFix + ':</strong> ' +
-				escapeHtml( result.message || '' );
+			p.textContent = '';
+			p.appendChild( createStrongMessage( config.i18n.nothingToFix + ':', result.message || '' ) );
 		}
 
 		// Before/After details (collapsible).
@@ -346,7 +414,9 @@
 			if ( result.before ) {
 				var beforeBlock = document.createElement( 'div' );
 				beforeBlock.className = 'sr-result-snapshot';
-				beforeBlock.innerHTML = '<strong>' + config.i18n.before + ':</strong>';
+				var beforeLabel = document.createElement( 'strong' );
+				beforeLabel.textContent = config.i18n.before + ':';
+				beforeBlock.appendChild( beforeLabel );
 				var beforePre = document.createElement( 'pre' );
 				beforePre.textContent = JSON.stringify( result.before, null, 2 );
 				beforeBlock.appendChild( beforePre );
@@ -356,7 +426,9 @@
 			if ( result.after ) {
 				var afterBlock = document.createElement( 'div' );
 				afterBlock.className = 'sr-result-snapshot';
-				afterBlock.innerHTML = '<strong>' + config.i18n.after + ':</strong>';
+				var afterLabel = document.createElement( 'strong' );
+				afterLabel.textContent = config.i18n.after + ':';
+				afterBlock.appendChild( afterLabel );
 				var afterPre = document.createElement( 'pre' );
 				afterPre.textContent = JSON.stringify( result.after, null, 2 );
 				afterBlock.appendChild( afterPre );
@@ -366,18 +438,6 @@
 			details.appendChild( detailsContent );
 			resultArea.appendChild( details );
 		}
-	}
-
-	/**
-	 * Escape HTML entities.
-	 *
-	 * @param {string} str Input string.
-	 * @return {string} Escaped string.
-	 */
-	function escapeHtml( str ) {
-		var div = document.createElement( 'div' );
-		div.appendChild( document.createTextNode( str ) );
-		return div.innerHTML;
 	}
 
 	/**
@@ -392,9 +452,7 @@
 		apiFetch( config.fixesUrl )
 			.then( function ( response ) {
 				if ( ! response.ok ) {
-					return response.json().then( function ( err ) {
-						throw new Error( err.message || config.i18n.loadFailed );
-					} );
+					return rejectWithResponseError( response, config.i18n.loadFailed );
 				}
 				return response.json();
 			} )
@@ -414,7 +472,7 @@
 
 				if ( listEl ) {
 					listEl.style.display = 'block';
-					listEl.innerHTML = '';
+					listEl.textContent = '';
 				}
 
 				// Group by category and render.
@@ -479,12 +537,34 @@
 			backdrop.addEventListener( 'click', hideConfirmModal );
 		}
 
-		// Escape key closes modal.
-		document.addEventListener( 'keydown', function ( e ) {
-			if ( e.key === 'Escape' && pendingFixId ) {
-				hideConfirmModal();
-			}
-		} );
+		// Modal keyboard handling: Escape closes, Tab traps focus.
+		var modal = document.getElementById( 'sr-confirm-modal' );
+		if ( modal ) {
+			modal.addEventListener( 'keydown', function ( e ) {
+				if ( e.key === 'Escape' ) {
+					e.preventDefault();
+					hideConfirmModal();
+					return;
+				}
+				if ( e.key === 'Tab' ) {
+					var focusable = modal.querySelectorAll(
+						'button:not([disabled]), [href], input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])'
+					);
+					if ( ! focusable.length ) {
+						return;
+					}
+					var first = focusable[ 0 ];
+					var last = focusable[ focusable.length - 1 ];
+					if ( e.shiftKey && document.activeElement === first ) {
+						e.preventDefault();
+						last.focus();
+					} else if ( ! e.shiftKey && document.activeElement === last ) {
+						e.preventDefault();
+						first.focus();
+					}
+				}
+			} );
+		}
 	}
 
 	// Initialize when DOM is ready.
