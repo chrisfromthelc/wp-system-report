@@ -119,6 +119,7 @@ class Notification_Controller extends \WP_REST_Controller {
 			'notify_email_enabled'      => (bool) Settings::get( 'notify_email_enabled', false ),
 			'notify_email_recipients'   => (string) Settings::get( 'notify_email_recipients', '' ),
 			'notify_slack_enabled'      => (bool) Settings::get( 'notify_slack_enabled', false ),
+			'notify_webhook_enabled'    => (bool) Settings::get( 'notify_webhook_enabled', false ),
 			'slack_webhook_url'         => (string) Settings::get( 'slack_webhook_url', '' ),
 			'webhook_urls'              => (string) Settings::get( 'webhook_urls', '' ),
 			'notify_critical_threshold' => (int) Settings::get( 'notify_critical_threshold', 1 ),
@@ -141,6 +142,7 @@ class Notification_Controller extends \WP_REST_Controller {
 			'notify_email_enabled',
 			'notify_email_recipients',
 			'notify_slack_enabled',
+			'notify_webhook_enabled',
 			'slack_webhook_url',
 			'webhook_urls',
 			'notify_critical_threshold',
@@ -316,27 +318,13 @@ class Notification_Controller extends \WP_REST_Controller {
 	/**
 	 * Get email recipients for testing.
 	 *
+	 * Delegates to the shared helper on Notification_Manager to keep
+	 * recipient parsing logic in one place.
+	 *
 	 * @return string[] Email addresses.
 	 */
 	private function get_test_email_recipients(): array {
-		$raw = Settings::get( 'notify_email_recipients', '' );
-
-		if ( is_string( $raw ) && '' !== $raw ) {
-			$emails = preg_split( '/[\r\n,]+/', $raw );
-
-			if ( false !== $emails ) {
-				$emails = array_map( 'trim', $emails );
-				$emails = array_filter( $emails, 'is_email' );
-
-				if ( ! empty( $emails ) ) {
-					return array_values( $emails );
-				}
-			}
-		}
-
-		$admin_email = get_option( 'admin_email' );
-
-		return $admin_email ? array( $admin_email ) : array();
+		return Notification_Manager::parse_email_recipients();
 	}
 
 	/**
@@ -359,6 +347,10 @@ class Notification_Controller extends \WP_REST_Controller {
 				'sanitize_callback' => 'sanitize_textarea_field',
 			),
 			'notify_slack_enabled'      => array(
+				'type'              => 'boolean',
+				'sanitize_callback' => 'rest_sanitize_boolean',
+			),
+			'notify_webhook_enabled'    => array(
 				'type'              => 'boolean',
 				'sanitize_callback' => 'rest_sanitize_boolean',
 			),

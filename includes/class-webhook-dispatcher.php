@@ -16,9 +16,9 @@ defined( 'ABSPATH' ) || exit;
  * findings that exceed configured thresholds. Payloads are sent as
  * JSON POST requests with HMAC-SHA256 signatures for verification.
  *
- * All webhook delivery is non-blocking: payloads are sent via
- * `wp_remote_post()` with a short timeout to avoid slowing down
- * report generation.
+ * Webhook delivery is blocking so that the HTTP response code can be
+ * inspected and accurate success/failure results returned to callers
+ * (including the test endpoint).
  */
 class Webhook_Dispatcher {
 
@@ -89,6 +89,9 @@ class Webhook_Dispatcher {
 	/**
 	 * Send a single webhook request.
 	 *
+	 * Requests are blocking so that the HTTP response code can be inspected
+	 * and an accurate result returned (important for the test endpoint).
+	 *
 	 * @param string $url       Target URL.
 	 * @param string $body      JSON-encoded body.
 	 * @param string $signature HMAC-SHA256 signature.
@@ -108,7 +111,7 @@ class Webhook_Dispatcher {
 			array(
 				'method'    => 'POST',
 				'timeout'   => self::TIMEOUT,
-				'blocking'  => false,
+				'blocking'  => true,
 				'headers'   => array(
 					'Content-Type'                 => 'application/json',
 					'User-Agent'                   => self::USER_AGENT,

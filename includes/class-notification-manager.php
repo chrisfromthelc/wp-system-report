@@ -221,9 +221,17 @@ class Notification_Manager {
 	/**
 	 * Dispatch webhook notifications.
 	 *
+	 * Only sends when the webhook channel is enabled via the
+	 * `notify_webhook_enabled` setting, consistent with the email and
+	 * Slack channel guards.
+	 *
 	 * @param array $findings Analysed findings.
 	 */
 	private function dispatch_webhooks( array $findings ): void {
+		if ( ! $this->is_channel_enabled( 'webhook' ) ) {
+			return;
+		}
+
 		$event = ! empty( $findings['critical'] ) ? 'report.critical' : 'report.warning';
 
 		$this->webhook_dispatcher->dispatch(
@@ -493,6 +501,20 @@ class Notification_Manager {
 	 * @return string[] Array of valid email addresses.
 	 */
 	private function get_email_recipients(): array {
+		return self::parse_email_recipients();
+	}
+
+	/**
+	 * Parse and validate the configured email recipient list.
+	 *
+	 * Shared helper used by both the notification manager and the
+	 * notification REST controller to ensure consistent behaviour.
+	 * Accepts a comma- or newline-separated list stored in settings;
+	 * falls back to the site admin email when no recipients are configured.
+	 *
+	 * @return string[] Array of valid, sanitised email addresses.
+	 */
+	public static function parse_email_recipients(): array {
 		$raw = Settings::get( 'notify_email_recipients', '' );
 
 		if ( ! is_string( $raw ) || '' === $raw ) {

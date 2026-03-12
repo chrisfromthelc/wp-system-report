@@ -30,6 +30,7 @@ class Settings {
 		'notify_email_enabled'      => false,
 		'notify_email_recipients'   => '',
 		'notify_slack_enabled'      => false,
+		'notify_webhook_enabled'    => false,
 		'slack_webhook_url'         => '',
 		'webhook_urls'              => '',
 		'webhook_secret'            => '',
@@ -126,6 +127,7 @@ class Settings {
 			case 'notifications_enabled':
 			case 'notify_email_enabled':
 			case 'notify_slack_enabled':
+			case 'notify_webhook_enabled':
 				return (bool) $value;
 
 			case 'notify_email_recipients':
