@@ -7,6 +7,8 @@
 
 namespace SystemReport\Collectors;
 
+use SystemReport\Status;
+
 defined( 'ABSPATH' ) || exit;
 
 /**
@@ -112,7 +114,7 @@ class Active_Plugins extends Abstract_Collector {
 				$version
 			);
 
-			$status      = 'info';
+			$status      = Status::Info;
 			$description = ! empty( $plugin_data['PluginURI'] ) ? $plugin_data['PluginURI'] : '';
 
 			// Check for available updates.
@@ -125,7 +127,7 @@ class Active_Plugins extends Abstract_Collector {
 						__( ' (update available: %s)', 'wp-system-report' ),
 						$new_version
 					);
-					$status = 'warning';
+					$status = Status::Warning;
 				}
 			}
 
@@ -145,7 +147,7 @@ class Active_Plugins extends Abstract_Collector {
 			$fields[] = $this->make_field(
 				__( 'No Active Plugins', 'wp-system-report' ),
 				__( 'No active plugins installed.', 'wp-system-report' ),
-				array( 'status' => 'info' )
+				array( 'status' => Status::Info )
 			);
 		}
 

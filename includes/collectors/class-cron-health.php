@@ -7,6 +7,8 @@
 
 namespace SystemReport\Collectors;
 
+use SystemReport\Status;
+
 defined( 'ABSPATH' ) || exit;
 
 /**
@@ -58,7 +60,7 @@ class Cron_Health extends Abstract_Collector {
 			__( 'WP-Cron Disabled', 'wp-system-report' ),
 			$this->format_boolean( $cron_disabled ),
 			array(
-				'status' => $cron_disabled ? 'warning' : 'good',
+				'status' => $cron_disabled ? Status::Warning : Status::Good,
 				'debug'  => $cron_disabled,
 			)
 		);
@@ -138,11 +140,11 @@ class Cron_Health extends Abstract_Collector {
 			}
 		}
 
-		$overdue_status = 'good';
+		$overdue_status = Status::Good;
 		if ( $overdue_count > 5 ) {
-			$overdue_status = 'critical';
+			$overdue_status = Status::Critical;
 		} elseif ( $overdue_count > 0 ) {
-			$overdue_status = 'warning';
+			$overdue_status = Status::Warning;
 		}
 
 		$fields[] = $this->make_field(
@@ -161,7 +163,7 @@ class Cron_Health extends Abstract_Collector {
 				__( 'Overdue Event Hooks', 'wp-system-report' ),
 				implode( ', ', array_slice( $overdue_hooks_unique, 0, 10 ) ),
 				array(
-					'status'      => 'info',
+					'status'      => Status::Info,
 					'debug'       => $overdue_hooks_unique,
 					'description' => $overdue_count > 10 ?
 						sprintf(

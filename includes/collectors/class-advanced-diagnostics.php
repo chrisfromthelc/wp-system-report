@@ -7,6 +7,8 @@
 
 namespace SystemReport\Collectors;
 
+use SystemReport\Status;
+
 defined( 'ABSPATH' ) || exit;
 
 /**
@@ -81,14 +83,14 @@ class Advanced_Diagnostics extends Abstract_Collector {
 		);
 
 		$autoload_size = $autoload_size ? absint( $autoload_size ) : 0;
-		$status        = 'good';
+		$status        = Status::Good;
 		$recommended   = '';
 
 		if ( $autoload_size > 1572864 ) { // 1.5 MB.
-			$status      = 'critical';
+			$status      = Status::Critical;
 			$recommended = __( '< 800 KB', 'wp-system-report' );
 		} elseif ( $autoload_size > 819200 ) { // 800 KB.
-			$status      = 'warning';
+			$status      = Status::Warning;
 			$recommended = __( '< 800 KB', 'wp-system-report' );
 		}
 
@@ -160,7 +162,7 @@ class Advanced_Diagnostics extends Abstract_Collector {
 			__( 'Rewrite Rules Count', 'wp-system-report' ),
 			$rules_count,
 			array(
-				'status' => $rules_count > 500 ? 'warning' : 'good',
+				'status' => $rules_count > 500 ? Status::Warning : Status::Good,
 			)
 		);
 

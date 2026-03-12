@@ -7,6 +7,8 @@
 
 namespace SystemReport\Collectors;
 
+use SystemReport\Status;
+
 defined( 'ABSPATH' ) || exit;
 
 /**
@@ -111,7 +113,7 @@ class Inactive_Plugins extends Abstract_Collector {
 				array(
 					'export_label' => $plugin_name,
 					'description'  => $description,
-					'status'       => 'info',
+					'status'       => Status::Info,
 				)
 			);
 		}
@@ -121,7 +123,7 @@ class Inactive_Plugins extends Abstract_Collector {
 			$fields[] = $this->make_field(
 				__( 'No Inactive Plugins', 'wp-system-report' ),
 				__( 'All installed plugins are active.', 'wp-system-report' ),
-				array( 'status' => 'info' )
+				array( 'status' => Status::Info )
 			);
 		}
 

@@ -7,6 +7,8 @@
 
 namespace SystemReport\Collectors;
 
+use SystemReport\Status;
+
 defined( 'ABSPATH' ) || exit;
 
 /**
@@ -54,7 +56,7 @@ class Security extends Abstract_Collector {
 
 		// Secure Connection (HTTPS).
 		$is_ssl     = is_ssl();
-		$ssl_status = $is_ssl ? 'good' : 'critical';
+		$ssl_status = $is_ssl ? Status::Good : Status::Critical;
 
 		$data[] = $this->make_field(
 			__( 'Secure Connection (HTTPS)', 'wp-system-report' ),
@@ -70,12 +72,12 @@ class Security extends Abstract_Collector {
 		$display_errors    = ini_get( 'display_errors' );
 		$errors_hidden     = ( false === $wp_debug_display ) && ( 'off' === strtolower( $display_errors ) || '0' === $display_errors );
 		$environment_type  = wp_get_environment_type();
-		$error_hide_status = 'info';
+		$error_hide_status = Status::Info;
 
 		if ( 'production' === $environment_type && ! $errors_hidden ) {
-			$error_hide_status = 'critical';
+			$error_hide_status = Status::Critical;
 		} elseif ( $errors_hidden ) {
-			$error_hide_status = 'good';
+			$error_hide_status = Status::Good;
 		}
 
 		$data[] = $this->make_field(
@@ -86,7 +88,7 @@ class Security extends Abstract_Collector {
 
 		// File Editing Disabled.
 		$file_edit_disabled = $this->get_constant_value( 'DISALLOW_FILE_EDIT', false );
-		$file_edit_status   = $file_edit_disabled ? 'good' : 'info';
+		$file_edit_status   = $file_edit_disabled ? Status::Good : Status::Info;
 
 		$data[] = $this->make_field(
 			__( 'File Editing Disabled', 'wp-system-report' ),

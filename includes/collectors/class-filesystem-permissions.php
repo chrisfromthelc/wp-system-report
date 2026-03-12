@@ -7,6 +7,8 @@
 
 namespace SystemReport\Collectors;
 
+use SystemReport\Status;
+
 defined( 'ABSPATH' ) || exit;
 
 /**
@@ -60,7 +62,7 @@ class Filesystem_Permissions extends Abstract_Collector {
 			$wp_root_writable ? __( 'Writable', 'wp-system-report' ) : __( 'Not Writable', 'wp-system-report' ),
 			array(
 				'debug'       => $wp_root_path,
-				'status'      => 'info',
+				'status'      => Status::Info,
 				'description' => $wp_root_path,
 			)
 		);
@@ -73,7 +75,7 @@ class Filesystem_Permissions extends Abstract_Collector {
 			$content_dir_writable ? __( 'Writable', 'wp-system-report' ) : __( 'Not Writable', 'wp-system-report' ),
 			array(
 				'debug'       => $content_dir_path,
-				'status'      => 'info',
+				'status'      => Status::Info,
 				'description' => $content_dir_path,
 			)
 		);
@@ -87,7 +89,7 @@ class Filesystem_Permissions extends Abstract_Collector {
 			$uploads_writable ? __( 'Writable', 'wp-system-report' ) : __( 'Not Writable', 'wp-system-report' ),
 			array(
 				'debug'       => $uploads_path,
-				'status'      => $uploads_writable ? 'good' : 'critical',
+				'status'      => $uploads_writable ? Status::Good : Status::Critical,
 				'description' => $uploads_path,
 			)
 		);
@@ -100,7 +102,7 @@ class Filesystem_Permissions extends Abstract_Collector {
 			$plugins_writable ? __( 'Writable', 'wp-system-report' ) : __( 'Not Writable', 'wp-system-report' ),
 			array(
 				'debug'       => $plugins_path,
-				'status'      => 'info',
+				'status'      => Status::Info,
 				'description' => $plugins_path,
 			)
 		);
@@ -113,7 +115,7 @@ class Filesystem_Permissions extends Abstract_Collector {
 			$themes_writable ? __( 'Writable', 'wp-system-report' ) : __( 'Not Writable', 'wp-system-report' ),
 			array(
 				'debug'       => $themes_path,
-				'status'      => 'info',
+				'status'      => Status::Info,
 				'description' => $themes_path,
 			)
 		);
@@ -127,7 +129,7 @@ class Filesystem_Permissions extends Abstract_Collector {
 				$mu_plugins_writable ? __( 'Writable', 'wp-system-report' ) : __( 'Not Writable', 'wp-system-report' ),
 				array(
 					'debug'       => $mu_plugins_path,
-					'status'      => 'info',
+					'status'      => Status::Info,
 					'description' => $mu_plugins_path,
 				)
 			);

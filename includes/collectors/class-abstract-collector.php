@@ -7,6 +7,9 @@
 
 namespace SystemReport\Collectors;
 
+use SystemReport\Field;
+use SystemReport\Status;
+
 defined( 'ABSPATH' ) || exit;
 
 /**
@@ -59,26 +62,33 @@ abstract class Abstract_Collector implements Collector {
 	}
 
 	/**
-	 * Build a field array with sensible defaults.
+	 * Build a Field value object with sensible defaults.
+	 *
+	 * Accepts both Status enum instances and legacy string values
+	 * (e.g. 'good', 'warning') in $options['status'] for backward
+	 * compatibility with third-party code.
 	 *
 	 * @param string $label   Display label.
 	 * @param mixed  $value   Display value.
 	 * @param array  $options Optional. Additional field options.
-	 * @return array Complete field array.
+	 * @return Field Complete field object.
 	 */
 	protected function make_field( $label, $value, $options = array() ) {
-		return array_merge(
-			array(
-				'label'        => $label,
-				'value'        => (string) $value,
-				'debug'        => $value,
-				'private'      => false,
-				'status'       => 'info',
-				'description'  => '',
-				'recommended'  => '',
-				'export_label' => $label,
-			),
-			$options
+		$status = $options['status'] ?? Status::Info;
+		if ( is_string( $status ) ) {
+			$status = Status::from_legacy( $status );
+		}
+
+		return new Field(
+			label:        $options['label'] ?? $label,
+			value:        (string) ( $options['value'] ?? $value ),
+			debug:        $options['debug'] ?? $value,
+			status:       $status,
+			description:  $options['description'] ?? '',
+			recommended:  $options['recommended'] ?? '',
+			export_label: $options['export_label'] ?? $label,
+			is_private:   $options['private'] ?? false,
+			fix_id:       $options['fix_id'] ?? null,
 		);
 	}
 

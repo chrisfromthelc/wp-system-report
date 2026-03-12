@@ -7,6 +7,8 @@
 
 namespace SystemReport\Collectors;
 
+use SystemReport\Status;
+
 defined( 'ABSPATH' ) || exit;
 
 /**
@@ -65,9 +67,9 @@ class Database extends Abstract_Collector {
 
 		// Database Prefix.
 		$prefix        = $wpdb->prefix;
-		$prefix_status = 'good';
+		$prefix_status = Status::Good;
 		if ( strlen( $prefix ) > 20 ) {
-			$prefix_status = 'warning';
+			$prefix_status = Status::Warning;
 		}
 
 		$data[] = $this->make_field(
