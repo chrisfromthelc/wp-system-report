@@ -73,7 +73,7 @@ abstract class Abstract_Collector implements Collector {
 	 * @param array  $options Optional. Additional field options.
 	 * @return Field Complete field object.
 	 */
-	protected function make_field( $label, $value, $options = array() ): Field {
+	protected function make_field( $label, $value, $options = array() ) {
 		$status = $options['status'] ?? Status::Info;
 		if ( is_string( $status ) ) {
 			$status = Status::from_legacy( $status );
