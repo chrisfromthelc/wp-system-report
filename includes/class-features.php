@@ -66,6 +66,30 @@ class Features {
 	}
 
 	/**
+	 * Whether the health score feature is available.
+	 *
+	 * Health scoring computes an aggregate 0–100 score from all collector
+	 * results and is gated behind the Pro tier.
+	 *
+	 * @return bool True when health score is available.
+	 */
+	public static function has_health_score(): bool {
+		return self::is_pro();
+	}
+
+	/**
+	 * Whether report history and trending is available.
+	 *
+	 * Report history stores periodic snapshots of the system report
+	 * and enables trend analysis over time. Gated behind the Pro tier.
+	 *
+	 * @return bool True when report history is available.
+	 */
+	public static function has_report_history(): bool {
+		return self::is_pro();
+	}
+
+	/**
 	 * Whether Abilities API integration is available.
 	 *
 	 * Abilities API integration exposes plugin capabilities as structured
