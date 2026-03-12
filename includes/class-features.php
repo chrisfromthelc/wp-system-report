@@ -76,6 +76,8 @@ class Features {
 	 * @return bool True when Abilities API integration is available.
 	 */
 	public static function has_abilities(): bool {
-		return self::is_pro() && Abilities_Provider::is_abilities_api_available();
+		return self::is_pro()
+			&& class_exists( Abilities_Provider::class )
+			&& Abilities_Provider::is_abilities_api_available();
 	}
 }

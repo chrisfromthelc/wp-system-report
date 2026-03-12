@@ -386,7 +386,9 @@ class Abilities_Provider {
 	 * @return array|\WP_Error Report data or error.
 	 */
 	public function execute_generate_report( mixed $input = null ): array|\WP_Error {
-		if ( is_array( $input ) && ! empty( $input['section'] ) ) {
+		$input = is_array( $input ) ? $input : (array) $input;
+
+		if ( ! empty( $input['section'] ) ) {
 			$section_id = sanitize_key( $input['section'] );
 			$section    = $this->report_generator->generate_section( $section_id );
 
@@ -434,8 +436,10 @@ class Abilities_Provider {
 	 * @return array|\WP_Error Log data or error.
 	 */
 	public function execute_get_error_log( mixed $input = null ): array|\WP_Error {
+		$input = is_array( $input ) ? $input : (array) $input;
 		$lines = 100;
-		if ( is_array( $input ) && isset( $input['lines'] ) ) {
+
+		if ( isset( $input['lines'] ) ) {
 			$lines = max( 1, min( 10000, absint( $input['lines'] ) ) );
 		}
 
@@ -494,7 +498,9 @@ class Abilities_Provider {
 	 * @return array|\WP_Error Fix result or error.
 	 */
 	public function execute_run_fix( mixed $input = null ): array|\WP_Error {
-		if ( ! is_array( $input ) || empty( $input['fix_id'] ) ) {
+		$input = is_array( $input ) ? $input : (array) $input;
+
+		if ( empty( $input['fix_id'] ) ) {
 			return new \WP_Error(
 				'wp_system_report_missing_fix_id',
 				__( 'The fix_id parameter is required.', 'wp-system-report' )

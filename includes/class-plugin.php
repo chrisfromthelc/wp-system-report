@@ -299,7 +299,7 @@ class Plugin {
 		// Handle dismissal via query parameter with nonce verification.
 		if ( isset( $_GET['sr_dismiss_mcp_notice'], $_GET['_wpnonce'] )
 			&& '1' === $_GET['sr_dismiss_mcp_notice']
-			&& wp_verify_nonce( sanitize_key( $_GET['_wpnonce'] ), 'sr_dismiss_mcp_notice' )
+			&& wp_verify_nonce( sanitize_text_field( wp_unslash( $_GET['_wpnonce'] ) ), 'sr_dismiss_mcp_notice' )
 		) {
 			update_user_meta( $user_id, 'sr_dismiss_mcp_notice', '1' );
 			return;
