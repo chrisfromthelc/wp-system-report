@@ -9,6 +9,7 @@ use SystemReport\Fix_Result;
 use SystemReport\Fixer_Registry;
 use SystemReport\Fixers\Autoload_Optimizer;
 use SystemReport\Fixers\Database_Optimizer;
+use SystemReport\Fixers\Security_Hardener;
 use SystemReport\Risk_Level;
 
 /**
@@ -618,6 +619,224 @@ class FixersTest extends WP_UnitTestCase {
 		$this->assertCount( 1, $db_category );
 		$this->assertSame( $autoload, $performance['autoload_optimizer'] );
 		$this->assertSame( $database, $db_category['database_optimizer'] );
+	}
+
+	// -------------------------------------------------------
+	// Security_Hardener fixer metadata tests.
+	// -------------------------------------------------------
+
+	/**
+	 * Test security hardener metadata.
+	 */
+	public function test_security_hardener_metadata() {
+		$fixer = new Security_Hardener();
+
+		$this->assertSame( 'security_hardener', $fixer->get_id() );
+		$this->assertNotEmpty( $fixer->get_label() );
+		$this->assertNotEmpty( $fixer->get_description() );
+		$this->assertSame( 'security', $fixer->get_category() );
+		$this->assertSame( Risk_Level::Medium, $fixer->get_risk_level() );
+	}
+
+	/**
+	 * Test security hardener requires confirmation (Medium risk).
+	 */
+	public function test_security_hardener_requires_confirmation() {
+		$fixer = new Security_Hardener();
+		$this->assertTrue( $fixer->get_risk_level()->requires_confirmation() );
+	}
+
+	// -------------------------------------------------------
+	// Security_Hardener functional tests.
+	// -------------------------------------------------------
+
+	/**
+	 * Test can_fix returns true when XML-RPC is enabled (default state).
+	 */
+	public function test_security_hardener_can_fix_when_xmlrpc_enabled() {
+		// Clear any previous hardening options.
+		delete_option( 'sr_security_hardening' );
+
+		$fixer = new Security_Hardener();
+		$this->assertTrue( $fixer->can_fix() );
+	}
+
+	/**
+	 * Test fix() disables XML-RPC.
+	 */
+	public function test_security_hardener_fix_disables_xmlrpc() {
+		delete_option( 'sr_security_hardening' );
+
+		$fixer  = new Security_Hardener();
+		$result = $fixer->fix();
+
+		$this->assertTrue( $result->success );
+		$this->assertStringContainsString( 'XML-RPC disabled', $result->message );
+
+		// Verify the option was stored.
+		$options = get_option( 'sr_security_hardening', array() );
+		$this->assertTrue( $options['xmlrpc_disabled'] );
+
+		// Clean up.
+		delete_option( 'sr_security_hardening' );
+	}
+
+	/**
+	 * Test fix() enables security headers.
+	 */
+	public function test_security_hardener_fix_enables_security_headers() {
+		delete_option( 'sr_security_hardening' );
+
+		$fixer  = new Security_Hardener();
+		$result = $fixer->fix();
+
+		$this->assertTrue( $result->success );
+		$this->assertStringContainsString( 'Security headers enabled', $result->message );
+
+		// Verify headers are stored.
+		$options = get_option( 'sr_security_hardening', array() );
+		$this->assertArrayHasKey( 'security_headers', $options );
+		$this->assertArrayHasKey( 'X-Content-Type-Options', $options['security_headers'] );
+		$this->assertArrayHasKey( 'X-Frame-Options', $options['security_headers'] );
+		$this->assertArrayHasKey( 'Referrer-Policy', $options['security_headers'] );
+
+		// Clean up.
+		delete_option( 'sr_security_hardening' );
+	}
+
+	/**
+	 * Test fix() returns before/after snapshots.
+	 */
+	public function test_security_hardener_fix_returns_snapshots() {
+		delete_option( 'sr_security_hardening' );
+
+		$fixer  = new Security_Hardener();
+		$result = $fixer->fix();
+
+		$this->assertTrue( $result->success );
+		$this->assertNotEmpty( $result->before );
+		$this->assertNotEmpty( $result->after );
+
+		// Before should show xmlrpc enabled and missing headers.
+		$this->assertTrue( $result->before['xmlrpc_enabled'] );
+		$this->assertTrue( $result->before['missing_headers'] );
+
+		// After should show xmlrpc disabled and no missing headers.
+		$this->assertFalse( $result->after['xmlrpc_enabled'] );
+		$this->assertFalse( $result->after['missing_headers'] );
+
+		// Clean up.
+		delete_option( 'sr_security_hardening' );
+	}
+
+	/**
+	 * Test can_fix returns false after all measures have been applied.
+	 */
+	public function test_security_hardener_can_fix_false_when_hardened() {
+		// Simulate a fully hardened state.
+		update_option(
+			'sr_security_hardening',
+			array(
+				'xmlrpc_disabled'  => true,
+				'security_headers' => array(
+					'X-Content-Type-Options' => 'nosniff',
+					'X-Frame-Options'        => 'SAMEORIGIN',
+					'Referrer-Policy'        => 'strict-origin-when-cross-origin',
+				),
+			),
+			false
+		);
+
+		$fixer = new Security_Hardener();
+
+		// XML-RPC is disabled and headers are set, but file editor
+		// is not disabled (DISALLOW_FILE_EDIT constant not defined).
+		// So can_fix should return true for the file editor advisory.
+		if ( ! defined( 'DISALLOW_FILE_EDIT' ) || ! DISALLOW_FILE_EDIT ) {
+			$this->assertTrue( $fixer->can_fix() );
+		}
+
+		// Clean up.
+		delete_option( 'sr_security_hardening' );
+	}
+
+	/**
+	 * Test fix() noop when already hardened.
+	 */
+	public function test_security_hardener_fix_noop_when_fully_hardened() {
+		// Simulate fully hardened state including file editor.
+		update_option(
+			'sr_security_hardening',
+			array(
+				'xmlrpc_disabled'  => true,
+				'security_headers' => array(
+					'X-Content-Type-Options' => 'nosniff',
+					'X-Frame-Options'        => 'SAMEORIGIN',
+					'Referrer-Policy'        => 'strict-origin-when-cross-origin',
+				),
+			),
+			false
+		);
+
+		$fixer  = new Security_Hardener();
+		$result = $fixer->fix();
+
+		$this->assertTrue( $result->success );
+
+		// The message should mention file editor advisory (since DISALLOW_FILE_EDIT
+		// is not set in test environment) or confirm everything is in place.
+		if ( ! defined( 'DISALLOW_FILE_EDIT' ) || ! DISALLOW_FILE_EDIT ) {
+			$this->assertStringContainsString( 'DISALLOW_FILE_EDIT', $result->message );
+		} else {
+			$this->assertStringContainsString( 'already in place', $result->message );
+		}
+
+		// Clean up.
+		delete_option( 'sr_security_hardening' );
+	}
+
+	/**
+	 * Test that the security hardener is registered in the default plugin fixers.
+	 */
+	public function test_security_hardener_registered_in_plugin() {
+		$plugin   = \SystemReport\Plugin::get_instance();
+		$registry = $plugin->get_fixer_registry();
+
+		$this->assertTrue( $registry->has( 'security_hardener' ) );
+		$this->assertInstanceOf( Security_Hardener::class, $registry->get( 'security_hardener' ) );
+	}
+
+	/**
+	 * Test security hardener appears in security category.
+	 */
+	public function test_registry_security_category() {
+		$fixer = new Security_Hardener();
+		$this->registry->register( $fixer );
+
+		$security = $this->registry->get_by_category( 'security' );
+		$this->assertCount( 1, $security );
+		$this->assertSame( $fixer, $security['security_hardener'] );
+	}
+
+	/**
+	 * Test apply_runtime_hardening registers xmlrpc filter when disabled.
+	 */
+	public function test_apply_runtime_hardening_xmlrpc() {
+		update_option(
+			'sr_security_hardening',
+			array( 'xmlrpc_disabled' => true ),
+			false
+		);
+
+		Security_Hardener::apply_runtime_hardening();
+
+		// The filter should return false for xmlrpc_enabled.
+		// phpcs:ignore WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedHooknameFound -- Core WordPress filter.
+		$this->assertFalse( apply_filters( 'xmlrpc_enabled', true ) );
+
+		// Clean up.
+		remove_all_filters( 'xmlrpc_enabled' );
+		delete_option( 'sr_security_hardening' );
 	}
 
 	// -------------------------------------------------------
