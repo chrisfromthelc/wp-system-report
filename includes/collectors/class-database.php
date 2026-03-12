@@ -79,7 +79,7 @@ class Database extends Abstract_Collector {
 		// Database Charset.
 		$fallback_charset = ! empty( $wpdb->charset ) ? $wpdb->charset : 'utf8mb4';
 		$charset          = $this->get_constant_value( 'DB_CHARSET', $fallback_charset );
-		$data[]  = $this->make_field(
+		$data[]           = $this->make_field(
 			__( 'Database Charset', 'wp-system-report' ),
 			$charset
 		);
