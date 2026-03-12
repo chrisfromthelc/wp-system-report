@@ -67,6 +67,16 @@ class Plugin {
 	private \SystemReport\AI_Context_Generator $ai_context_generator;
 
 	/**
+	 * Health score calculator instance.
+	 */
+	private \SystemReport\Health_Score $health_score;
+
+	/**
+	 * Health score controller instance.
+	 */
+	private \SystemReport\Health_Score_Controller $health_score_controller;
+
+	/**
 	 * Notification manager instance.
 	 */
 	private \SystemReport\Notification_Manager $notification_manager;
@@ -128,6 +138,8 @@ class Plugin {
 		$this->debug_toggle            = new Debug_Toggle();
 		$this->error_log_controller    = new Error_Log_Controller( $this->error_log_reader, $this->debug_toggle );
 		$this->fixer_controller        = new Fixer_Controller( $this->fixer_registry );
+		$this->health_score            = new Health_Score( $this->report_generator );
+		$this->health_score_controller = new Health_Score_Controller( $this->health_score );
 		$this->ai_context_generator    = new AI_Context_Generator( $this->report_generator );
 		$webhook_dispatcher            = new Webhook_Dispatcher();
 		$this->notification_manager    = new Notification_Manager( $webhook_dispatcher );
@@ -203,6 +215,7 @@ class Plugin {
 		add_action( 'rest_api_init', array( $this->error_log_controller, 'register_routes' ) );
 		add_action( 'rest_api_init', array( $this->fixer_controller, 'register_routes' ) );
 		add_action( 'rest_api_init', array( $this->notification_controller, 'register_routes' ) );
+		add_action( 'rest_api_init', array( $this->health_score_controller, 'register_routes' ) );
 		add_action( 'admin_enqueue_scripts', array( $this->admin_page, 'enqueue_assets' ) );
 
 		// Apply security hardening measures stored from previous fixer runs.
@@ -250,6 +263,15 @@ class Plugin {
 	 */
 	public function get_fixer_registry(): Fixer_Registry {
 		return $this->fixer_registry;
+	}
+
+	/**
+	 * Get the health score calculator.
+	 *
+	 * @return Health_Score The health score calculator instance.
+	 */
+	public function get_health_score(): Health_Score {
+		return $this->health_score;
 	}
 
 	/**

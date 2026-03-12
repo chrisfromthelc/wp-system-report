@@ -66,6 +66,18 @@ class Features {
 	}
 
 	/**
+	 * Whether the health score feature is available.
+	 *
+	 * Health score aggregates all collector results into a single
+	 * 0–100 score with a letter grade. Gated behind the Pro tier.
+	 *
+	 * @return bool True when health score is available.
+	 */
+	public static function has_health_score(): bool {
+		return self::is_pro();
+	}
+
+	/**
 	 * Whether Abilities API integration is available.
 	 *
 	 * Abilities API integration exposes plugin capabilities as structured
