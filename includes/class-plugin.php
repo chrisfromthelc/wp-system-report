@@ -106,6 +106,16 @@ class Plugin {
 	private ?\SystemReport\Abilities_Provider $abilities_provider = null;
 
 	/**
+	 * Report diff engine instance.
+	 */
+	private \SystemReport\Report_Diff $report_diff;
+
+	/**
+	 * Report diff controller instance.
+	 */
+	private \SystemReport\Report_Diff_Controller $report_diff_controller;
+
+	/**
 	 * GitHub updater instance.
 	 *
 	 * Stored to prevent garbage collection; hooks are registered in the constructor.
@@ -155,6 +165,13 @@ class Plugin {
 		if ( Features::has_health_score() ) {
 			$this->health_score_controller = new Health_Score_Controller( $this->health_score );
 		}
+
+		$this->report_diff            = new Report_Diff();
+		$this->report_diff_controller = new Report_Diff_Controller(
+			$this->report_diff,
+			$this->report_generator,
+			$this->health_score
+		);
 
 		$this->ai_context_generator    = new AI_Context_Generator( $this->report_generator );
 		$webhook_dispatcher            = new Webhook_Dispatcher();
@@ -249,6 +266,7 @@ class Plugin {
 		if ( null !== $this->report_history_controller ) {
 			add_action( 'rest_api_init', array( $this->report_history_controller, 'register_routes' ) );
 		}
+		add_action( 'rest_api_init', array( $this->report_diff_controller, 'register_routes' ) );
 		add_action( 'admin_enqueue_scripts', array( $this->admin_page, 'enqueue_assets' ) );
 
 		// Apply security hardening measures stored from previous fixer runs.
@@ -314,6 +332,15 @@ class Plugin {
 	 */
 	public function get_report_history(): ?Report_History {
 		return $this->report_history;
+	}
+
+	/**
+	 * Get the report diff engine.
+	 *
+	 * @return Report_Diff The report diff engine instance.
+	 */
+	public function get_report_diff(): Report_Diff {
+		return $this->report_diff;
 	}
 
 	/**
