@@ -104,8 +104,9 @@ class Security extends Abstract_Collector {
 			$this->format_boolean( $file_mods_disabled )
 		);
 
-		// Application Passwords.
-		$app_passwords_available = function_exists( 'wp_is_application_passwords_available' ) && wp_is_application_passwords_available();
+		// Application Passwords — wp_is_application_passwords_available()
+		// exists since WP 5.6; no function_exists() guard needed.
+		$app_passwords_available = wp_is_application_passwords_available();
 
 		$data[] = $this->make_field(
 			__( 'Application Passwords', 'wp-system-report' ),
