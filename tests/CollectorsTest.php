@@ -53,6 +53,7 @@ class CollectorsTest extends WP_UnitTestCase {
 			'advanced_diagnostics',
 			'email_delivery',
 			'media_uploads',
+			'performance',
 		);
 
 		foreach ( $expected_ids as $id ) {
@@ -398,5 +399,61 @@ class CollectorsTest extends WP_UnitTestCase {
 		$this->assertNotFalse( $cached );
 
 		delete_transient( 'sr_media_uploads' );
+	}
+
+	/**
+	 * Test that the Performance collector returns expected fields.
+	 */
+	public function test_performance_has_expected_fields() {
+		$collector = $this->collectors['performance'];
+		$fields    = $collector->collect();
+		$labels    = wp_list_pluck( $fields, 'label' );
+
+		$this->assertContains( 'Object Cache Backend', $labels );
+		$this->assertContains( 'Object Cache Drop-in', $labels );
+		$this->assertContains( 'Page Cache Plugin', $labels );
+		$this->assertContains( 'OPcache', $labels );
+		$this->assertContains( 'Total wp_options Rows', $labels );
+		$this->assertContains( 'wp_options Table Size', $labels );
+		$this->assertContains( 'Expired Transients', $labels );
+		$this->assertContains( 'Database Overhead', $labels );
+		$this->assertContains( 'Top Autoloaded Options', $labels );
+		$this->assertContains( 'Persistent Object Cache', $labels );
+	}
+
+	/**
+	 * Test that the Performance collector marks Top Autoloaded Options as private.
+	 */
+	public function test_performance_autoloaded_options_is_private() {
+		$collector = $this->collectors['performance'];
+		$fields    = $collector->collect();
+
+		$target_field = null;
+		foreach ( $fields as $field ) {
+			if ( 'Top Autoloaded Options' === $field['label'] ) {
+				$target_field = $field;
+				break;
+			}
+		}
+
+		$this->assertNotNull( $target_field, 'Performance should include Top Autoloaded Options field.' );
+		$this->assertTrue( $target_field['private'], 'Top Autoloaded Options should be marked as private.' );
+	}
+
+	/**
+	 * Test that the Performance collector caching works.
+	 */
+	public function test_performance_caching() {
+		$collector = $this->collectors['performance'];
+
+		delete_transient( 'sr_performance' );
+
+		$data1 = $collector->get_cached_data();
+		$this->assertIsArray( $data1 );
+
+		$cached = get_transient( 'sr_performance' );
+		$this->assertNotFalse( $cached );
+
+		delete_transient( 'sr_performance' );
 	}
 }

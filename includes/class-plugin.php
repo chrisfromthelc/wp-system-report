@@ -124,6 +124,7 @@ class Plugin {
 			new Collectors\Advanced_Diagnostics(),
 			new Collectors\Email_Delivery(),
 			new Collectors\Media_Uploads(),
+			new Collectors\Performance(),
 		);
 
 		foreach ( $collectors as $collector ) {
