@@ -15,7 +15,7 @@ jobs:
         php-version: ['7.4', '8.0', '8.1', '8.2', '8.3']
     steps:
       - name: Checkout
-        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
 
       - name: Setup PHP
         uses: shivammathur/setup-php@d59004228537ca90c8dca680592a08a675bf52b6 # v2
@@ -46,7 +46,7 @@ jobs:
     runs-on: ubuntu-24.04
     steps:
       - name: Checkout
-        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
 
       - name: Setup PHP
         uses: shivammathur/setup-php@d59004228537ca90c8dca680592a08a675bf52b6 # v2
@@ -77,7 +77,7 @@ jobs:
     runs-on: ubuntu-24.04
     steps:
       - name: Checkout
-        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
 
       - name: Setup PHP
         uses: shivammathur/setup-php@d59004228537ca90c8dca680592a08a675bf52b6 # v2
@@ -124,7 +124,7 @@ jobs:
           --health-retries=3
     steps:
       - name: Checkout
-        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
 
       - name: Install subversion
         run: sudo apt-get update && sudo apt-get install -y subversion
