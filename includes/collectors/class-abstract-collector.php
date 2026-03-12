@@ -80,8 +80,8 @@ abstract class Abstract_Collector implements Collector {
 		}
 
 		return new Field(
-			label:        $label,
-			value:        (string) $value,
+			label:        $options['label'] ?? $label,
+			value:        (string) ( $options['value'] ?? $value ),
 			debug:        $options['debug'] ?? $value,
 			status:       $status,
 			description:  $options['description'] ?? '',

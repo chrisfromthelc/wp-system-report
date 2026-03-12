@@ -187,7 +187,8 @@ class Field implements \ArrayAccess, \JsonSerializable {
 				$this->recommended = (string) $value;
 				break;
 			case 'export_label':
-				$this->export_label = (string) $value;
+				$cast               = (string) $value;
+				$this->export_label = '' === $cast ? $this->label : $cast;
 				break;
 			case 'private':
 				$this->private = (bool) $value;

@@ -49,8 +49,7 @@ interface Collector {
 	/**
 	 * Collect and return the data fields.
 	 *
-	 * Returns an array of Field value objects (or associative arrays for
-	 * backward compatibility). Each field contains:
+	 * Returns an array of Field value objects. Each field contains:
 	 * - label        (string)      Display label.
 	 * - value        (string)      Formatted display value.
 	 * - debug        (mixed)       Raw value for machine-readable export.
