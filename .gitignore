@@ -50,3 +50,7 @@ phpstan-baseline.neon
 # Debug
 debug.log
 error_log
+
+# Beads issue tracker
+.beads/
+AGENTS.md
