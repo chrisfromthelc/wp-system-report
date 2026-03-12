@@ -36,3 +36,7 @@ tests_add_filter( 'muplugins_loaded', '_manually_load_plugin' );
 
 // Start up the WP testing environment.
 require $_tests_dir . '/includes/bootstrap.php';
+
+// Create plugin tables that normally rely on register_activation_hook()
+// or admin_init, neither of which fire during the test bootstrap.
+\SystemReport\Report_History::create_table();

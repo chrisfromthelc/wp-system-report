@@ -52,10 +52,12 @@ class ReportHistoryTest extends WP_UnitTestCase {
 		// tests trigger report generation.
 		remove_all_actions( 'wp_system_report_generated' );
 
-		// Drop and recreate the table so the auto-increment counter
-		// resets to 1 for each test, ensuring predictable IDs.
-		Report_History::drop_table();
-		Report_History::create_table();
+		// Clear all rows between tests.  The table is created once by
+		// the test bootstrap (outside any transaction) so we only need
+		// to empty it here.  Using DELETE (DML) instead of TRUNCATE or
+		// DROP/CREATE (DDL) so it participates in the test transaction
+		// and doesn't cause an implicit commit.
+		$this->history->delete_all();
 	}
 
 	/**
@@ -94,81 +96,17 @@ class ReportHistoryTest extends WP_UnitTestCase {
 	}
 
 	/**
-	 * Test that the table can be created.
+	 * Test that the table exists (created by the test bootstrap).
 	 */
 	public function test_create_table(): void {
 		global $wpdb;
 
 		$table = Report_History::get_table_name();
 
-		// Check if setUp's create_table() succeeded.
 		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery,WordPress.DB.DirectDatabaseQuery.NoCaching
 		$exists = $wpdb->get_var(
 			$wpdb->prepare( 'SHOW TABLES LIKE %s', $table )
 		);
-		$setup_error = $wpdb->last_error;
-
-		if ( null === $exists ) {
-			// Diagnostic: Can we create ANY table?
-			$diag_table = $wpdb->prefix . 'sr_diag_test';
-			// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery,WordPress.DB.DirectDatabaseQuery.NoCaching,WordPress.DB.PreparedSQL.InterpolatedNotPrepared
-			$simple_result = $wpdb->query( "CREATE TABLE {$diag_table} (id INT PRIMARY KEY)" );
-			$simple_error  = $wpdb->last_error;
-			// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery,WordPress.DB.DirectDatabaseQuery.NoCaching,WordPress.DB.PreparedSQL.InterpolatedNotPrepared
-			$simple_exists = $wpdb->get_var( "SHOW TABLES LIKE '{$diag_table}'" );
-			// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery,WordPress.DB.DirectDatabaseQuery.NoCaching,WordPress.DB.PreparedSQL.InterpolatedNotPrepared
-			$wpdb->query( "DROP TABLE IF EXISTS {$diag_table}" );
-
-			// Diagnostic: Try creating our actual table directly.
-			$charset = $wpdb->get_charset_collate();
-			// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery,WordPress.DB.DirectDatabaseQuery.NoCaching,WordPress.DB.PreparedSQL.InterpolatedNotPrepared
-			$full_result = $wpdb->query(
-				"CREATE TABLE $table (
- id bigint(20) unsigned NOT NULL AUTO_INCREMENT,
- score smallint(3) unsigned NOT NULL DEFAULT 0,
- grade varchar(2) NOT NULL DEFAULT 'F',
- summary_good smallint(5) unsigned NOT NULL DEFAULT 0,
- summary_warning smallint(5) unsigned NOT NULL DEFAULT 0,
- summary_critical smallint(5) unsigned NOT NULL DEFAULT 0,
- report_data longblob NOT NULL,
- created_at datetime NOT NULL DEFAULT '0000-00-00 00:00:00',
- PRIMARY KEY  (id),
- KEY idx_created_at (created_at),
- KEY idx_score (score)
-) $charset"
-			);
-			$full_error  = $wpdb->last_error;
-			// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery,WordPress.DB.DirectDatabaseQuery.NoCaching
-			$full_exists = $wpdb->get_var(
-				$wpdb->prepare( 'SHOW TABLES LIKE %s', $table )
-			);
-
-			// Diagnostic: Check SQL mode.
-			// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery,WordPress.DB.DirectDatabaseQuery.NoCaching
-			$sql_mode = $wpdb->get_var( 'SELECT @@SESSION.sql_mode' );
-
-			$this->assertSame(
-				$table,
-				$exists,
-				sprintf(
-					"setUp create_table failed.\n" .
-					"setup_error='%s'\n" .
-					"simple: result=%s, error='%s', exists=%s\n" .
-					"full: result=%s, error='%s', exists=%s\n" .
-					"charset='%s', sql_mode='%s', dbname='%s'",
-					$setup_error,
-					var_export( $simple_result, true ),
-					$simple_error,
-					var_export( $simple_exists, true ),
-					var_export( $full_result, true ),
-					$full_error,
-					var_export( $full_exists, true ),
-					$charset,
-					$sql_mode,
-					$wpdb->dbname
-				)
-			);
-		}
 
 		$this->assertSame( $table, $exists );
 	}
