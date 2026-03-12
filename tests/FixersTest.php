@@ -8,6 +8,7 @@
 use SystemReport\Fix_Result;
 use SystemReport\Fixer_Registry;
 use SystemReport\Fixers\Autoload_Optimizer;
+use SystemReport\Fixers\Database_Optimizer;
 use SystemReport\Risk_Level;
 
 /**
@@ -398,5 +399,300 @@ class FixersTest extends WP_UnitTestCase {
 		$this->assertFalse( Risk_Level::Low->requires_confirmation() );
 		$this->assertTrue( Risk_Level::Medium->requires_confirmation() );
 		$this->assertTrue( Risk_Level::High->requires_confirmation() );
+	}
+
+	// -------------------------------------------------------
+	// Database_Optimizer fixer metadata tests.
+	// -------------------------------------------------------
+
+	/**
+	 * Test database optimizer metadata.
+	 */
+	public function test_database_optimizer_metadata() {
+		$fixer = new Database_Optimizer();
+
+		$this->assertSame( 'database_optimizer', $fixer->get_id() );
+		$this->assertNotEmpty( $fixer->get_label() );
+		$this->assertNotEmpty( $fixer->get_description() );
+		$this->assertSame( 'database', $fixer->get_category() );
+		$this->assertSame( Risk_Level::Low, $fixer->get_risk_level() );
+	}
+
+	/**
+	 * Test database optimizer does not require confirmation (Low risk).
+	 */
+	public function test_database_optimizer_low_risk_no_confirmation() {
+		$fixer = new Database_Optimizer();
+		$this->assertFalse( $fixer->get_risk_level()->requires_confirmation() );
+	}
+
+	// -------------------------------------------------------
+	// Database_Optimizer expired transient tests.
+	// -------------------------------------------------------
+
+	/**
+	 * Test can_fix returns false when no expired transients or overhead exist.
+	 */
+	public function test_database_optimizer_can_fix_false_when_clean() {
+		// In a fresh WP test install, there should be no expired transients.
+		// Override the overhead threshold to avoid noise from test DB fragmentation.
+		add_filter( 'wp_system_report_optimize_overhead_threshold', function (): int {
+			return PHP_INT_MAX; // Set impossibly high so overhead check returns nothing.
+		} );
+
+		$fixer = new Database_Optimizer();
+
+		// Delete any expired transients that might exist from other tests.
+		$this->delete_all_expired_transients();
+
+		$this->assertFalse( $fixer->can_fix() );
+
+		remove_all_filters( 'wp_system_report_optimize_overhead_threshold' );
+	}
+
+	/**
+	 * Test can_fix returns true when expired transients exist.
+	 */
+	public function test_database_optimizer_can_fix_true_with_expired_transients() {
+		// Create an expired transient by directly setting a past timestamp.
+		$this->create_expired_transient( 'sr_test_expired', 'test_value', time() - 3600 );
+
+		$fixer = new Database_Optimizer();
+		$this->assertTrue( $fixer->can_fix() );
+
+		$this->cleanup_test_transient( 'sr_test_expired' );
+	}
+
+	/**
+	 * Test fix() deletes expired transients.
+	 */
+	public function test_database_optimizer_fix_deletes_expired_transients() {
+		global $wpdb;
+
+		// Suppress table overhead to isolate transient testing.
+		add_filter( 'wp_system_report_optimize_overhead_threshold', function (): int {
+			return PHP_INT_MAX;
+		} );
+
+		// Create multiple expired transients.
+		$this->create_expired_transient( 'sr_test_exp_a', 'value_a', time() - 7200 );
+		$this->create_expired_transient( 'sr_test_exp_b', 'value_b', time() - 3600 );
+
+		$fixer  = new Database_Optimizer();
+		$result = $fixer->fix();
+
+		$this->assertTrue( $result->success );
+		$this->assertNotEmpty( $result->before );
+		$this->assertNotEmpty( $result->after );
+
+		// Before snapshot should show expired transients.
+		$this->assertGreaterThanOrEqual( 2, $result->before['expired_transients'] );
+
+		// After snapshot should show transients were deleted.
+		$this->assertArrayHasKey( 'transients_deleted', $result->after );
+		$this->assertGreaterThanOrEqual( 2, $result->after['transients_deleted'] );
+
+		// Verify the transient data rows are gone.
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery,WordPress.DB.DirectDatabaseQuery.NoCaching -- Test assertion query.
+		$remaining = $wpdb->get_var(
+			$wpdb->prepare(
+				"SELECT COUNT(*) FROM {$wpdb->options} WHERE option_name = %s",
+				'_transient_sr_test_exp_a'
+			)
+		);
+		$this->assertSame( '0', $remaining );
+
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery,WordPress.DB.DirectDatabaseQuery.NoCaching -- Test assertion query.
+		$remaining_timeout = $wpdb->get_var(
+			$wpdb->prepare(
+				"SELECT COUNT(*) FROM {$wpdb->options} WHERE option_name = %s",
+				'_transient_timeout_sr_test_exp_a'
+			)
+		);
+		$this->assertSame( '0', $remaining_timeout );
+
+		remove_all_filters( 'wp_system_report_optimize_overhead_threshold' );
+		$this->cleanup_test_transient( 'sr_test_exp_a' );
+		$this->cleanup_test_transient( 'sr_test_exp_b' );
+	}
+
+	/**
+	 * Test fix() returns success with nothing to do when database is clean.
+	 */
+	public function test_database_optimizer_fix_noop_when_clean() {
+		// Suppress overhead detection.
+		add_filter( 'wp_system_report_optimize_overhead_threshold', function (): int {
+			return PHP_INT_MAX;
+		} );
+
+		// Ensure no expired transients.
+		$this->delete_all_expired_transients();
+
+		$fixer  = new Database_Optimizer();
+		$result = $fixer->fix();
+
+		$this->assertTrue( $result->success );
+		$this->assertStringContainsString( 'already clean', $result->message );
+
+		remove_all_filters( 'wp_system_report_optimize_overhead_threshold' );
+	}
+
+	/**
+	 * Test fix() success message includes transient count.
+	 */
+	public function test_database_optimizer_fix_message_includes_transient_count() {
+		// Suppress overhead.
+		add_filter( 'wp_system_report_optimize_overhead_threshold', function (): int {
+			return PHP_INT_MAX;
+		} );
+
+		$this->create_expired_transient( 'sr_test_msg', 'val', time() - 100 );
+
+		$fixer  = new Database_Optimizer();
+		$result = $fixer->fix();
+
+		$this->assertTrue( $result->success );
+		$this->assertStringContainsString( 'transient', $result->message );
+
+		remove_all_filters( 'wp_system_report_optimize_overhead_threshold' );
+		$this->cleanup_test_transient( 'sr_test_msg' );
+	}
+
+	/**
+	 * Test the overhead threshold filter.
+	 */
+	public function test_database_optimizer_overhead_threshold_filter() {
+		// Use a filter to set threshold to 0, which should trigger overhead detection
+		// even on small databases.
+		add_filter( 'wp_system_report_optimize_overhead_threshold', function (): int {
+			return 0;
+		} );
+
+		$fixer = new Database_Optimizer();
+
+		// We can't guarantee overhead exists, but the filter should be applied.
+		// Just verify no errors are thrown.
+		$result = $fixer->fix();
+		$this->assertInstanceOf( Fix_Result::class, $result );
+
+		remove_all_filters( 'wp_system_report_optimize_overhead_threshold' );
+	}
+
+	/**
+	 * Test that the database optimizer is registered in the default plugin fixers.
+	 */
+	public function test_database_optimizer_registered_in_plugin() {
+		$plugin   = \SystemReport\Plugin::get_instance();
+		$registry = $plugin->get_fixer_registry();
+
+		$this->assertTrue( $registry->has( 'database_optimizer' ) );
+		$this->assertInstanceOf( Database_Optimizer::class, $registry->get( 'database_optimizer' ) );
+	}
+
+	/**
+	 * Test registry get_by_category includes database optimizer.
+	 */
+	public function test_registry_database_category() {
+		$fixer = new Database_Optimizer();
+		$this->registry->register( $fixer );
+
+		$database = $this->registry->get_by_category( 'database' );
+		$this->assertCount( 1, $database );
+		$this->assertSame( $fixer, $database['database_optimizer'] );
+	}
+
+	/**
+	 * Test registry holds both autoload and database optimizers by category.
+	 */
+	public function test_registry_multiple_categories() {
+		$autoload = new Autoload_Optimizer();
+		$database = new Database_Optimizer();
+
+		$this->registry->register( $autoload );
+		$this->registry->register( $database );
+
+		$performance = $this->registry->get_by_category( 'performance' );
+		$db_category = $this->registry->get_by_category( 'database' );
+
+		$this->assertCount( 1, $performance );
+		$this->assertCount( 1, $db_category );
+		$this->assertSame( $autoload, $performance['autoload_optimizer'] );
+		$this->assertSame( $database, $db_category['database_optimizer'] );
+	}
+
+	// -------------------------------------------------------
+	// Helper methods for transient tests.
+	// -------------------------------------------------------
+
+	/**
+	 * Create an expired transient by directly inserting into the database.
+	 *
+	 * @param string $name      Transient name (without _transient_ prefix).
+	 * @param string $value     Transient value.
+	 * @param int    $timestamp Expiration timestamp (should be in the past).
+	 */
+	private function create_expired_transient( string $name, string $value, int $timestamp ): void {
+		global $wpdb;
+
+		// Insert the data row.
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery -- Test setup.
+		$wpdb->replace(
+			$wpdb->options,
+			array(
+				'option_name'  => '_transient_' . $name,
+				'option_value' => $value,
+				'autoload'     => 'no',
+			)
+		);
+
+		// Insert the timeout row with a past timestamp.
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery -- Test setup.
+		$wpdb->replace(
+			$wpdb->options,
+			array(
+				'option_name'  => '_transient_timeout_' . $name,
+				'option_value' => (string) $timestamp,
+				'autoload'     => 'no',
+			)
+		);
+
+		// Clear the options cache so our fixer sees the changes.
+		wp_cache_flush();
+	}
+
+	/**
+	 * Clean up a test transient (both data and timeout rows).
+	 *
+	 * @param string $name Transient name (without _transient_ prefix).
+	 */
+	private function cleanup_test_transient( string $name ): void {
+		delete_option( '_transient_' . $name );
+		delete_option( '_transient_timeout_' . $name );
+	}
+
+	/**
+	 * Delete all expired transients for a clean test environment.
+	 */
+	private function delete_all_expired_transients(): void {
+		global $wpdb;
+
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery,WordPress.DB.DirectDatabaseQuery.NoCaching -- Test cleanup.
+		$expired = $wpdb->get_col(
+			$wpdb->prepare(
+				"SELECT option_name FROM {$wpdb->options}
+				WHERE option_name LIKE %s
+				AND option_value < %d",
+				$wpdb->esc_like( '_transient_timeout_' ) . '%',
+				time()
+			)
+		);
+
+		foreach ( $expired as $timeout_key ) {
+			$data_key = str_replace( '_transient_timeout_', '_transient_', $timeout_key );
+			delete_option( $data_key );
+			delete_option( $timeout_key );
+		}
+
+		wp_cache_flush();
 	}
 }
