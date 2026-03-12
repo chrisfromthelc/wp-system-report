@@ -150,6 +150,7 @@ class Plugin {
 			new Fixers\Autoload_Optimizer(),
 			new Fixers\Database_Optimizer(),
 			new Fixers\Security_Hardener(),
+			new Fixers\Cron_Repair(),
 		);
 
 		foreach ( $fixers as $fixer ) {
