@@ -78,19 +78,19 @@ class Database extends Abstract_Collector {
 			array( 'status' => $prefix_status )
 		);
 
-		// Database Charset.
-		$fallback_charset = ! empty( $wpdb->charset ) ? $wpdb->charset : 'utf8mb4';
-		$charset          = $this->get_constant_value( 'DB_CHARSET', $fallback_charset );
-		$data[]           = $this->make_field(
+		// Database Charset — wpdb->charset is the authoritative runtime value
+		// set during wpdb::determine_charset(). The DB_CHARSET constant only
+		// provides the initial hint; the actual charset may differ after
+		// negotiation with the server.
+		$data[] = $this->make_field(
 			__( 'Database Charset', 'wp-system-report' ),
-			$charset
+			! empty( $wpdb->charset ) ? $wpdb->charset : 'utf8mb4'
 		);
 
-		// Database Collation.
-		$collate = $this->get_constant_value( 'DB_COLLATE', $wpdb->collate );
-		$data[]  = $this->make_field(
+		// Database Collation — same reasoning as charset above.
+		$data[] = $this->make_field(
 			__( 'Database Collation', 'wp-system-report' ),
-			$collate ? $collate : __( 'Default', 'wp-system-report' )
+			! empty( $wpdb->collate ) ? $wpdb->collate : __( 'Default', 'wp-system-report' )
 		);
 
 		// Max Allowed Packet.
