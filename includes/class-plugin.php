@@ -37,6 +37,11 @@ class Plugin {
 	private \SystemReport\REST_Controller $rest_controller;
 
 	/**
+	 * Fixer registry instance.
+	 */
+	private \SystemReport\Fixer_Registry $fixer_registry;
+
+	/**
 	 * Error log reader instance.
 	 */
 	private \SystemReport\Error_Log_Reader $error_log_reader;
@@ -89,6 +94,7 @@ class Plugin {
 	 */
 	private function __construct() {
 		$this->report_generator     = new Report_Generator();
+		$this->fixer_registry       = new Fixer_Registry();
 		$this->admin_page           = new Admin_Page( $this->report_generator );
 		$this->rest_controller      = new REST_Controller( $this->report_generator );
 		$this->error_log_reader     = new Error_Log_Reader();
@@ -97,6 +103,7 @@ class Plugin {
 		$this->github_updater       = new GitHub_Updater( WP_SYSTEM_REPORT_FILE );
 
 		$this->register_default_collectors();
+		$this->register_default_fixers();
 		$this->register_hooks();
 	}
 
@@ -132,6 +139,19 @@ class Plugin {
 
 		foreach ( $collectors as $collector ) {
 			$this->report_generator->register_collector( $collector );
+		}
+	}
+
+	/**
+	 * Register all default fixers.
+	 */
+	private function register_default_fixers(): void {
+		$fixers = array(
+			new Fixers\Autoload_Optimizer(),
+		);
+
+		foreach ( $fixers as $fixer ) {
+			$this->fixer_registry->register( $fixer );
 		}
 	}
 
@@ -173,6 +193,15 @@ class Plugin {
  */
 	public function get_report_generator(): \SystemReport\Report_Generator {
 		return $this->report_generator;
+	}
+
+	/**
+	 * Get the fixer registry.
+	 *
+	 * @return Fixer_Registry The fixer registry instance.
+	 */
+	public function get_fixer_registry(): Fixer_Registry {
+		return $this->fixer_registry;
 	}
 
 	/**
