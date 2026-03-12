@@ -101,28 +101,35 @@ class ReportHistoryTest extends WP_UnitTestCase {
 
 		$table = Report_History::get_table_name();
 
-		// Diagnostic: attempt a minimal direct CREATE TABLE to verify
-		// the MySQL connection and permissions work for DDL statements.
-		$charset = $wpdb->get_charset_collate();
-		// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
-		$result = $wpdb->query( "CREATE TABLE IF NOT EXISTS {$table}_diag ( id int PRIMARY KEY ) {$charset}" );
-		// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
-		$diag_exists = $wpdb->get_var( "SHOW TABLES LIKE '{$table}_diag'" );
-		// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
-		$wpdb->query( "DROP TABLE IF EXISTS {$table}_diag" );
+		// Diagnostic: list all tables to see what actually exists.
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery,WordPress.DB.DirectDatabaseQuery.NoCaching
+		$all_tables = $wpdb->get_col( 'SHOW TABLES' );
+		$sr_tables  = array_filter(
+			$all_tables,
+			static fn( string $t ): bool => str_contains( $t, 'sr_report' )
+		);
+
+		// Check using information_schema as an alternative.
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery,WordPress.DB.DirectDatabaseQuery.NoCaching
+		$info_check = $wpdb->get_var(
+			$wpdb->prepare(
+				"SELECT TABLE_NAME FROM information_schema.TABLES WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = %s",
+				$table
+			)
+		);
 
 		$exists = $wpdb->get_var(
 			$wpdb->prepare( 'SHOW TABLES LIKE %s', $table )
 		);
 
 		$debug = sprintf(
-			'Table: %s | exists: %s | diag_result: %s | diag_exists: %s | last_error: %s | prefix: %s',
+			'Table: %s | SHOW TABLES LIKE: %s | info_schema: %s | sr_tables: [%s] | total_tables: %d | last_error: %s',
 			$table,
 			var_export( $exists, true ),
-			var_export( $result, true ),
-			var_export( $diag_exists, true ),
-			$wpdb->last_error,
-			$wpdb->prefix
+			var_export( $info_check, true ),
+			implode( ', ', $sr_tables ),
+			count( $all_tables ),
+			$wpdb->last_error
 		);
 
 		$this->assertSame( $table, $exists, $debug );
