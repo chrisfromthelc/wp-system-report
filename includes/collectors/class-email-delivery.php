@@ -288,7 +288,14 @@ class Email_Delivery extends Abstract_Collector {
 	 */
 	private function collect_mail_plugin() {
 		$active_plugins = (array) get_option( 'active_plugins', array() );
-		$detected       = array();
+
+		// Include network-activated plugins on multisite.
+		if ( is_multisite() ) {
+			$network_active = (array) get_site_option( 'active_sitewide_plugins', array() );
+			$active_plugins = array_merge( $active_plugins, array_keys( $network_active ) );
+		}
+
+		$detected = array();
 
 		foreach ( self::KNOWN_MAIL_PLUGINS as $file => $name ) {
 			if ( in_array( $file, $active_plugins, true ) ) {
@@ -329,7 +336,7 @@ class Email_Delivery extends Abstract_Collector {
 			__( 'PHPMailer Override', 'wp-system-report' ),
 			$this->format_boolean( false !== $has_override ),
 			array(
-				'status'      => false !== $has_override ? Status::Info : Status::Info,
+				'status'      => Status::Info,
 				'description' => __( 'Whether a plugin or theme has hooked into phpmailer_init to customize mail settings.', 'wp-system-report' ),
 			)
 		);
@@ -363,7 +370,8 @@ class Email_Delivery extends Abstract_Collector {
 		$disabled = ini_get( 'disable_functions' );
 		$disabled = false !== $disabled ? $disabled : '';
 
-		$mail_disabled = str_contains( $disabled, 'mail' );
+		$disabled_list = array_map( 'trim', explode( ',', $disabled ) );
+		$mail_disabled = in_array( 'mail', $disabled_list, true );
 
 		return $this->make_field(
 			__( 'PHP mail() Disabled', 'wp-system-report' ),
