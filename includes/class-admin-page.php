@@ -30,6 +30,8 @@ class Admin_Page {
 
 	/**
 	 * Report generator instance.
+	 *
+	 * @var \SystemReport\Report_Generator
 	 */
 	private \SystemReport\Report_Generator $report_generator;
 
@@ -116,7 +118,7 @@ class Admin_Page {
 	 */
 	private function enqueue_interactivity_assets( string $current_tab ): void {
 		// Script Modules API (WP 6.5+) uses array-of-arrays format, not flat strings.
-		// @see https://developer.wordpress.org/reference/functions/wp_enqueue_script_module/
+		// See https://developer.wordpress.org/reference/functions/wp_enqueue_script_module/.
 		$iapi_dep = array( array( 'id' => '@wordpress/interactivity' ) );
 
 		if ( 'report' === $current_tab ) {
@@ -146,9 +148,12 @@ class Admin_Page {
 			);
 		}
 
-		// The Interactivity API state printer hooks into wp_footer by default.
-		// Admin pages use admin_footer, so we add the hook manually.
-		if ( function_exists( 'wp_interactivity' ) ) {
+		// WP 6.7+ automatically prints Interactivity API state in admin_footer,
+		// so the manual hook is only needed for WP 6.5–6.6.x.
+		// print_client_interactivity_data() was deprecated in WP 6.7.0 (#96).
+		if ( function_exists( 'wp_interactivity' )
+			&& version_compare( $GLOBALS['wp_version'], '6.7', '<' )
+		) {
 			add_action( 'admin_footer', array( wp_interactivity(), 'print_client_interactivity_data' ), 8 );
 		}
 	}
