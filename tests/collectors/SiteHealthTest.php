@@ -40,6 +40,77 @@ class SiteHealthTest extends WP_UnitTestCase {
 	}
 
 	// -------------------------------------------------------
+	// Test helper methods.
+	// -------------------------------------------------------
+
+	/**
+	 * Register direct tests via the site_status_tests filter.
+	 *
+	 * Replaces all Site Health tests with the provided direct test
+	 * configurations. Each entry should be a test config array with
+	 * at minimum a 'test' key (string or callable).
+	 *
+	 * @param array<string, array> $tests Keyed by test ID.
+	 */
+	private function register_direct_tests( array $tests ): void {
+		add_filter(
+			'site_status_tests',
+			static function () use ( $tests ) {
+				return array(
+					'direct' => $tests,
+					'async'  => array(),
+				);
+			}
+		);
+	}
+
+	/**
+	 * Build a mock callable test that returns a fixed result.
+	 *
+	 * @param string $status      The Site Health status string ('good', 'recommended', 'critical').
+	 * @param string $label       Optional label override. Defaults to ucfirst of status.
+	 * @param string $test_id     Optional test identifier.
+	 * @param string $description Optional description (may contain HTML for testing stripping).
+	 * @return callable The callable that returns a Site Health test result array.
+	 */
+	private function make_mock_test( string $status, string $label = '', string $test_id = '', string $description = '' ): callable {
+		$label   = '' !== $label ? $label : ucfirst( $status ) . ' Test';
+		$test_id = '' !== $test_id ? $test_id : 'mock_' . $status;
+
+		return static function () use ( $label, $status, $test_id, $description ) {
+			$result = array(
+				'label'  => $label,
+				'status' => $status,
+				'badge'  => array(
+					'label' => 'Performance',
+					'color' => 'blue',
+				),
+				'test'   => $test_id,
+			);
+			if ( '' !== $description ) {
+				$result['description'] = $description;
+			}
+			return $result;
+		};
+	}
+
+	/**
+	 * Find a field in the collected array by its label.
+	 *
+	 * @param Field[] $fields Array of collected Field objects.
+	 * @param string  $label  The label to search for.
+	 * @return Field|null The matching field, or null if not found.
+	 */
+	private function find_field_by_label( array $fields, string $label ): ?Field {
+		foreach ( $fields as $field ) {
+			if ( $field instanceof Field && $label === $field->label ) {
+				return $field;
+			}
+		}
+		return null;
+	}
+
+	// -------------------------------------------------------
 	// Metadata tests.
 	// -------------------------------------------------------
 
@@ -130,9 +201,9 @@ class SiteHealthTest extends WP_UnitTestCase {
 	 * Test that all non-summary fields have a valid Status enum value.
 	 */
 	public function test_individual_tests_have_valid_status(): void {
-		$fields          = $this->collector->collect();
-		$non_summary     = array_slice( $fields, 1 );
-		$valid_statuses  = array( Status::Good, Status::Warning, Status::Critical );
+		$fields         = $this->collector->collect();
+		$non_summary    = array_slice( $fields, 1 );
+		$valid_statuses = array( Status::Good, Status::Warning, Status::Critical );
 
 		if ( empty( $non_summary ) ) {
 			$this->assertIsArray( $non_summary, 'No individual site health test fields to validate.' );
@@ -156,8 +227,8 @@ class SiteHealthTest extends WP_UnitTestCase {
 	 * so valid values are 'Good', 'Recommended', or 'Critical'.
 	 */
 	public function test_field_values_are_ucfirst_status(): void {
-		$fields      = $this->collector->collect();
-		$non_summary = array_slice( $fields, 1 );
+		$fields       = $this->collector->collect();
+		$non_summary  = array_slice( $fields, 1 );
 		$valid_values = array( 'Good', 'Recommended', 'Critical' );
 
 		if ( empty( $non_summary ) ) {
@@ -277,20 +348,13 @@ class SiteHealthTest extends WP_UnitTestCase {
 	 * the resolution logic in WP_Site_Health::get_page_data().
 	 */
 	public function test_string_test_callbacks_are_resolved(): void {
-		// Replace tests with a single known string-based test.
-		add_filter(
-			'site_status_tests',
-			static function () {
-				return array(
-					'direct' => array(
-						'wordpress_version' => array(
-							'label' => 'WordPress Version',
-							'test'  => 'wordpress_version',
-						),
-					),
-					'async'  => array(),
-				);
-			}
+		$this->register_direct_tests(
+			array(
+				'wordpress_version' => array(
+					'label' => 'WordPress Version',
+					'test'  => 'wordpress_version',
+				),
+			)
 		);
 
 		$fields = $this->collector->collect();
@@ -315,30 +379,13 @@ class SiteHealthTest extends WP_UnitTestCase {
 	 * instead of a string. Ensure those are still executed correctly.
 	 */
 	public function test_callable_test_callbacks_are_executed(): void {
-		add_filter(
-			'site_status_tests',
-			static function () {
-				return array(
-					'direct' => array(
-						'custom_test' => array(
-							'label' => 'Custom Callable Test',
-							'test'  => static function () {
-								return array(
-									'label'       => 'Custom Callable Test',
-									'status'      => 'good',
-									'badge'       => array(
-										'label' => 'Performance',
-										'color' => 'blue',
-									),
-									'description' => 'This is a custom callable test.',
-									'test'        => 'custom_test',
-								);
-							},
-						),
-					),
-					'async'  => array(),
-				);
-			}
+		$this->register_direct_tests(
+			array(
+				'custom_test' => array(
+					'label' => 'Custom Callable Test',
+					'test'  => $this->make_mock_test( 'good', 'Custom Callable Test', 'custom_test', 'This is a custom callable test.' ),
+				),
+			)
 		);
 
 		$fields = $this->collector->collect();
@@ -356,34 +403,17 @@ class SiteHealthTest extends WP_UnitTestCase {
 	 * Test that a mix of string and callable tests are all processed.
 	 */
 	public function test_mixed_string_and_callable_tests(): void {
-		add_filter(
-			'site_status_tests',
-			static function () {
-				return array(
-					'direct' => array(
-						'wordpress_version' => array(
-							'label' => 'WordPress Version',
-							'test'  => 'wordpress_version',
-						),
-						'custom_callable'   => array(
-							'label' => 'Custom Check',
-							'test'  => static function () {
-								return array(
-									'label'       => 'Custom Check',
-									'status'      => 'recommended',
-									'badge'       => array(
-										'label' => 'Security',
-										'color' => 'blue',
-									),
-									'description' => 'Custom recommendation.',
-									'test'        => 'custom_callable',
-								);
-							},
-						),
-					),
-					'async'  => array(),
-				);
-			}
+		$this->register_direct_tests(
+			array(
+				'wordpress_version' => array(
+					'label' => 'WordPress Version',
+					'test'  => 'wordpress_version',
+				),
+				'custom_callable'   => array(
+					'label' => 'Custom Check',
+					'test'  => $this->make_mock_test( 'recommended', 'Custom Check', 'custom_callable', 'Custom recommendation.' ),
+				),
+			)
 		);
 
 		$fields = $this->collector->collect();
@@ -405,19 +435,13 @@ class SiteHealthTest extends WP_UnitTestCase {
 	 * WP_Site_Health, the collector should skip it without error.
 	 */
 	public function test_unresolvable_string_test_is_skipped(): void {
-		add_filter(
-			'site_status_tests',
-			static function () {
-				return array(
-					'direct' => array(
-						'nonexistent_method' => array(
-							'label' => 'Nonexistent',
-							'test'  => 'nonexistent_method_that_does_not_exist',
-						),
-					),
-					'async'  => array(),
-				);
-			}
+		$this->register_direct_tests(
+			array(
+				'nonexistent_method' => array(
+					'label' => 'Nonexistent',
+					'test'  => 'nonexistent_method_that_does_not_exist',
+				),
+			)
 		);
 
 		$fields = $this->collector->collect();
@@ -436,30 +460,13 @@ class SiteHealthTest extends WP_UnitTestCase {
 	 * Test correct counting with known critical test result.
 	 */
 	public function test_critical_test_counted_correctly(): void {
-		add_filter(
-			'site_status_tests',
-			static function () {
-				return array(
-					'direct' => array(
-						'mock_critical' => array(
-							'label' => 'Critical Issue',
-							'test'  => static function () {
-								return array(
-									'label'       => 'Critical Issue',
-									'status'      => 'critical',
-									'badge'       => array(
-										'label' => 'Security',
-										'color' => 'red',
-									),
-									'description' => 'Something is critically wrong.',
-									'test'        => 'mock_critical',
-								);
-							},
-						),
-					),
-					'async'  => array(),
-				);
-			}
+		$this->register_direct_tests(
+			array(
+				'mock_critical' => array(
+					'label' => 'Critical Issue',
+					'test'  => $this->make_mock_test( 'critical', 'Critical Issue', 'mock_critical', 'Something is critically wrong.' ),
+				),
+			)
 		);
 
 		$fields  = $this->collector->collect();
@@ -481,30 +488,13 @@ class SiteHealthTest extends WP_UnitTestCase {
 	 * Test correct counting with known recommended test result.
 	 */
 	public function test_recommended_test_counted_correctly(): void {
-		add_filter(
-			'site_status_tests',
-			static function () {
-				return array(
-					'direct' => array(
-						'mock_recommended' => array(
-							'label' => 'Recommended Fix',
-							'test'  => static function () {
-								return array(
-									'label'       => 'Recommended Fix',
-									'status'      => 'recommended',
-									'badge'       => array(
-										'label' => 'Performance',
-										'color' => 'orange',
-									),
-									'description' => 'This could be improved.',
-									'test'        => 'mock_recommended',
-								);
-							},
-						),
-					),
-					'async'  => array(),
-				);
-			}
+		$this->register_direct_tests(
+			array(
+				'mock_recommended' => array(
+					'label' => 'Recommended Fix',
+					'test'  => $this->make_mock_test( 'recommended', 'Recommended Fix', 'mock_recommended', 'This could be improved.' ),
+				),
+			)
 		);
 
 		$fields  = $this->collector->collect();
@@ -524,43 +514,17 @@ class SiteHealthTest extends WP_UnitTestCase {
 	 * Test correct counting with all-good test results.
 	 */
 	public function test_all_good_tests_produce_good_summary(): void {
-		add_filter(
-			'site_status_tests',
-			static function () {
-				return array(
-					'direct' => array(
-						'mock_good_1' => array(
-							'label' => 'Good Test 1',
-							'test'  => static function () {
-								return array(
-									'label'  => 'Good Test 1',
-									'status' => 'good',
-									'badge'  => array(
-										'label' => 'Performance',
-										'color' => 'blue',
-									),
-									'test'   => 'mock_good_1',
-								);
-							},
-						),
-						'mock_good_2' => array(
-							'label' => 'Good Test 2',
-							'test'  => static function () {
-								return array(
-									'label'  => 'Good Test 2',
-									'status' => 'good',
-									'badge'  => array(
-										'label' => 'Security',
-										'color' => 'blue',
-									),
-									'test'   => 'mock_good_2',
-								);
-							},
-						),
-					),
-					'async'  => array(),
-				);
-			}
+		$this->register_direct_tests(
+			array(
+				'mock_good_1' => array(
+					'label' => 'Good Test 1',
+					'test'  => $this->make_mock_test( 'good', 'Good Test 1', 'mock_good_1' ),
+				),
+				'mock_good_2' => array(
+					'label' => 'Good Test 2',
+					'test'  => $this->make_mock_test( 'good', 'Good Test 2', 'mock_good_2' ),
+				),
+			)
 		);
 
 		$fields  = $this->collector->collect();
@@ -576,57 +540,21 @@ class SiteHealthTest extends WP_UnitTestCase {
 	 * Test that mixed statuses produce the correct worst-case summary.
 	 */
 	public function test_mixed_statuses_produce_correct_summary(): void {
-		add_filter(
-			'site_status_tests',
-			static function () {
-				return array(
-					'direct' => array(
-						'mock_good'        => array(
-							'label' => 'Good Test',
-							'test'  => static function () {
-								return array(
-									'label'  => 'Good Test',
-									'status' => 'good',
-									'badge'  => array(
-										'label' => 'Performance',
-										'color' => 'blue',
-									),
-									'test'   => 'mock_good',
-								);
-							},
-						),
-						'mock_recommended' => array(
-							'label' => 'Recommended Test',
-							'test'  => static function () {
-								return array(
-									'label'  => 'Recommended Test',
-									'status' => 'recommended',
-									'badge'  => array(
-										'label' => 'Security',
-										'color' => 'orange',
-									),
-									'test'   => 'mock_recommended',
-								);
-							},
-						),
-						'mock_critical'    => array(
-							'label' => 'Critical Test',
-							'test'  => static function () {
-								return array(
-									'label'  => 'Critical Test',
-									'status' => 'critical',
-									'badge'  => array(
-										'label' => 'Security',
-										'color' => 'red',
-									),
-									'test'   => 'mock_critical',
-								);
-							},
-						),
-					),
-					'async'  => array(),
-				);
-			}
+		$this->register_direct_tests(
+			array(
+				'mock_good'        => array(
+					'label' => 'Good Test',
+					'test'  => $this->make_mock_test( 'good', 'Good Test', 'mock_good' ),
+				),
+				'mock_recommended' => array(
+					'label' => 'Recommended Test',
+					'test'  => $this->make_mock_test( 'recommended', 'Recommended Test', 'mock_recommended' ),
+				),
+				'mock_critical'    => array(
+					'label' => 'Critical Test',
+					'test'  => $this->make_mock_test( 'critical', 'Critical Test', 'mock_critical' ),
+				),
+			)
 		);
 
 		$fields  = $this->collector->collect();
@@ -649,21 +577,15 @@ class SiteHealthTest extends WP_UnitTestCase {
 	 * Test that a test returning null is silently skipped.
 	 */
 	public function test_test_returning_null_is_skipped(): void {
-		add_filter(
-			'site_status_tests',
-			static function () {
-				return array(
-					'direct' => array(
-						'bad_return' => array(
-							'label' => 'Bad Return',
-							'test'  => static function () {
-								return null;
-							},
-						),
-					),
-					'async'  => array(),
-				);
-			}
+		$this->register_direct_tests(
+			array(
+				'bad_return' => array(
+					'label' => 'Bad Return',
+					'test'  => static function () {
+						return null;
+					},
+				),
+			)
 		);
 
 		$fields = $this->collector->collect();
@@ -676,24 +598,18 @@ class SiteHealthTest extends WP_UnitTestCase {
 	 * Test that a test returning an array without 'status' is skipped.
 	 */
 	public function test_test_without_status_key_is_skipped(): void {
-		add_filter(
-			'site_status_tests',
-			static function () {
-				return array(
-					'direct' => array(
-						'no_status' => array(
-							'label' => 'No Status',
-							'test'  => static function () {
-								return array(
-									'label'       => 'No Status',
-									'description' => 'Missing status key.',
-								);
-							},
-						),
-					),
-					'async'  => array(),
-				);
-			}
+		$this->register_direct_tests(
+			array(
+				'no_status' => array(
+					'label' => 'No Status',
+					'test'  => static function () {
+						return array(
+							'label'       => 'No Status',
+							'description' => 'Missing status key.',
+						);
+					},
+				),
+			)
 		);
 
 		$fields = $this->collector->collect();
@@ -705,35 +621,19 @@ class SiteHealthTest extends WP_UnitTestCase {
 	 * Test that a test throwing an exception is silently skipped.
 	 */
 	public function test_throwing_test_is_skipped(): void {
-		add_filter(
-			'site_status_tests',
-			static function () {
-				return array(
-					'direct' => array(
-						'good_test'     => array(
-							'label' => 'Good Test',
-							'test'  => static function () {
-								return array(
-									'label'  => 'Good Test',
-									'status' => 'good',
-									'badge'  => array(
-										'label' => 'Performance',
-										'color' => 'blue',
-									),
-									'test'   => 'good_test',
-								);
-							},
-						),
-						'throwing_test' => array(
-							'label' => 'Throwing Test',
-							'test'  => static function () {
-								throw new \RuntimeException( 'Test failure' );
-							},
-						),
-					),
-					'async'  => array(),
-				);
-			}
+		$this->register_direct_tests(
+			array(
+				'good_test'     => array(
+					'label' => 'Good Test',
+					'test'  => $this->make_mock_test( 'good', 'Good Test', 'good_test' ),
+				),
+				'throwing_test' => array(
+					'label' => 'Throwing Test',
+					'test'  => static function () {
+						throw new \RuntimeException( 'Test failure' );
+					},
+				),
+			)
 		);
 
 		$fields = $this->collector->collect();
@@ -747,19 +647,13 @@ class SiteHealthTest extends WP_UnitTestCase {
 	 * Test that empty test config (no 'test' key) is skipped.
 	 */
 	public function test_empty_test_config_is_skipped(): void {
-		add_filter(
-			'site_status_tests',
-			static function () {
-				return array(
-					'direct' => array(
-						'empty_config' => array(
-							'label' => 'Empty Config',
-							// No 'test' key at all.
-						),
-					),
-					'async'  => array(),
-				);
-			}
+		$this->register_direct_tests(
+			array(
+				'empty_config' => array(
+					'label' => 'Empty Config',
+					// No 'test' key at all.
+				),
+			)
 		);
 
 		$fields = $this->collector->collect();
@@ -792,29 +686,13 @@ class SiteHealthTest extends WP_UnitTestCase {
 	 * Test that the site_status_test_result filter is applied to results.
 	 */
 	public function test_site_status_test_result_filter_is_applied(): void {
-		add_filter(
-			'site_status_tests',
-			static function () {
-				return array(
-					'direct' => array(
-						'filterable_test' => array(
-							'label' => 'Filterable',
-							'test'  => static function () {
-								return array(
-									'label'  => 'Filterable',
-									'status' => 'good',
-									'badge'  => array(
-										'label' => 'Performance',
-										'color' => 'blue',
-									),
-									'test'   => 'filterable_test',
-								);
-							},
-						),
-					),
-					'async'  => array(),
-				);
-			}
+		$this->register_direct_tests(
+			array(
+				'filterable_test' => array(
+					'label' => 'Filterable',
+					'test'  => $this->make_mock_test( 'good', 'Filterable', 'filterable_test' ),
+				),
+			)
 		);
 
 		// Override the test result via the core filter.
@@ -847,29 +725,13 @@ class SiteHealthTest extends WP_UnitTestCase {
 	 * Test that unknown status values map to Status::Info.
 	 */
 	public function test_unknown_status_maps_to_info(): void {
-		add_filter(
-			'site_status_tests',
-			static function () {
-				return array(
-					'direct' => array(
-						'unknown_status' => array(
-							'label' => 'Unknown Status',
-							'test'  => static function () {
-								return array(
-									'label'  => 'Unknown Status',
-									'status' => 'informational',
-									'badge'  => array(
-										'label' => 'Performance',
-										'color' => 'blue',
-									),
-									'test'   => 'unknown_status',
-								);
-							},
-						),
-					),
-					'async'  => array(),
-				);
-			}
+		$this->register_direct_tests(
+			array(
+				'unknown_status' => array(
+					'label' => 'Unknown Status',
+					'test'  => $this->make_mock_test( 'informational', 'Unknown Status', 'unknown_status' ),
+				),
+			)
 		);
 
 		$fields = $this->collector->collect();
@@ -885,30 +747,13 @@ class SiteHealthTest extends WP_UnitTestCase {
 	 * Test that the field description is stripped of HTML tags.
 	 */
 	public function test_field_description_is_stripped(): void {
-		add_filter(
-			'site_status_tests',
-			static function () {
-				return array(
-					'direct' => array(
-						'html_desc' => array(
-							'label' => 'HTML Description',
-							'test'  => static function () {
-								return array(
-									'label'       => 'HTML Description',
-									'status'      => 'good',
-									'badge'       => array(
-										'label' => 'Performance',
-										'color' => 'blue',
-									),
-									'description' => '<p>This is <strong>HTML</strong> content.</p>',
-									'test'        => 'html_desc',
-								);
-							},
-						),
-					),
-					'async'  => array(),
-				);
-			}
+		$this->register_direct_tests(
+			array(
+				'html_desc' => array(
+					'label' => 'HTML Description',
+					'test'  => $this->make_mock_test( 'good', 'HTML Description', 'html_desc', '<p>This is <strong>HTML</strong> content.</p>' ),
+				),
+			)
 		);
 
 		$fields = $this->collector->collect();
@@ -923,29 +768,23 @@ class SiteHealthTest extends WP_UnitTestCase {
 	 * Test that fields use the test label when available, falling back to test ID.
 	 */
 	public function test_field_label_fallback_to_test_id(): void {
-		add_filter(
-			'site_status_tests',
-			static function () {
-				return array(
-					'direct' => array(
-						'no_label_test' => array(
-							'label' => 'Config Label',
-							'test'  => static function () {
-								return array(
-									// No 'label' in the result — should use the array key.
-									'status' => 'good',
-									'badge'  => array(
-										'label' => 'Performance',
-										'color' => 'blue',
-									),
-									'test'   => 'no_label_test',
-								);
-							},
-						),
-					),
-					'async'  => array(),
-				);
-			}
+		$this->register_direct_tests(
+			array(
+				'no_label_test' => array(
+					'label' => 'Config Label',
+					'test'  => static function () {
+						return array(
+							// No 'label' in the result — should use the array key.
+							'status' => 'good',
+							'badge'  => array(
+								'label' => 'Performance',
+								'color' => 'blue',
+							),
+							'test'   => 'no_label_test',
+						);
+					},
+				),
+			)
 		);
 
 		$fields = $this->collector->collect();
@@ -953,25 +792,5 @@ class SiteHealthTest extends WP_UnitTestCase {
 
 		// When the test result has no 'label' key, the collector uses the $test_id.
 		$this->assertSame( 'no_label_test', $field->label );
-	}
-
-	// -------------------------------------------------------
-	// Helper methods.
-	// -------------------------------------------------------
-
-	/**
-	 * Find a field in the collected array by its label.
-	 *
-	 * @param Field[] $fields Array of collected Field objects.
-	 * @param string  $label  The label to search for.
-	 * @return Field|null The matching field, or null if not found.
-	 */
-	private function find_field_by_label( array $fields, string $label ): ?Field {
-		foreach ( $fields as $field ) {
-			if ( $field instanceof Field && $label === $field->label ) {
-				return $field;
-			}
-		}
-		return null;
 	}
 }
