@@ -12,8 +12,14 @@ defined( 'ABSPATH' ) || exit;
 
 // Template variables are scoped to the including method, not truly global.
 // phpcs:disable WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedVariableFound
+
+$sr_iapi = \SystemReport\Features::has_interactivity();
 ?>
-<div class="wrap wp-system-report-wrap">
+<div class="wrap wp-system-report-wrap"
+	<?php if ( $sr_iapi ) : ?>
+		data-wp-interactive="wp-system-report"
+	<?php endif; ?>
+>
 	<h1><?php esc_html_e( 'WP System Report', 'wp-system-report' ); ?></h1>
 
 	<nav class="nav-tab-wrapper wp-clearfix">
@@ -40,27 +46,72 @@ defined( 'ABSPATH' ) || exit;
 				<?php esc_html_e( 'Copy and paste this information when contacting support or use the AI export for detailed analysis:', 'wp-system-report' ); ?>
 			</p>
 			<p class="submit">
-				<button type="button" class="button-primary" id="sr-generate-report">
+				<button type="button" class="button-primary" id="sr-generate-report"
+					<?php if ( $sr_iapi ) : ?>
+						data-wp-on--click="actions.generateReport"
+						data-wp-bind--hidden="state.reportBtnHidden"
+					<?php endif; ?>
+				>
 					<?php esc_html_e( 'Get system report', 'wp-system-report' ); ?>
 				</button>
-				<button type="button" class="button" id="sr-download-ai" style="margin-left: 4px;">
+				<button type="button" class="button" id="sr-download-ai" style="margin-left: 4px;"
+					<?php if ( $sr_iapi ) : ?>
+						data-wp-on--click="actions.downloadForAi"
+						data-wp-bind--disabled="state.aiGenerating"
+						data-wp-text="state.aiDownloadLabel"
+					<?php endif; ?>
+				>
 					<?php esc_html_e( 'Download for AI analysis', 'wp-system-report' ); ?>
 				</button>
 			</p>
-			<div id="sr-debug-report" style="display: none;">
+			<?php if ( $sr_iapi ) : ?>
+				<div class="notice notice-error inline sr-ai-error"
+					data-wp-bind--hidden="!state.aiErrorVisible"
+					hidden
+				>
+					<p data-wp-text="state.aiError"></p>
+				</div>
+			<?php endif; ?>
+			<div id="sr-debug-report"
+				<?php if ( $sr_iapi ) : ?>
+					data-wp-bind--hidden="!state.debugReportVisible"
+					hidden
+				<?php else : ?>
+					style="display: none;"
+				<?php endif; ?>
+			>
 				<textarea readonly="readonly" rows="12"></textarea>
 				<p class="submit">
-					<button type="button" class="button-primary" id="sr-download-support">
+					<button type="button" class="button-primary" id="sr-download-support"
+						<?php if ( $sr_iapi ) : ?>
+							data-wp-on--click="actions.downloadForSupport"
+						<?php endif; ?>
+					>
 						<?php esc_html_e( 'Download for support', 'wp-system-report' ); ?>
 					</button>
-					<button type="button" class="button" id="sr-copy-support">
+					<button type="button" class="button" id="sr-copy-support"
+						<?php if ( $sr_iapi ) : ?>
+							data-wp-on--click="actions.copyForSupport"
+						<?php endif; ?>
+					>
 						<?php esc_html_e( 'Copy for support', 'wp-system-report' ); ?>
 					</button>
-					<button type="button" class="button" id="sr-copy-github">
+					<button type="button" class="button" id="sr-copy-github"
+						<?php if ( $sr_iapi ) : ?>
+							data-wp-on--click="actions.copyForGitHub"
+						<?php endif; ?>
+					>
 						<?php esc_html_e( 'Copy for GitHub', 'wp-system-report' ); ?>
 					</button>
 				</p>
-				<p class="sr-copy-error" style="display: none;">
+				<p class="sr-copy-error"
+					<?php if ( $sr_iapi ) : ?>
+						data-wp-bind--hidden="!state.copyErrorVisible"
+						hidden
+					<?php else : ?>
+						style="display: none;"
+					<?php endif; ?>
+				>
 					<?php esc_html_e( 'Copying to clipboard failed. Please press Ctrl/Cmd+C to copy.', 'wp-system-report' ); ?>
 				</p>
 			</div>
