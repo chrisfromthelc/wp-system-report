@@ -158,6 +158,9 @@ class Permissions_Repair implements Fixer {
 			}
 		}
 
+		// Clear PHP's stat cache so fileperms() returns the updated values.
+		clearstatcache();
+
 		$after = $this->capture_state();
 
 		if ( empty( $applied ) && ! empty( $errors ) ) {
