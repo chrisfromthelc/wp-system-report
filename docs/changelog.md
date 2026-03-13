@@ -21,7 +21,7 @@ This format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
   periodic heartbeats, enforces configurable maximum duration, reuses existing redaction
   pipeline; new `SSE_Log_Streamer` and `SSE_Log_Controller` classes
 - Report history and snapshot storage (Phase 5.3): compressed JSON snapshots stored in a
-  custom `wp_system_report_history` database table; paginated REST endpoints for listing and
+  custom `sr_report_history` database table; paginated REST endpoints for listing and
   retrieving snapshots; health score trend tracking; `Report_History` class with feature flag
 - Report diffing engine (Phase 5.5): structured diff between two snapshots identifying
   added/removed sections, added/removed fields, value changes, and status transitions

@@ -173,12 +173,12 @@ Calculate and return the aggregate site health score with a per-section breakdow
 
 | Score range | Grade |
 |-------------|-------|
-| 97 – 100 | A+ |
-| 90 – 96 | A |
-| 80 – 89 | B |
-| 70 – 79 | C |
-| 60 – 69 | D |
-| 0 – 59 | F |
+| 95 – 100 | A+ |
+| 80 – 94 | A |
+| 65 – 79 | B |
+| 50 – 64 | C |
+| 35 – 49 | D |
+| 0 – 34 | F |
 
 ---
 

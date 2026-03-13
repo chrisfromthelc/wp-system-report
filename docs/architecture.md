@@ -172,7 +172,7 @@ wp-system-report/
    │       ├── Sends per-recipient emails via wp_mail()
    │       └── Dispatches HMAC-signed JSON webhooks via Webhook_Dispatcher
    └── Report_History::maybe_save_snapshot()  (if feature enabled)
-       └── Compresses and stores report in wp_sr_report_history table
+       └── Compresses and stores report in sr_report_history table
            with health score and grade pre-computed
 
 7. REST_Controller returns the report
@@ -195,7 +195,7 @@ wp-system-report/
        └── Returns Fix_Result (success, message, before/after snapshots)
 
 10. Report diff (History tab)
-    └── GET /wp-system-report/v1/diff?before={id}&after={id}
+    └── POST /wp-system-report/v1/diff
         └── Report_Diff::compare() classifies field changes as
             improved, degraded, added, removed, or changed
 ```
@@ -293,7 +293,7 @@ All controllers extend `WP_REST_Controller` and register under the `wp-system-re
 | `Fixer_Controller` | `fixes`, `fixes/{fix_id}` | GET, POST | `Features::has_fixers()` |
 | `Health_Score_Controller` | `health-score` | GET | `Features::has_health_score()` |
 | `Report_History_Controller` | `history`, `history/{id}` | GET, POST, DELETE | `Features::has_report_history()` |
-| `Report_Diff_Controller` | `diff` | GET | Always active |
+| `Report_Diff_Controller` | `diff` | POST | Always active |
 | `Notification_Controller` | `notifications/settings`, `notifications/test` | GET, POST | Always active |
 
 ### Fixer System
@@ -367,8 +367,8 @@ Note: there is no `Abstract_Fixer` base class — all four concrete fixers imple
 - Status transitions use a numeric rank (`critical=0`, `warning=1`, `info=2`, `good=3`) to determine direction
 
 `Report_Diff_Controller` provides:
-- `GET /diff?before={id}&after={id}` — Compare two history snapshots
-- `GET /diff?before={id}` — Compare a history snapshot to the current live report
+- `POST /diff` with `before` and `after` body params — Compare two history snapshots
+- `POST /diff` with `before` body param and `after` set to `"current"` — Compare a history snapshot to the current live report
 
 ### Notification System
 
