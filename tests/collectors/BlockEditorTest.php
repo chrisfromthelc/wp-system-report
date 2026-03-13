@@ -34,14 +34,14 @@ class BlockEditorTest extends WP_UnitTestCase {
 		$collectors      = $generator->get_collectors();
 		$this->collector = $collectors['block_editor'];
 
-		delete_transient( 'sr_block_editor' );
+		delete_transient( sr_versioned_cache_key( 'sr_block_editor' ) );
 	}
 
 	/**
 	 * Tear down after each test.
 	 */
 	public function tear_down() {
-		delete_transient( 'sr_block_editor' );
+		delete_transient( sr_versioned_cache_key( 'sr_block_editor' ) );
 		parent::tear_down();
 	}
 
@@ -217,17 +217,17 @@ class BlockEditorTest extends WP_UnitTestCase {
 	 * call, and returns identical data on the second call.
 	 */
 	public function test_caching() {
-		delete_transient( 'sr_block_editor' );
+		delete_transient( sr_versioned_cache_key( 'sr_block_editor' ) );
 
 		$data1 = $this->collector->get_cached_data();
 		$this->assertIsArray( $data1 );
 
-		$cached = get_transient( 'sr_block_editor' );
+		$cached = get_transient( sr_versioned_cache_key( 'sr_block_editor' ) );
 		$this->assertNotFalse( $cached, 'Transient should be set after first get_cached_data() call.' );
 
 		$data2 = $this->collector->get_cached_data();
 		$this->assertEquals( $data1, $data2 );
 
-		delete_transient( 'sr_block_editor' );
+		delete_transient( sr_versioned_cache_key( 'sr_block_editor' ) );
 	}
 }

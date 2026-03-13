@@ -34,14 +34,14 @@ class MediaUploadsTest extends WP_UnitTestCase {
 		$collectors      = $generator->get_collectors();
 		$this->collector = $collectors['media_uploads'];
 
-		delete_transient( 'sr_media_uploads' );
+		delete_transient( sr_versioned_cache_key( 'sr_media_uploads' ) );
 	}
 
 	/**
 	 * Tear down after each test.
 	 */
 	public function tear_down() {
-		delete_transient( 'sr_media_uploads' );
+		delete_transient( sr_versioned_cache_key( 'sr_media_uploads' ) );
 		parent::tear_down();
 	}
 
@@ -220,17 +220,17 @@ class MediaUploadsTest extends WP_UnitTestCase {
 	 * call, and returns identical data on the second call.
 	 */
 	public function test_caching() {
-		delete_transient( 'sr_media_uploads' );
+		delete_transient( sr_versioned_cache_key( 'sr_media_uploads' ) );
 
 		$data1 = $this->collector->get_cached_data();
 		$this->assertIsArray( $data1 );
 
-		$cached = get_transient( 'sr_media_uploads' );
+		$cached = get_transient( sr_versioned_cache_key( 'sr_media_uploads' ) );
 		$this->assertNotFalse( $cached, 'Transient should be set after first get_cached_data() call.' );
 
 		$data2 = $this->collector->get_cached_data();
 		$this->assertEquals( $data1, $data2 );
 
-		delete_transient( 'sr_media_uploads' );
+		delete_transient( sr_versioned_cache_key( 'sr_media_uploads' ) );
 	}
 }

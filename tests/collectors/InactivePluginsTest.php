@@ -39,7 +39,7 @@ class InactivePluginsTest extends WP_UnitTestCase {
 		$this->original_active_plugins = (array) get_option( 'active_plugins', array() );
 
 		// Clear any cached data from previous test runs.
-		delete_transient( 'sr_inactive_plugins' );
+		delete_transient( sr_versioned_cache_key( 'sr_inactive_plugins' ) );
 	}
 
 	/**
@@ -50,7 +50,7 @@ class InactivePluginsTest extends WP_UnitTestCase {
 	 */
 	public function tear_down(): void {
 		update_option( 'active_plugins', $this->original_active_plugins );
-		delete_transient( 'sr_inactive_plugins' );
+		delete_transient( sr_versioned_cache_key( 'sr_inactive_plugins' ) );
 		parent::tear_down();
 	}
 
@@ -87,7 +87,7 @@ class InactivePluginsTest extends WP_UnitTestCase {
 		// we verify it uses the right key by priming the transient and
 		// asserting get_cached_data() reads from it.
 		$sentinel = array( new Field( 'Cache Key Sentinel', '1' ) );
-		set_transient( 'sr_inactive_plugins', $sentinel, HOUR_IN_SECONDS );
+		set_transient( sr_versioned_cache_key( 'sr_inactive_plugins' ), $sentinel, HOUR_IN_SECONDS );
 
 		$result = $this->collector->get_cached_data();
 
@@ -165,7 +165,7 @@ class InactivePluginsTest extends WP_UnitTestCase {
 		// Mark every installed plugin as active.
 		update_option( 'active_plugins', $all_plugins );
 
-		delete_transient( 'sr_inactive_plugins' );
+		delete_transient( sr_versioned_cache_key( 'sr_inactive_plugins' ) );
 		$fields = $this->collector->collect();
 
 		$this->assertCount(
@@ -222,7 +222,7 @@ class InactivePluginsTest extends WP_UnitTestCase {
 		// Make all plugins inactive.
 		update_option( 'active_plugins', array() );
 
-		delete_transient( 'sr_inactive_plugins' );
+		delete_transient( sr_versioned_cache_key( 'sr_inactive_plugins' ) );
 		$fields = $this->collector->collect();
 
 		// With at least one plugin inactive we expect more than one field OR
@@ -278,7 +278,7 @@ class InactivePluginsTest extends WP_UnitTestCase {
 		$other_plugins = array_keys( array_diff_key( $all_plugins, array( $plugin_path => true ) ) );
 		update_option( 'active_plugins', $other_plugins );
 
-		delete_transient( 'sr_inactive_plugins' );
+		delete_transient( sr_versioned_cache_key( 'sr_inactive_plugins' ) );
 		$fields = $this->collector->collect();
 
 		// Build the expected value string the same way the collector does.
@@ -329,7 +329,7 @@ class InactivePluginsTest extends WP_UnitTestCase {
 		// Make all plugins inactive.
 		update_option( 'active_plugins', array() );
 
-		delete_transient( 'sr_inactive_plugins' );
+		delete_transient( sr_versioned_cache_key( 'sr_inactive_plugins' ) );
 		$fields = $this->collector->collect();
 
 		foreach ( $fields as $field ) {
@@ -368,7 +368,7 @@ class InactivePluginsTest extends WP_UnitTestCase {
 
 		update_option( 'active_plugins', array() );
 
-		delete_transient( 'sr_inactive_plugins' );
+		delete_transient( sr_versioned_cache_key( 'sr_inactive_plugins' ) );
 		$fields = $this->collector->collect();
 
 		// Filter out the placeholder.
@@ -410,11 +410,11 @@ class InactivePluginsTest extends WP_UnitTestCase {
 	 * Test that get_cached_data() stores results in the "sr_inactive_plugins" transient.
 	 */
 	public function test_get_cached_data_sets_transient(): void {
-		delete_transient( 'sr_inactive_plugins' );
+		delete_transient( sr_versioned_cache_key( 'sr_inactive_plugins' ) );
 
 		$this->collector->get_cached_data();
 
-		$cached = get_transient( 'sr_inactive_plugins' );
+		$cached = get_transient( sr_versioned_cache_key( 'sr_inactive_plugins' ) );
 		$this->assertNotFalse(
 			$cached,
 			'Transient "sr_inactive_plugins" should be set after get_cached_data().'
@@ -425,7 +425,7 @@ class InactivePluginsTest extends WP_UnitTestCase {
 	 * Test that a second call to get_cached_data() returns the same data as the first.
 	 */
 	public function test_get_cached_data_consistent_results(): void {
-		delete_transient( 'sr_inactive_plugins' );
+		delete_transient( sr_versioned_cache_key( 'sr_inactive_plugins' ) );
 
 		$first  = $this->collector->get_cached_data();
 		$second = $this->collector->get_cached_data();

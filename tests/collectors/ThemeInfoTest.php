@@ -28,14 +28,14 @@ class ThemeInfoTest extends WP_UnitTestCase {
 		$this->collector = new \SystemReport\Collectors\Theme_Info();
 
 		// Clear any cached data from previous test runs.
-		delete_transient( 'sr_theme_info' );
+		delete_transient( sr_versioned_cache_key( 'sr_theme_info' ) );
 	}
 
 	/**
 	 * Tear down after each test.
 	 */
 	public function tear_down(): void {
-		delete_transient( 'sr_theme_info' );
+		delete_transient( sr_versioned_cache_key( 'sr_theme_info' ) );
 		parent::tear_down();
 	}
 
@@ -309,7 +309,7 @@ class ThemeInfoTest extends WP_UnitTestCase {
 		// First call: should populate the transient.
 		$first_result = $this->collector->get_cached_data();
 
-		$cached = get_transient( 'sr_theme_info' );
+		$cached = get_transient( sr_versioned_cache_key( 'sr_theme_info' ) );
 		$this->assertNotFalse(
 			$cached,
 			'Transient "sr_theme_info" should be set after get_cached_data().'
@@ -338,7 +338,7 @@ class ThemeInfoTest extends WP_UnitTestCase {
 			new Field( 'Sentinel', '42' ),
 		);
 
-		set_transient( 'sr_theme_info', $sentinel, HOUR_IN_SECONDS );
+		set_transient( sr_versioned_cache_key( 'sr_theme_info' ), $sentinel, HOUR_IN_SECONDS );
 
 		$result = $this->collector->get_cached_data();
 

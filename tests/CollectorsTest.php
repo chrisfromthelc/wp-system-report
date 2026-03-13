@@ -335,15 +335,15 @@ class CollectorsTest extends WP_UnitTestCase {
 	public function test_email_delivery_caching() {
 		$collector = $this->collectors['email_delivery'];
 
-		delete_transient( 'sr_email_delivery' );
+		delete_transient( sr_versioned_cache_key( 'sr_email_delivery' ) );
 
 		$data1 = $collector->get_cached_data();
 		$this->assertIsArray( $data1 );
 
-		$cached = get_transient( 'sr_email_delivery' );
+		$cached = get_transient( sr_versioned_cache_key( 'sr_email_delivery' ) );
 		$this->assertNotFalse( $cached );
 
-		delete_transient( 'sr_email_delivery' );
+		delete_transient( sr_versioned_cache_key( 'sr_email_delivery' ) );
 	}
 
 	/**
@@ -393,15 +393,15 @@ class CollectorsTest extends WP_UnitTestCase {
 	public function test_media_uploads_caching() {
 		$collector = $this->collectors['media_uploads'];
 
-		delete_transient( 'sr_media_uploads' );
+		delete_transient( sr_versioned_cache_key( 'sr_media_uploads' ) );
 
 		$data1 = $collector->get_cached_data();
 		$this->assertIsArray( $data1 );
 
-		$cached = get_transient( 'sr_media_uploads' );
+		$cached = get_transient( sr_versioned_cache_key( 'sr_media_uploads' ) );
 		$this->assertNotFalse( $cached );
 
-		delete_transient( 'sr_media_uploads' );
+		delete_transient( sr_versioned_cache_key( 'sr_media_uploads' ) );
 	}
 
 	/**
@@ -486,15 +486,15 @@ class CollectorsTest extends WP_UnitTestCase {
 	public function test_update_health_caching() {
 		$collector = $this->collectors['update_health'];
 
-		delete_transient( 'sr_update_health' );
+		delete_transient( sr_versioned_cache_key( 'sr_update_health' ) );
 
 		$data1 = $collector->get_cached_data();
 		$this->assertIsArray( $data1 );
 
-		$cached = get_transient( 'sr_update_health' );
+		$cached = get_transient( sr_versioned_cache_key( 'sr_update_health' ) );
 		$this->assertNotFalse( $cached );
 
-		delete_transient( 'sr_update_health' );
+		delete_transient( sr_versioned_cache_key( 'sr_update_health' ) );
 	}
 
 	/**
@@ -523,15 +523,15 @@ class CollectorsTest extends WP_UnitTestCase {
 	public function test_block_editor_caching() {
 		$collector = $this->collectors['block_editor'];
 
-		delete_transient( 'sr_block_editor' );
+		delete_transient( sr_versioned_cache_key( 'sr_block_editor' ) );
 
 		$data1 = $collector->get_cached_data();
 		$this->assertIsArray( $data1 );
 
-		$cached = get_transient( 'sr_block_editor' );
+		$cached = get_transient( sr_versioned_cache_key( 'sr_block_editor' ) );
 		$this->assertNotFalse( $cached );
 
-		delete_transient( 'sr_block_editor' );
+		delete_transient( sr_versioned_cache_key( 'sr_block_editor' ) );
 	}
 
 	/**
@@ -560,14 +560,14 @@ class CollectorsTest extends WP_UnitTestCase {
 	public function test_network_connectivity_caching() {
 		$collector = $this->collectors['network_connectivity'];
 
-		delete_transient( 'sr_network_connectivity' );
+		delete_transient( sr_versioned_cache_key( 'sr_network_connectivity' ) );
 
 		$data1 = $collector->get_cached_data();
 		$this->assertIsArray( $data1 );
 
-		$cached = get_transient( 'sr_network_connectivity' );
+		$cached = get_transient( sr_versioned_cache_key( 'sr_network_connectivity' ) );
 		$this->assertNotFalse( $cached );
 
-		delete_transient( 'sr_network_connectivity' );
+		delete_transient( sr_versioned_cache_key( 'sr_network_connectivity' ) );
 	}
 }
