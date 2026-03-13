@@ -96,7 +96,7 @@ defined( 'ABSPATH' ) || exit;
 										data-wp-class--dashicons-yes-alt="!context.item.can_fix"
 									></span>
 									<span
-										data-wp-text="context.item.can_fix ? '<?php echo esc_js( __( 'Issues detected', 'wp-system-report' ) ); ?>' : '<?php echo esc_js( __( 'No issues', 'wp-system-report' ) ); ?>'"
+										data-wp-text="context.item.can_fix ? state.i18n.issuesDetected : state.i18n.noIssues"
 									></span>
 								</span>
 								<button type="button"
@@ -104,7 +104,7 @@ defined( 'ABSPATH' ) || exit;
 									data-wp-on--click="actions.handleRunFix"
 									data-wp-bind--data-fix-id="context.item.id"
 									data-wp-bind--disabled="!context.item.can_fix || context.item.isRunning || context.item.btnDisabled"
-									data-wp-text="context.item.isRunning ? '<?php echo esc_js( __( 'Running...', 'wp-system-report' ) ); ?>' : '<?php echo esc_js( __( 'Run fix', 'wp-system-report' ) ); ?>'"
+									data-wp-text="context.item.isRunning ? state.i18n.running : state.i18n.runFix"
 								></button>
 							</div>
 							<!-- Result area -->

@@ -108,6 +108,7 @@ const { state, actions } = store( 'wp-system-report', {
 		 */
 		copyForSupport() {
 			const { ref } = getElement();
+			state.copyError = false;
 			const text = '`' + state.reportText + '`';
 			copyToClipboard(
 				text,
@@ -123,6 +124,7 @@ const { state, actions } = store( 'wp-system-report', {
 		 */
 		copyForGitHub() {
 			const { ref } = getElement();
+			state.copyError = false;
 			const redacted = actions.applyRedactions( state.reportText );
 			const githubReport =
 				'<details><summary>System Status Report</summary>\n\n```\n' +

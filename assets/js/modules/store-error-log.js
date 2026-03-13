@@ -10,6 +10,7 @@ import {
 	showCopySuccess,
 	downloadFile,
 	buildFilename,
+	fetchCombinedContent,
 } from './store-utils.js';
 
 const { state, actions } = store( 'wp-system-report', {
@@ -277,46 +278,26 @@ const { state, actions } = store( 'wp-system-report', {
 			const { ref } = getElement();
 			const logContent = state.errorLog.logContent;
 			const includeReport = state.errorLog.includeReport;
+			const reportUrl = includeReport ? state.config.reportUrl : null;
 
-			if ( includeReport && state.config.reportUrl ) {
+			if ( reportUrl ) {
 				ref.disabled = true;
 				const origText = ref.textContent;
 				ref.textContent = state.i18n.loading;
 
 				try {
-					const sep =
-						state.config.reportUrl.indexOf( '?' ) === -1 ? '?' : '&';
-					const response = yield fetch(
-						state.config.reportUrl + sep + 'format=plain',
-						{
-							headers: { 'X-WP-Nonce': state.config.restNonce },
-							credentials: 'same-origin',
-						}
-					);
-
-					if ( ! response.ok ) {
-						throw new Error( 'Failed to fetch system report' );
-					}
-
-					const reportText = yield response.text();
-					const combined =
-						'===================================\n' +
-						'WP SYSTEM REPORT\n' +
-						'===================================\n\n' +
-						reportText +
-						'\n\n' +
-						'===================================\n' +
-						'ERROR LOG\n' +
-						'===================================\n\n' +
-						logContent;
-					downloadFile(
-						combined,
-						buildFilename( 'SystemReport_ErrorLog', 'txt' )
-					);
-				} catch ( e ) {
-					downloadFile(
+					const content = yield fetchCombinedContent(
 						logContent,
-						buildFilename( 'ErrorLog', 'log' )
+						reportUrl,
+						state.config.restNonce
+					);
+					const isCombined = content !== logContent;
+					downloadFile(
+						content,
+						buildFilename(
+							isCombined ? 'SystemReport_ErrorLog' : 'ErrorLog',
+							isCombined ? 'txt' : 'log'
+						)
 					);
 				} finally {
 					ref.disabled = false;
@@ -335,48 +316,29 @@ const { state, actions } = store( 'wp-system-report', {
 		 */
 		*copyLog() {
 			const { ref } = getElement();
+			state.copyError = false;
+
 			const logContent = state.errorLog.logContent;
 			const includeReport = state.errorLog.includeReport;
+			const reportUrl = includeReport ? state.config.reportUrl : null;
 
 			const onSuccess = () => showCopySuccess( ref, state.i18n.copied );
 			const onError = () => {
 				state.copyError = true;
 			};
 
-			if ( includeReport && state.config.reportUrl ) {
+			if ( reportUrl ) {
 				ref.disabled = true;
 				const origText = ref.textContent;
 				ref.textContent = state.i18n.loading;
 
 				try {
-					const sep =
-						state.config.reportUrl.indexOf( '?' ) === -1 ? '?' : '&';
-					const response = yield fetch(
-						state.config.reportUrl + sep + 'format=plain',
-						{
-							headers: { 'X-WP-Nonce': state.config.restNonce },
-							credentials: 'same-origin',
-						}
+					const content = yield fetchCombinedContent(
+						logContent,
+						reportUrl,
+						state.config.restNonce
 					);
-
-					if ( ! response.ok ) {
-						throw new Error( 'Failed to fetch system report' );
-					}
-
-					const reportText = yield response.text();
-					const combined =
-						'===================================\n' +
-						'WP SYSTEM REPORT\n' +
-						'===================================\n\n' +
-						reportText +
-						'\n\n' +
-						'===================================\n' +
-						'ERROR LOG\n' +
-						'===================================\n\n' +
-						logContent;
-					copyToClipboard( combined, onSuccess, onError );
-				} catch ( e ) {
-					copyToClipboard( logContent, onSuccess, onError );
+					copyToClipboard( content, onSuccess, onError );
 				} finally {
 					ref.disabled = false;
 					ref.textContent = origText;

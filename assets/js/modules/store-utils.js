@@ -91,3 +91,48 @@ export function buildFilename( prefix, ext ) {
 		.replace( /:/g, '-' );
 	return prefix + '_' + domain + '_' + datetime + '.' + ext;
 }
+
+/**
+ * Fetch the system report and combine it with the error log content.
+ *
+ * Returns a promise that resolves with the combined text, or falls
+ * back to the plain log content on failure. Designed to be yielded
+ * inside an Interactivity API generator action.
+ *
+ * @param {string} logContent  The error log text.
+ * @param {string} reportUrl   REST URL for the system report.
+ * @param {string} restNonce   WP REST nonce.
+ * @return {Promise<string>} Combined or plain log content.
+ */
+export async function fetchCombinedContent( logContent, reportUrl, restNonce ) {
+	if ( ! reportUrl ) {
+		return logContent;
+	}
+
+	try {
+		const sep = reportUrl.indexOf( '?' ) === -1 ? '?' : '&';
+		const response = await fetch( reportUrl + sep + 'format=plain', {
+			headers: { 'X-WP-Nonce': restNonce },
+			credentials: 'same-origin',
+		} );
+
+		if ( ! response.ok ) {
+			throw new Error( 'Failed to fetch system report' );
+		}
+
+		const reportText = await response.text();
+		return (
+			'===================================\n' +
+			'WP SYSTEM REPORT\n' +
+			'===================================\n\n' +
+			reportText +
+			'\n\n' +
+			'===================================\n' +
+			'ERROR LOG\n' +
+			'===================================\n\n' +
+			logContent
+		);
+	} catch ( e ) {
+		return logContent;
+	}
+}
