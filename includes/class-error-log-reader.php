@@ -150,13 +150,13 @@ class Error_Log_Reader {
 
 		// Check if within ABSPATH.
 		$abspath = defined( 'ABSPATH' ) ? realpath( ABSPATH ) : false;
-		if ( false !== $abspath && 0 === strpos( $real_path, $abspath ) ) {
+		if ( false !== $abspath && 0 === strpos( $real_path, rtrim( $abspath, '/' ) . '/' ) ) {
 			return true;
 		}
 
 		// Check if within WP_CONTENT_DIR.
 		$content_dir = defined( 'WP_CONTENT_DIR' ) ? realpath( WP_CONTENT_DIR ) : false;
-		if ( false !== $content_dir && 0 === strpos( $real_path, $content_dir ) ) {
+		if ( false !== $content_dir && 0 === strpos( $real_path, rtrim( $content_dir, '/' ) . '/' ) ) {
 			return true;
 		}
 
@@ -205,7 +205,7 @@ class Error_Log_Reader {
 					continue;
 				}
 
-				if ( 0 === strpos( $real_path, $real_allowed ) ) {
+				if ( 0 === strpos( $real_path, rtrim( $real_allowed, '/' ) . '/' ) ) {
 					return true;
 				}
 			}
