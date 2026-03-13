@@ -15,8 +15,8 @@ defined( 'ABSPATH' ) || exit;
 class Cron_Health extends Abstract_Collector {
 
 	/**
- * Get the collector ID.
- */
+	 * Get the collector ID.
+	 */
 	public function get_id(): string {
 		return 'cron_health';
 	}
@@ -40,15 +40,15 @@ class Cron_Health extends Abstract_Collector {
 	}
 
 	/**
- * Get the collector priority.
- */
+	 * Get the collector priority.
+	 */
 	public function get_priority(): int {
 		return 130;
 	}
 
 	/**
- * Collect the data.
- */
+	 * Collect the data.
+	 */
 	public function collect(): array {
 		$fields = array();
 
@@ -85,10 +85,13 @@ class Cron_Health extends Abstract_Collector {
 		);
 
 		// Get next cron run time.
+		// Cast to int: WordPress stores cron timestamps as floats in some environments,
+		// and PHP 8.1+ raises a deprecation notice when a float-string is implicitly
+		// converted to int (e.g. by gmdate() or human_time_diff()). See issue #95.
 		$next_run_timestamp = null;
 		if ( ! empty( $cron_array ) ) {
 			$timestamps         = array_keys( $cron_array );
-			$next_run_timestamp = min( $timestamps );
+			$next_run_timestamp = (int) min( $timestamps );
 		}
 
 		if ( $next_run_timestamp ) {
@@ -174,19 +177,23 @@ class Cron_Health extends Abstract_Collector {
 		}
 
 		// Check for last cron run via doing_cron transient.
+		// Cast to int: the transient value is stored as a float-string microtime,
+		// which triggers a PHP 8.1+ deprecation on implicit float-to-int conversion
+		// when passed to gmdate() or human_time_diff(). See issue #95.
 		$doing_cron = get_transient( 'doing_cron' );
 
 		if ( $doing_cron ) {
+			$doing_cron_int   = (int) $doing_cron;
 			$last_run_display = sprintf(
 				// translators: %s: Human-readable time difference.
 				__( '%s ago (currently running)', 'wp-system-report' ),
-				human_time_diff( $doing_cron, time() )
+				human_time_diff( $doing_cron_int, time() )
 			);
 			$fields[] = $this->make_field(
 				__( 'Last Cron Run', 'wp-system-report' ),
 				$last_run_display,
 				array(
-					'debug' => gmdate( 'Y-m-d H:i:s', $doing_cron ),
+					'debug' => gmdate( 'Y-m-d H:i:s', $doing_cron_int ),
 				)
 			);
 		} else {

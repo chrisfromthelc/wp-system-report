@@ -282,4 +282,119 @@ class CollectorsTest extends WP_UnitTestCase {
 
 		delete_transient( 'sr_active_plugins' );
 	}
+
+	/**
+	 * Test that the Cron_Health collector handles float-string timestamps without
+	 * triggering a PHP 8.1+ deprecation notice for implicit float-to-int conversion.
+	 *
+	 * WordPress stores cron timestamps as floats in some environments. The
+	 * `doing_cron` transient in particular is a microtime float-string such as
+	 * "1773429002.8655860424041748046875". Passing that raw string value to
+	 * gmdate() or human_time_diff() would trigger:
+	 *   PHP Deprecated: Implicit conversion from float-string "..." to int loses precision
+	 *
+	 * @see https://github.com/chrisfromthelc/wp-system-report/issues/95
+	 */
+	public function test_cron_health_handles_float_string_timestamps() {
+		$collector = $this->collectors['cron_health'];
+
+		// Simulate the doing_cron transient with a float-string microtime value,
+		// exactly as WordPress core sets it via microtime( true ).
+		$float_timestamp = '1773429002.8655860424041748046875';
+		set_transient( 'doing_cron', $float_timestamp );
+
+		// Capture deprecation notices — PHPUnit converts them to errors on PHP 8.1+
+		// when running with a strict error handler. The test will fail if the
+		// collector issues a deprecation notice during collect().
+		$fields = $collector->collect();
+
+		// Verify collect() ran successfully and returned an array.
+		$this->assertIsArray( $fields );
+
+		// Verify that a Last Cron Run field was produced (meaning the truthy
+		// float-string transient value was processed without fatal or deprecation).
+		$labels = wp_list_pluck( $fields, 'label' );
+		$this->assertContains( 'Last Cron Run', $labels, 'Cron_Health should produce a Last Cron Run field when doing_cron transient is set.' );
+
+		// The debug value for Last Cron Run should be a formatted date string,
+		// confirming that gmdate() received a valid int (not a raw float-string).
+		$last_run_field = null;
+		foreach ( $fields as $field ) {
+			if ( 'Last Cron Run' === $field['label'] ) {
+				$last_run_field = $field;
+				break;
+			}
+		}
+		$this->assertNotNull( $last_run_field );
+		$this->assertMatchesRegularExpression(
+			'/^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}$/',
+			$last_run_field['debug'],
+			'Last Cron Run debug value should be a Y-m-d H:i:s formatted date string.'
+		);
+
+		// Cleanup.
+		delete_transient( 'doing_cron' );
+	}
+
+	/**
+	 * Test that the Cron_Health collector handles float-string keys in the cron
+	 * array (next run timestamp) without triggering PHP 8.1+ deprecation notices.
+	 *
+	 * @see https://github.com/chrisfromthelc/wp-system-report/issues/95
+	 */
+	public function test_cron_health_handles_float_string_cron_array_keys() {
+		$collector = $this->collectors['cron_health'];
+
+		// Build a synthetic cron array with a float-string timestamp key.
+		// This mirrors what _get_cron_array() can return in some WordPress installs.
+		$float_timestamp = '9999999999.123456789';
+		$fake_cron       = array(
+			$float_timestamp => array(
+				'my_future_hook' => array(
+					md5( '' ) => array(
+						'schedule' => 'hourly',
+						'args'     => array(),
+						'interval' => HOUR_IN_SECONDS,
+					),
+				),
+			),
+		);
+
+		// Temporarily filter _get_cron_array() to return the synthetic array.
+		add_filter(
+			'pre_option_cron',
+			static function () use ( $fake_cron ) {
+				return $fake_cron;
+			}
+		);
+
+		$fields = $collector->collect();
+
+		remove_all_filters( 'pre_option_cron' );
+
+		$this->assertIsArray( $fields );
+
+		// The Next Cron Run field must be present and must not be "No scheduled events".
+		$next_run_field = null;
+		foreach ( $fields as $field ) {
+			if ( 'Next Cron Run' === $field['label'] ) {
+				$next_run_field = $field;
+				break;
+			}
+		}
+		$this->assertNotNull( $next_run_field );
+		$this->assertNotSame(
+			'No scheduled events',
+			$next_run_field['value'],
+			'Next Cron Run should not be "No scheduled events" when a future float-key event exists.'
+		);
+
+		// The debug value should be a properly formatted Y-m-d H:i:s date string,
+		// confirming that gmdate() received an int, not a raw float-string.
+		$this->assertMatchesRegularExpression(
+			'/^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}$/',
+			$next_run_field['debug'],
+			'Next Cron Run debug value should be a Y-m-d H:i:s formatted date string.'
+		);
+	}
 }
