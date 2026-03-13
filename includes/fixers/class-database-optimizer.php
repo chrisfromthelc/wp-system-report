@@ -20,8 +20,22 @@ defined( 'ABSPATH' ) || exit;
  * Expired transients accumulate in wp_options when they are not
  * garbage-collected. Database overhead (DATA_FREE) builds up as
  * rows are inserted, updated, and deleted. This fixer cleans both.
+ *
+ * Note: OPTIMIZE TABLE acquires a write lock for the duration of
+ * the operation. On InnoDB (the default engine) this is usually
+ * fast, but very large tables may cause brief write pauses.
+ * The fixer limits each run to {@see MAX_TABLES_PER_RUN} tables
+ * to bound the total lock time.
  */
 class Database_Optimizer implements Fixer {
+
+	/**
+	 * Maximum number of tables to optimize in a single run.
+	 *
+	 * Prevents OPTIMIZE TABLE from locking too many tables in one
+	 * request. Remaining tables will be optimized on subsequent runs.
+	 */
+	private const MAX_TABLES_PER_RUN = 20;
 
 	/**
 	 * Get the unique slug identifier.
@@ -47,7 +61,7 @@ class Database_Optimizer implements Fixer {
 	 * @return string Translated description.
 	 */
 	public function get_description(): string {
-		return __( 'Cleans expired transients and reclaims table overhead to reduce database bloat.', 'wp-system-report' );
+		return __( 'Cleans expired transients and reclaims table overhead to reduce database bloat. OPTIMIZE TABLE briefly locks each table during optimization.', 'wp-system-report' );
 	}
 
 	/**
@@ -111,9 +125,12 @@ class Database_Optimizer implements Fixer {
 			$transients_deleted = $this->delete_expired_transients();
 		}
 
-		// Step 2: Optimize tables with overhead.
+		// Step 2: Optimize tables with overhead (capped per run to limit lock time).
 		$tables_optimized = 0;
-		foreach ( $tables_with_waste as $table_name ) {
+		$tables_to_run    = array_slice( $tables_with_waste, 0, self::MAX_TABLES_PER_RUN );
+		$tables_skipped   = count( $tables_with_waste ) - count( $tables_to_run );
+
+		foreach ( $tables_to_run as $table_name ) {
 			$result = $this->optimize_table( $table_name );
 			if ( $result ) {
 				++$tables_optimized;
@@ -131,6 +148,7 @@ class Database_Optimizer implements Fixer {
 			'total_overhead'     => $this->get_total_overhead(),
 			'transients_deleted' => $transients_deleted,
 			'tables_optimized'   => $tables_optimized,
+			'tables_skipped'     => $tables_skipped,
 		);
 
 		if ( ! empty( $errors ) ) {
@@ -159,6 +177,13 @@ class Database_Optimizer implements Fixer {
 				/* translators: %d: number of tables optimized */
 				__( '%d table(s) optimized', 'wp-system-report' ),
 				$tables_optimized
+			);
+		}
+		if ( $tables_skipped > 0 ) {
+			$parts[] = sprintf(
+				/* translators: %d: number of tables deferred to next run */
+				__( '%d table(s) deferred to next run', 'wp-system-report' ),
+				$tables_skipped
 			);
 		}
 

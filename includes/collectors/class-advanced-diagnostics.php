@@ -171,11 +171,21 @@ class Advanced_Diagnostics extends Abstract_Collector {
 
 		if ( $error_log && file_exists( $error_log ) && is_readable( $error_log ) ) {
 			$error_log_size = filesize( $error_log );
-			$log_value      = sprintf(
-				/* translators: 1: file path, 2: file size */
+
+			// Display value uses only the filename to avoid leaking the full
+			// server path. The complete path is available in the debug field.
+			$log_basename = wp_basename( $error_log );
+			$log_value    = sprintf(
+				/* translators: 1: file basename, 2: file size */
 				__( '%1$s (%2$s)', 'wp-system-report' ),
-				$error_log,
+				$log_basename,
 				$this->format_size( $error_log_size )
+			);
+
+			// Build the debug payload with the full (private) path.
+			$debug = array(
+				'path' => $error_log,
+				'size' => $error_log_size,
 			);
 
 			// Read only the last ~4 KB of the log to avoid memory exhaustion on large files.
@@ -183,25 +193,23 @@ class Advanced_Diagnostics extends Abstract_Collector {
 				$last_lines = $this->read_last_lines( $error_log, 5, 4096 );
 
 				if ( ! empty( $last_lines ) ) {
-					$log_value = sprintf(
-						/* translators: 1: file path, 2: file size, 3: last log lines */
-						__( '%1$s (%2$s) - Last entries: %3$s', 'wp-system-report' ),
-						$error_log,
-						$this->format_size( $error_log_size ),
-						implode( ' | ', $last_lines )
-					);
+					$debug['last_entries'] = $last_lines;
 				}
 			}
 
 			$fields[] = $this->make_field(
 				__( 'PHP Error Log', 'wp-system-report' ),
 				$log_value,
-				array( 'private' => true )
+				array(
+					'private' => true,
+					'debug'   => $debug,
+				)
 			);
 		} else {
 			$fields[] = $this->make_field(
 				__( 'PHP Error Log', 'wp-system-report' ),
-				$error_log ? __( 'Not accessible', 'wp-system-report' ) : __( 'Not configured', 'wp-system-report' )
+				$error_log ? __( 'Not accessible', 'wp-system-report' ) : __( 'Not configured', 'wp-system-report' ),
+				array( 'private' => true )
 			);
 		}
 

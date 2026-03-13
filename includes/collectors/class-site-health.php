@@ -139,8 +139,8 @@ class Site_Health extends Abstract_Collector {
 							)
 						);
 
-					} catch ( \Exception $e ) {
-						// Skip tests that throw exceptions.
+					} catch ( \Throwable $e ) {
+						// Skip tests that throw exceptions or errors (e.g. TypeError on PHP 8.x).
 						continue;
 					}
 				}
@@ -169,7 +169,7 @@ class Site_Health extends Abstract_Collector {
 				)
 			);
 
-		} catch ( \Exception $e ) {
+		} catch ( \Throwable $e ) {
 			// If Site Health fails completely, add error field.
 			$fields[] = $this->make_field(
 				__( 'Site Health Status', 'wp-system-report' ),
