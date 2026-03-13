@@ -345,6 +345,8 @@ class Admin_Page {
 					'runFix'         => __( 'Run Fix', 'wp-system-report' ),
 					'confirmTitle'   => __( 'Confirm Fix', 'wp-system-report' ),
 					'confirmMessage' => __( 'This operation may modify your site. Are you sure you want to proceed?', 'wp-system-report' ),
+					'confirmRun'     => __( 'Yes, run fix', 'wp-system-report' ),
+					'cancel'         => __( 'Cancel', 'wp-system-report' ),
 					'success'        => __( 'Success', 'wp-system-report' ),
 					'failed'         => __( 'Failed', 'wp-system-report' ),
 					'nothingToFix'   => __( 'No issues detected', 'wp-system-report' ),

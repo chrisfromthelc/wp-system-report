@@ -4,7 +4,13 @@
  * @package SystemReport
  */
 
-import { store, getContext, getElement } from '@wordpress/interactivity';
+import { store, getElement } from '@wordpress/interactivity';
+import {
+	copyToClipboard,
+	showCopySuccess,
+	downloadFile,
+	buildFilename,
+} from './store-utils.js';
 
 const { state, actions } = store( 'wp-system-report', {
 	state: {
@@ -16,8 +22,8 @@ const { state, actions } = store( 'wp-system-report', {
 		},
 		get aiDownloadLabel() {
 			return state.aiGenerating
-				? ( state.i18n.generating || 'Generating...' )
-				: ( state.i18n.downloadAi || 'Download for AI analysis' );
+				? state.i18n.generating
+				: state.i18n.downloadAi;
 		},
 		get copyErrorVisible() {
 			return state.copyError;
@@ -26,6 +32,9 @@ const { state, actions } = store( 'wp-system-report', {
 	actions: {
 		/**
 		 * Generate the plain-text report by scraping DOM tables.
+		 *
+		 * Stores plain text without markdown formatting; call sites
+		 * apply formatting (backtick wrapping, code fences) as needed.
 		 */
 		generateReport() {
 			let report = '';
@@ -78,7 +87,7 @@ const { state, actions } = store( 'wp-system-report', {
 				}
 			} );
 
-			state.reportText = '`' + report + '`';
+			state.reportText = report;
 			state.reportGenerated = true;
 
 			// Focus and select the textarea.
@@ -95,15 +104,22 @@ const { state, actions } = store( 'wp-system-report', {
 		},
 
 		/**
-		 * Copy the report for support.
+		 * Copy the report for support (backtick-wrapped for inline code).
 		 */
 		copyForSupport() {
 			const { ref } = getElement();
-			actions.copyToClipboard( state.reportText, ref );
+			const text = '`' + state.reportText + '`';
+			copyToClipboard(
+				text,
+				() => showCopySuccess( ref, state.i18n.copied ),
+				() => {
+					state.copyError = true;
+				}
+			);
 		},
 
 		/**
-		 * Copy a redacted version for GitHub.
+		 * Copy a redacted version for GitHub (fenced code block).
 		 */
 		copyForGitHub() {
 			const { ref } = getElement();
@@ -112,16 +128,22 @@ const { state, actions } = store( 'wp-system-report', {
 				'<details><summary>System Status Report</summary>\n\n```\n' +
 				redacted +
 				'\n```\n</details>';
-			actions.copyToClipboard( githubReport, ref );
+			copyToClipboard(
+				githubReport,
+				() => showCopySuccess( ref, state.i18n.copied ),
+				() => {
+					state.copyError = true;
+				}
+			);
 		},
 
 		/**
 		 * Download the report as a text file.
 		 */
 		downloadForSupport() {
-			actions.downloadFile(
+			downloadFile(
 				state.reportText,
-				actions.buildFilename( 'SystemStatusReport', 'txt' ),
+				buildFilename( 'SystemStatusReport', 'txt' ),
 				'text/plain'
 			);
 		},
@@ -147,19 +169,16 @@ const { state, actions } = store( 'wp-system-report', {
 				}
 
 				const data = yield response.text();
-				actions.downloadFile(
+				downloadFile(
 					data,
-					actions.buildFilename( 'WPSystemReport_AI', 'md' ),
+					buildFilename( 'WPSystemReport_AI', 'md' ),
 					'text/markdown'
 				);
 			} catch ( error ) {
 				/* eslint-disable-next-line no-console */
 				console.error( 'WP System Report AI download failed:', error );
 				/* eslint-disable-next-line no-alert */
-				alert(
-					state.i18n.aiFailed ||
-						'Failed to generate AI report. Please try again.'
-				);
+				alert( state.i18n.aiFailed );
 			} finally {
 				state.aiGenerating = false;
 			}
@@ -185,93 +204,6 @@ const { state, actions } = store( 'wp-system-report', {
 				text = text.replace( r.regex, r.replacement );
 			} );
 			return text;
-		},
-
-		/**
-		 * Copy text to clipboard and show feedback.
-		 *
-		 * @param {string}      text   Text to copy.
-		 * @param {HTMLElement} button The button element.
-		 */
-		copyToClipboard( text, button ) {
-			if ( navigator.clipboard && navigator.clipboard.writeText ) {
-				navigator.clipboard.writeText( text ).then(
-					() => actions.showCopySuccess( button ),
-					() => {
-						state.copyError = true;
-					}
-				);
-			} else {
-				const textarea = document.createElement( 'textarea' );
-				textarea.value = text;
-				textarea.style.position = 'fixed';
-				textarea.style.opacity = '0';
-				document.body.appendChild( textarea );
-				textarea.select();
-				try {
-					document.execCommand( 'copy' );
-					actions.showCopySuccess( button );
-				} catch ( e ) {
-					state.copyError = true;
-				}
-				document.body.removeChild( textarea );
-			}
-		},
-
-		/**
-		 * Show copy success indicator near a button.
-		 *
-		 * @param {HTMLElement} button The button element.
-		 */
-		showCopySuccess( button ) {
-			let indicator = button.nextElementSibling;
-			if (
-				! indicator ||
-				! indicator.classList.contains( 'sr-copy-success' )
-			) {
-				indicator = document.createElement( 'span' );
-				indicator.className = 'sr-copy-success';
-				indicator.textContent = state.i18n.copied || 'Copied!';
-				button.parentNode.insertBefore( indicator, button.nextSibling );
-			}
-			indicator.classList.add( 'visible' );
-			setTimeout( () => indicator.classList.remove( 'visible' ), 2000 );
-		},
-
-		/**
-		 * Download text content as a file.
-		 *
-		 * @param {string} content  File content.
-		 * @param {string} filename File name.
-		 * @param {string} mimeType MIME type.
-		 */
-		downloadFile( content, filename, mimeType ) {
-			mimeType = mimeType || 'text/plain';
-			const blob = new Blob( [ content ], { type: mimeType } );
-			const a = document.createElement( 'a' );
-			a.download = filename;
-			a.href = window.URL.createObjectURL( blob );
-			a.style.display = 'none';
-			document.body.appendChild( a );
-			a.click();
-			a.remove();
-			window.URL.revokeObjectURL( a.href );
-		},
-
-		/**
-		 * Build a filename with domain and timestamp.
-		 *
-		 * @param {string} prefix File prefix.
-		 * @param {string} ext    File extension.
-		 * @return {string} Full filename.
-		 */
-		buildFilename( prefix, ext ) {
-			const domain = window.location.hostname;
-			const datetime = new Date()
-				.toISOString()
-				.slice( 0, 19 )
-				.replace( /:/g, '-' );
-			return prefix + '_' + domain + '_' + datetime + '.' + ext;
 		},
 	},
 } );

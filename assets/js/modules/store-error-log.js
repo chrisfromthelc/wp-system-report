@@ -5,6 +5,12 @@
  */
 
 import { store, getElement } from '@wordpress/interactivity';
+import {
+	copyToClipboard,
+	showCopySuccess,
+	downloadFile,
+	buildFilename,
+} from './store-utils.js';
 
 const { state, actions } = store( 'wp-system-report', {
 	state: {
@@ -43,8 +49,8 @@ const { state, actions } = store( 'wp-system-report', {
 		},
 		get loadBtnLabel() {
 			return state.errorLog.isLoading
-				? ( state.i18n.loading || 'Loading...' )
-				: ( state.i18n.loadLog || 'Load error log' );
+				? state.i18n.loading
+				: state.i18n.loadLog;
 		},
 		get toggleBtnsDisabled() {
 			return state.errorLog.isToggling;
@@ -78,15 +84,15 @@ const { state, actions } = store( 'wp-system-report', {
 		 */
 		getBadgeText( value ) {
 			if ( value === null || value === undefined ) {
-				return state.i18n.notSet || 'Not set';
+				return state.i18n.notSet;
 			}
 			if ( typeof value === 'string' ) {
 				return value;
 			}
 			if ( value ) {
-				return state.i18n.enabled || 'Enabled';
+				return state.i18n.enabled;
 			}
-			return state.i18n.disabled || 'Disabled';
+			return state.i18n.disabled;
 		},
 
 		/**
@@ -276,7 +282,7 @@ const { state, actions } = store( 'wp-system-report', {
 			if ( includeReport && state.config.reportUrl ) {
 				ref.disabled = true;
 				const origText = ref.textContent;
-				ref.textContent = state.i18n.loading || 'Loading...';
+				ref.textContent = state.i18n.loading;
 
 				try {
 					const sep =
@@ -304,23 +310,23 @@ const { state, actions } = store( 'wp-system-report', {
 						'ERROR LOG\n' +
 						'===================================\n\n' +
 						logContent;
-					actions.downloadFileHelper(
+					downloadFile(
 						combined,
-						actions.buildFilename( 'SystemReport_ErrorLog', 'txt' )
+						buildFilename( 'SystemReport_ErrorLog', 'txt' )
 					);
 				} catch ( e ) {
-					actions.downloadFileHelper(
+					downloadFile(
 						logContent,
-						actions.buildFilename( 'ErrorLog', 'log' )
+						buildFilename( 'ErrorLog', 'log' )
 					);
 				} finally {
 					ref.disabled = false;
 					ref.textContent = origText;
 				}
 			} else {
-				actions.downloadFileHelper(
+				downloadFile(
 					logContent,
-					actions.buildFilename( 'ErrorLog', 'log' )
+					buildFilename( 'ErrorLog', 'log' )
 				);
 			}
 		},
@@ -333,10 +339,15 @@ const { state, actions } = store( 'wp-system-report', {
 			const logContent = state.errorLog.logContent;
 			const includeReport = state.errorLog.includeReport;
 
+			const onSuccess = () => showCopySuccess( ref, state.i18n.copied );
+			const onError = () => {
+				state.copyError = true;
+			};
+
 			if ( includeReport && state.config.reportUrl ) {
 				ref.disabled = true;
 				const origText = ref.textContent;
-				ref.textContent = state.i18n.loading || 'Loading...';
+				ref.textContent = state.i18n.loading;
 
 				try {
 					const sep =
@@ -364,15 +375,15 @@ const { state, actions } = store( 'wp-system-report', {
 						'ERROR LOG\n' +
 						'===================================\n\n' +
 						logContent;
-					actions.copyToClipboard( combined, ref );
+					copyToClipboard( combined, onSuccess, onError );
 				} catch ( e ) {
-					actions.copyToClipboard( logContent, ref );
+					copyToClipboard( logContent, onSuccess, onError );
 				} finally {
 					ref.disabled = false;
 					ref.textContent = origText;
 				}
 			} else {
-				actions.copyToClipboard( logContent, ref );
+				copyToClipboard( logContent, onSuccess, onError );
 			}
 		},
 
@@ -399,91 +410,6 @@ const { state, actions } = store( 'wp-system-report', {
 					state.errorLog.noticeMessage = '';
 				}, 5000 );
 			}
-		},
-
-		/**
-		 * Copy text to clipboard.
-		 *
-		 * @param {string}      text   Text to copy.
-		 * @param {HTMLElement} button Button element.
-		 */
-		copyToClipboard( text, button ) {
-			if ( navigator.clipboard && navigator.clipboard.writeText ) {
-				navigator.clipboard.writeText( text ).then(
-					() => actions.showCopySuccess( button ),
-					() => {
-						state.copyError = true;
-					}
-				);
-			} else {
-				const textarea = document.createElement( 'textarea' );
-				textarea.value = text;
-				textarea.style.position = 'fixed';
-				textarea.style.opacity = '0';
-				document.body.appendChild( textarea );
-				textarea.select();
-				try {
-					document.execCommand( 'copy' );
-					actions.showCopySuccess( button );
-				} catch ( e ) {
-					state.copyError = true;
-				}
-				document.body.removeChild( textarea );
-			}
-		},
-
-		/**
-		 * Show copy success indicator.
-		 *
-		 * @param {HTMLElement} button The button element.
-		 */
-		showCopySuccess( button ) {
-			let indicator = button.nextElementSibling;
-			if (
-				! indicator ||
-				! indicator.classList.contains( 'sr-copy-success' )
-			) {
-				indicator = document.createElement( 'span' );
-				indicator.className = 'sr-copy-success';
-				indicator.textContent = state.i18n.copied || 'Copied!';
-				button.parentNode.insertBefore( indicator, button.nextSibling );
-			}
-			indicator.classList.add( 'visible' );
-			setTimeout( () => indicator.classList.remove( 'visible' ), 2000 );
-		},
-
-		/**
-		 * Download helper.
-		 *
-		 * @param {string} content  File content.
-		 * @param {string} filename File name.
-		 */
-		downloadFileHelper( content, filename ) {
-			const blob = new Blob( [ content ], { type: 'text/plain' } );
-			const a = document.createElement( 'a' );
-			a.download = filename;
-			a.href = window.URL.createObjectURL( blob );
-			a.style.display = 'none';
-			document.body.appendChild( a );
-			a.click();
-			a.remove();
-			window.URL.revokeObjectURL( a.href );
-		},
-
-		/**
-		 * Build a filename.
-		 *
-		 * @param {string} prefix File prefix.
-		 * @param {string} ext    File extension.
-		 * @return {string} Full filename.
-		 */
-		buildFilename( prefix, ext ) {
-			const domain = window.location.hostname;
-			const datetime = new Date()
-				.toISOString()
-				.slice( 0, 19 )
-				.replace( /:/g, '-' );
-			return prefix + '_' + domain + '_' + datetime + '.' + ext;
 		},
 	},
 

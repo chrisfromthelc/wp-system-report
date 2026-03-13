@@ -98,7 +98,7 @@ const { state, actions } = store( 'wp-system-report', {
 				if ( ! response.ok ) {
 					const err = yield response.json().catch( () => ( {} ) );
 					throw new Error(
-						err.message || state.i18n.loadFailed || 'Failed to load fixes.'
+						err.message || state.i18n.loadFailed
 					);
 				}
 
@@ -119,7 +119,7 @@ const { state, actions } = store( 'wp-system-report', {
 			} catch ( error ) {
 				state.fixes.hasError = true;
 				state.fixes.errorMessage =
-					error.message || state.i18n.loadFailed || 'Failed to load fixes.';
+					error.message || state.i18n.loadFailed;
 			} finally {
 				state.fixes.isLoading = false;
 			}
@@ -175,9 +175,8 @@ const { state, actions } = store( 'wp-system-report', {
 		showConfirmModal( fixer ) {
 			state.fixes.pendingFixId = fixer.id;
 			state.fixes.modalTitle =
-				( state.i18n.confirmTitle || 'Confirm' ) + ': ' + fixer.label;
-			state.fixes.modalMessage =
-				state.i18n.confirmMessage || 'Are you sure you want to run this fix?';
+				state.i18n.confirmTitle + ': ' + fixer.label;
+			state.fixes.modalMessage = state.i18n.confirmMessage;
 			state.fixes.modalDescription = fixer.description;
 			state.fixes.modalOpen = true;
 			state.fixes.lastFocusedSelector = document.activeElement
@@ -291,7 +290,7 @@ const { state, actions } = store( 'wp-system-report', {
 				if ( ! response.ok ) {
 					const err = yield response.json().catch( () => ( {} ) );
 					throw new Error(
-						err.message || state.i18n.executeFailed || 'Fix execution failed.'
+						err.message || state.i18n.executeFailed
 					);
 				}
 
@@ -302,15 +301,15 @@ const { state, actions } = store( 'wp-system-report', {
 
 				// Build result display data.
 				let noticeClass = 'notice-success';
-				let statusLabel = state.i18n.success || 'Success';
+				let statusLabel = state.i18n.success;
 
 				if ( ! result.success ) {
 					noticeClass = 'notice-error';
-					statusLabel = state.i18n.failed || 'Failed';
+					statusLabel = state.i18n.failed;
 					succeeded = false;
 				} else if ( ! data.applied ) {
 					noticeClass = 'notice-info';
-					statusLabel = state.i18n.nothingToFix || 'Nothing to fix';
+					statusLabel = state.i18n.nothingToFix;
 				}
 
 				actions.updateFixerState( fixId, {
@@ -330,9 +329,9 @@ const { state, actions } = store( 'wp-system-report', {
 						afterJson: result.after
 							? JSON.stringify( result.after, null, 2 )
 							: '',
-						detailsLabel: state.i18n.resultDetails || 'Details',
-						beforeLabel: ( state.i18n.before || 'Before' ) + ':',
-						afterLabel: ( state.i18n.after || 'After' ) + ':',
+						detailsLabel: state.i18n.resultDetails,
+						beforeLabel: state.i18n.before + ':',
+						afterLabel: state.i18n.after + ':',
 					},
 				} );
 
@@ -347,7 +346,7 @@ const { state, actions } = store( 'wp-system-report', {
 					result: {
 						visible: true,
 						noticeClass: 'notice notice-error inline sr-result-notice',
-						statusLabel: ( state.i18n.failed || 'Failed' ) + ':',
+						statusLabel: state.i18n.failed + ':',
 						message:
 							error.message ||
 							state.i18n.executeFailed ||
