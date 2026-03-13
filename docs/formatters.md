@@ -1,6 +1,6 @@
 # Formatters
 
-Formatters transform the raw report data from collectors into different output formats. WP System Report includes three built-in formatters.
+Formatters transform the raw report data from collectors into different output formats. WP System Report includes four built-in formatters.
 
 ## Plain Text Formatter
 
@@ -101,6 +101,60 @@ The AI formatter runs automatic heuristic checks beyond field-level statuses:
 | `wp_system_report_ai_issues` | Add, remove, or modify detected issues before rendering |
 | `wp_system_report_ai_executive_summary` | Customize or extend the executive summary output |
 
+## MCP Formatter
+
+**Class:** `SystemReport\Formatters\MCP_Formatter`
+**Content Type:** `application/json; charset=utf-8`
+**File Extension:** `.json`
+
+Produces structured JSON optimized for AI agents consuming data via the Model Context Protocol (MCP). Unlike the AI Formatter (which outputs markdown), the MCP Formatter returns compact, machine-readable JSON designed for token-efficient processing in LLM context windows.
+
+### Design Principles
+
+- **Token efficiency** — Only fields with warning or critical status are listed in detail; good/info fields are counted but not enumerated.
+- **Actionable references** — Issues include `fix_id` links to available fixers.
+- **Machine-readable** — All statuses, categories, and ratings use consistent lowercase enum strings.
+- **Compact descriptions** — Field values are capped at 200 characters to prevent token bloat.
+
+### Structure
+
+The output is a JSON object with four top-level keys:
+
+1. **`site`** — Site identity and metadata (URL, name, WordPress/PHP versions, multisite flag, generation timestamp)
+2. **`health`** — Health score (0-100), rating (`excellent`/`good`/`fair`/`needs_attention`), issue counts, section/check totals, fixer availability flag
+3. **`issues`** — Prioritised list of warning/critical findings sorted by weight, with severity, category, description, and optional `fix_id` and `recommended` fields
+4. **`sections`** — Per-section summaries with `total_checks`, `passing` count, and `notable_fields` array (only non-good/non-info fields). Sections exceeding 50 notable fields are truncated.
+
+### Health Score
+
+The health score is computed identically to the AI Formatter:
+
+- Starts at 100
+- Deducts 10 points per critical issue
+- Deducts 5 points per warning issue
+- Minimum score is 0
+
+### Issue Categorization
+
+Issues are categorized using keyword matching on field labels with a fallback to section-based classification. Categories include: `security`, `performance`, `updates`, `email`, `media`, `cron`, `connectivity`, `rest_api`, `database`, `editor`, and `general`.
+
+### Convenience Method
+
+The `format_array()` method returns the payload as a decoded PHP array instead of a JSON string, useful for MCP ability callbacks that need structured data directly:
+
+```php
+$formatter = new MCP_Formatter();
+$payload   = $formatter->format_array( $report_data );
+// $payload is an array with 'site', 'health', 'issues', 'sections' keys
+```
+
+### Customization
+
+| Filter | Description |
+|--------|-------------|
+| `wp_system_report_mcp_payload` | Modify the full MCP payload before JSON encoding |
+| `wp_system_report_mcp_site_identity` | Customize the site identity metadata block |
+
 ## Using Formatters via REST API
 
 ```
@@ -108,6 +162,7 @@ GET /wp-json/wp-system-report/v1/report              # JSON (raw data)
 GET /wp-json/wp-system-report/v1/report?format=plain  # Plain Text
 GET /wp-json/wp-system-report/v1/report?format=github # GitHub (redacted)
 GET /wp-json/wp-system-report/v1/report?format=ai     # AI Markdown
+GET /wp-json/wp-system-report/v1/report?format=mcp    # MCP JSON
 ```
 
 See the [REST API documentation](rest-api.md) for authentication details.

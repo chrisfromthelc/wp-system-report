@@ -93,11 +93,12 @@ Each field returned by `make_field()` has these properties:
 | `label` | string | Yes | Display label |
 | `value` | string | Yes | Formatted display value |
 | `debug` | mixed | No | Raw/machine-readable value (defaults to `value`) |
-| `status` | string | No | `good`, `warning`, `critical`, or `info` |
+| `status` | `Status` or string | No | `Status::Good`, `Status::Warning`, `Status::Critical`, or `Status::Info`. Legacy strings (`'good'`, `'warning'`, etc.) are also accepted. |
 | `description` | string | No | Contextual description for AI export |
 | `recommended` | string | No | Recommended value for AI export |
 | `private` | bool | No | If `true`, excluded from exports |
 | `export_label` | string | No | Compact label for text export (defaults to `label`) |
+| `fix_id` | string or null | No | ID of an available fixer that can resolve this issue |
 
 ### Caching
 
@@ -222,6 +223,12 @@ add_filter( 'wp_system_report_ai_issues', function ( array $issues, array $repor
 
 ---
 
+## Writing a Custom Fixer
+
+See the [Fixers documentation](fixers.md#writing-a-custom-fixer) for a complete guide to implementing the `Fixer` interface, including risk levels, the `Fix_Result` value object, and registration via the `wp_system_report_fixers` filter.
+
+---
+
 ## Adding Redaction Patterns
 
 Add patterns to the GitHub formatter's redaction engine:
@@ -235,3 +242,9 @@ add_filter( 'wp_system_report_redactions', function ( array $redactions ): array
     return $redactions;
 } );
 ```
+
+---
+
+## Testing Custom Extensions
+
+See the [Testing Guide](testing.md) for instructions on writing PHPUnit tests for custom collectors and fixers, including mocking strategies for WordPress dependencies.
