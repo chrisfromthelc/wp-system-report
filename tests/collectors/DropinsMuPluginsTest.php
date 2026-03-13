@@ -32,14 +32,14 @@ class DropinsMuPluginsTest extends WP_UnitTestCase {
 		parent::set_up();
 		$this->collector = new \SystemReport\Collectors\Dropins_MU_Plugins();
 		// Clear any cached data from a previous run.
-		delete_transient( 'sr_dropins_mu_plugins' );
+		delete_transient( sr_versioned_cache_key( 'sr_dropins_mu_plugins' ) );
 	}
 
 	/**
 	 * Remove the transient after each test to avoid cross-test pollution.
 	 */
 	public function tear_down() {
-		delete_transient( 'sr_dropins_mu_plugins' );
+		delete_transient( sr_versioned_cache_key( 'sr_dropins_mu_plugins' ) );
 		parent::tear_down();
 	}
 
@@ -226,7 +226,7 @@ class DropinsMuPluginsTest extends WP_UnitTestCase {
 	 * 'sr_dropins_mu_plugins' and return identical data on a second call.
 	 */
 	public function test_caching() {
-		$cache_key = 'sr_dropins_mu_plugins';
+		$cache_key = sr_versioned_cache_key( 'sr_dropins_mu_plugins' );
 
 		// Ensure no stale cache exists before the test.
 		delete_transient( $cache_key );

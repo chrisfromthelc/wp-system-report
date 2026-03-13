@@ -28,14 +28,14 @@ class PostTypeCountsTest extends WP_UnitTestCase {
 		$this->collector = new \SystemReport\Collectors\Post_Type_Counts();
 
 		// Clear any cached data from previous test runs.
-		delete_transient( 'sr_post_type_counts' );
+		delete_transient( sr_versioned_cache_key( 'sr_post_type_counts' ) );
 	}
 
 	/**
 	 * Tear down after each test.
 	 */
 	public function tear_down(): void {
-		delete_transient( 'sr_post_type_counts' );
+		delete_transient( sr_versioned_cache_key( 'sr_post_type_counts' ) );
 		parent::tear_down();
 	}
 
@@ -144,7 +144,7 @@ class PostTypeCountsTest extends WP_UnitTestCase {
 		);
 
 		// Clear cache so the fresh query runs.
-		delete_transient( 'sr_post_type_counts' );
+		delete_transient( sr_versioned_cache_key( 'sr_post_type_counts' ) );
 
 		$fields = $this->collector->collect();
 
@@ -216,7 +216,7 @@ class PostTypeCountsTest extends WP_UnitTestCase {
 		$count = 7;
 		$this->factory->post->create_many( $count, array( 'post_type' => 'sr_test_fmt' ) );
 
-		delete_transient( 'sr_post_type_counts' );
+		delete_transient( sr_versioned_cache_key( 'sr_post_type_counts' ) );
 		$fields = $this->collector->collect();
 
 		$target_field = null;
@@ -272,7 +272,7 @@ class PostTypeCountsTest extends WP_UnitTestCase {
 		// First call: should populate the transient.
 		$first_result = $this->collector->get_cached_data();
 
-		$cached = get_transient( 'sr_post_type_counts' );
+		$cached = get_transient( sr_versioned_cache_key( 'sr_post_type_counts' ) );
 		$this->assertNotFalse( $cached, 'Transient "sr_post_type_counts" should be set after get_cached_data().' );
 
 		// Second call: should return the same data from cache.
@@ -296,7 +296,7 @@ class PostTypeCountsTest extends WP_UnitTestCase {
 			new Field( 'Sentinel', '999' ),
 		);
 
-		set_transient( 'sr_post_type_counts', $sentinel, HOUR_IN_SECONDS );
+		set_transient( sr_versioned_cache_key( 'sr_post_type_counts' ), $sentinel, HOUR_IN_SECONDS );
 
 		$result = $this->collector->get_cached_data();
 
@@ -330,7 +330,7 @@ class PostTypeCountsTest extends WP_UnitTestCase {
 		);
 
 		// Clear the transient so collect() runs fresh.
-		delete_transient( 'sr_post_type_counts' );
+		delete_transient( sr_versioned_cache_key( 'sr_post_type_counts' ) );
 
 		$fields = $this->collector->collect();
 

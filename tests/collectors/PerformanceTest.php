@@ -34,7 +34,7 @@ class PerformanceTest extends WP_UnitTestCase {
 		$this->collector = new \SystemReport\Collectors\Performance();
 
 		// Ensure no stale transient from a previous run contaminates results.
-		delete_transient( 'sr_performance' );
+		delete_transient( sr_versioned_cache_key( 'sr_performance' ) );
 	}
 
 	/**
@@ -44,7 +44,7 @@ class PerformanceTest extends WP_UnitTestCase {
 	 * cache state.
 	 */
 	public function tear_down(): void {
-		delete_transient( 'sr_performance' );
+		delete_transient( sr_versioned_cache_key( 'sr_performance' ) );
 		parent::tear_down();
 	}
 
@@ -296,12 +296,12 @@ class PerformanceTest extends WP_UnitTestCase {
 	 */
 	public function test_caching_returns_same_data(): void {
 		// Guarantee no pre-existing transient.
-		delete_transient( 'sr_performance' );
+		delete_transient( sr_versioned_cache_key( 'sr_performance' ) );
 
 		$first_result = $this->collector->get_cached_data();
 
 		$this->assertNotFalse(
-			get_transient( 'sr_performance' ),
+			get_transient( sr_versioned_cache_key( 'sr_performance' ) ),
 			'Transient "sr_performance" must be set after the first get_cached_data() call.'
 		);
 

@@ -38,7 +38,7 @@ class DatabaseTest extends WP_UnitTestCase {
 		$this->original_prefix = $wpdb->prefix;
 
 		// Clear any cached data from previous test runs.
-		delete_transient( 'sr_database' );
+		delete_transient( sr_versioned_cache_key( 'sr_database' ) );
 	}
 
 	/**
@@ -50,7 +50,7 @@ class DatabaseTest extends WP_UnitTestCase {
 		global $wpdb;
 		$wpdb->prefix = $this->original_prefix;
 
-		delete_transient( 'sr_database' );
+		delete_transient( sr_versioned_cache_key( 'sr_database' ) );
 		parent::tear_down();
 	}
 
@@ -185,7 +185,7 @@ class DatabaseTest extends WP_UnitTestCase {
 		// Guarantee the prefix is within the 20-character threshold.
 		$wpdb->prefix = 'wptests_';
 
-		delete_transient( 'sr_database' );
+		delete_transient( sr_versioned_cache_key( 'sr_database' ) );
 		$fields = $this->collector->collect();
 
 		$prefix_field = $fields[0];
@@ -213,7 +213,7 @@ class DatabaseTest extends WP_UnitTestCase {
 		// Use a prefix that is exactly 21 characters — one over the threshold.
 		$wpdb->prefix = 'this_prefix_is_toolong';
 
-		delete_transient( 'sr_database' );
+		delete_transient( sr_versioned_cache_key( 'sr_database' ) );
 		$fields = $this->collector->collect();
 
 		$prefix_field = $fields[0];
@@ -324,16 +324,16 @@ class DatabaseTest extends WP_UnitTestCase {
 	 */
 	public function test_caching_works(): void {
 		// Ensure no stale cache exists before the test.
-		delete_transient( 'sr_database' );
+		delete_transient( sr_versioned_cache_key( 'sr_database' ) );
 		$this->assertFalse(
-			get_transient( 'sr_database' ),
+			get_transient( sr_versioned_cache_key( 'sr_database' ) ),
 			'Transient "sr_database" should not exist before the first get_cached_data() call.'
 		);
 
 		// First call: should populate the transient.
 		$first_result = $this->collector->get_cached_data();
 
-		$cached = get_transient( 'sr_database' );
+		$cached = get_transient( sr_versioned_cache_key( 'sr_database' ) );
 		$this->assertNotFalse(
 			$cached,
 			'Transient "sr_database" should be set after get_cached_data().'
@@ -350,7 +350,7 @@ class DatabaseTest extends WP_UnitTestCase {
 		);
 
 		// Clean up.
-		delete_transient( 'sr_database' );
+		delete_transient( sr_versioned_cache_key( 'sr_database' ) );
 	}
 
 	/**
@@ -366,7 +366,7 @@ class DatabaseTest extends WP_UnitTestCase {
 			new Field( 'Sentinel', 'db-sentinel' ),
 		);
 
-		set_transient( 'sr_database', $sentinel, HOUR_IN_SECONDS );
+		set_transient( sr_versioned_cache_key( 'sr_database' ), $sentinel, HOUR_IN_SECONDS );
 
 		$result = $this->collector->get_cached_data();
 

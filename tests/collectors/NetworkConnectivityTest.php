@@ -25,7 +25,7 @@ class NetworkConnectivityTest extends WP_UnitTestCase {
 	 */
 	public function set_up(): void {
 		parent::set_up();
-		delete_transient( 'sr_network_connectivity' );
+		delete_transient( sr_versioned_cache_key( 'sr_network_connectivity' ) );
 		$this->collector = new \SystemReport\Collectors\Network_Connectivity();
 	}
 
@@ -33,7 +33,7 @@ class NetworkConnectivityTest extends WP_UnitTestCase {
 	 * Remove the cache transient after each test to avoid cross-test pollution.
 	 */
 	public function tear_down(): void {
-		delete_transient( 'sr_network_connectivity' );
+		delete_transient( sr_versioned_cache_key( 'sr_network_connectivity' ) );
 		parent::tear_down();
 	}
 
@@ -228,7 +228,7 @@ class NetworkConnectivityTest extends WP_UnitTestCase {
 		};
 
 		add_filter( 'pre_http_request', $mock_http, 10, 3 );
-		delete_transient( 'sr_network_connectivity' );
+		delete_transient( sr_versioned_cache_key( 'sr_network_connectivity' ) );
 
 		$fields = $this->collector->collect();
 
@@ -264,7 +264,7 @@ class NetworkConnectivityTest extends WP_UnitTestCase {
 		};
 
 		add_filter( 'pre_http_request', $mock_http, 10, 3 );
-		delete_transient( 'sr_network_connectivity' );
+		delete_transient( sr_versioned_cache_key( 'sr_network_connectivity' ) );
 
 		$fields = $this->collector->collect();
 

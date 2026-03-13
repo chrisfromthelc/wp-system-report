@@ -25,7 +25,7 @@ class UpdateHealthTest extends WP_UnitTestCase {
 	 */
 	public function set_up(): void {
 		parent::set_up();
-		delete_transient( 'sr_update_health' );
+		delete_transient( sr_versioned_cache_key( 'sr_update_health' ) );
 		$this->collector = new \SystemReport\Collectors\Update_Health();
 	}
 
@@ -33,7 +33,7 @@ class UpdateHealthTest extends WP_UnitTestCase {
 	 * Remove the cache transient after each test to avoid cross-test pollution.
 	 */
 	public function tear_down(): void {
-		delete_transient( 'sr_update_health' );
+		delete_transient( sr_versioned_cache_key( 'sr_update_health' ) );
 		parent::tear_down();
 	}
 
@@ -204,7 +204,7 @@ class UpdateHealthTest extends WP_UnitTestCase {
 	 * Both results must be identical arrays.
 	 */
 	public function test_caching_returns_same_data(): void {
-		delete_transient( 'sr_update_health' );
+		delete_transient( sr_versioned_cache_key( 'sr_update_health' ) );
 
 		$first  = $this->collector->get_cached_data();
 		$second = $this->collector->get_cached_data();

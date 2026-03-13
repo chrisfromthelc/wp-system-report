@@ -34,7 +34,7 @@ class AdvancedDiagnosticsTest extends WP_UnitTestCase {
 		$this->collector = new \SystemReport\Collectors\Advanced_Diagnostics();
 
 		// Ensure no stale transient from a previous run contaminates results.
-		delete_transient( 'sr_advanced_diagnostics' );
+		delete_transient( sr_versioned_cache_key( 'sr_advanced_diagnostics' ) );
 	}
 
 	/**
@@ -44,7 +44,7 @@ class AdvancedDiagnosticsTest extends WP_UnitTestCase {
 	 * cache state.
 	 */
 	public function tear_down(): void {
-		delete_transient( 'sr_advanced_diagnostics' );
+		delete_transient( sr_versioned_cache_key( 'sr_advanced_diagnostics' ) );
 		parent::tear_down();
 	}
 
@@ -217,7 +217,7 @@ class AdvancedDiagnosticsTest extends WP_UnitTestCase {
 	 */
 	public function test_autoloaded_options_size_status_is_good_when_small(): void {
 		// Clear any cached data to force a fresh collect() call.
-		delete_transient( 'sr_advanced_diagnostics' );
+		delete_transient( sr_versioned_cache_key( 'sr_advanced_diagnostics' ) );
 
 		$field = $this->find_field_by_label(
 			$this->collector->collect(),
@@ -324,12 +324,12 @@ class AdvancedDiagnosticsTest extends WP_UnitTestCase {
 	 */
 	public function test_caching_returns_same_data(): void {
 		// Guarantee no pre-existing transient.
-		delete_transient( 'sr_advanced_diagnostics' );
+		delete_transient( sr_versioned_cache_key( 'sr_advanced_diagnostics' ) );
 
 		$first_result = $this->collector->get_cached_data();
 
 		$this->assertNotFalse(
-			get_transient( 'sr_advanced_diagnostics' ),
+			get_transient( sr_versioned_cache_key( 'sr_advanced_diagnostics' ) ),
 			'Transient "sr_advanced_diagnostics" must be set after the first get_cached_data() call.'
 		);
 

@@ -37,6 +37,20 @@ tests_add_filter( 'muplugins_loaded', '_manually_load_plugin' );
 // Start up the WP testing environment.
 require $_tests_dir . '/includes/bootstrap.php';
 
+/**
+ * Build the versioned transient cache key used by collectors.
+ *
+ * Mirrors the logic in Abstract_Collector::build_versioned_cache_key()
+ * so that tests can interact with the correct transient.
+ *
+ * @param string $base_key The base cache key (e.g. 'sr_site_health').
+ * @return string The versioned cache key.
+ */
+function sr_versioned_cache_key( string $base_key ): string {
+	$version = defined( 'WP_SYSTEM_REPORT_VERSION' ) ? WP_SYSTEM_REPORT_VERSION : '0.0.0';
+	return $base_key . '_' . str_replace( '.', '_', $version );
+}
+
 // Create plugin tables that normally rely on register_activation_hook()
 // or admin_init, neither of which fire during the test bootstrap.
 \SystemReport\Report_History::create_table();
