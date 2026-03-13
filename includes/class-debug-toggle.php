@@ -266,7 +266,12 @@ class Debug_Toggle {
 	 */
 	private function get_backup_path(): string {
 		if ( '' === $this->backup_token ) {
-			$this->backup_token = bin2hex( random_bytes( 16 ) );
+			try {
+				$this->backup_token = bin2hex( random_bytes( 16 ) );
+			} catch ( \Throwable $e ) {
+				// Fall back to a deterministic hash if no CSPRNG is available.
+				$this->backup_token = md5( $this->config_path );
+			}
 		}
 
 		return get_temp_dir() . 'wp-system-report-config-' . $this->backup_token . '.bak';

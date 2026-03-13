@@ -110,7 +110,8 @@ const { state, actions } = store( 'wp-system-report', {
 					throw new Error( state.i18n.loadFailed );
 				}
 
-				const data = yield response.json();
+				const envelope = yield response.json();
+				const data = envelope.data || {};
 				const toggle = data.toggle || {};
 
 				state.errorLog.wpDebug = toggle.wp_debug ?? null;
@@ -165,7 +166,8 @@ const { state, actions } = store( 'wp-system-report', {
 					throw new Error( err.message || state.i18n.loadFailed );
 				}
 
-				const data = yield response.json();
+				const envelope = yield response.json();
+				const data = envelope.data || {};
 				state.errorLog.logLoaded = true;
 
 				if ( data.lines && data.lines.length > 0 ) {
@@ -235,7 +237,8 @@ const { state, actions } = store( 'wp-system-report', {
 					throw new Error( err.message || state.i18n.toggleFailed );
 				}
 
-				const data = yield response.json();
+				const envelope = yield response.json();
+				const data = envelope.data || {};
 				actions.showToggleNotice( state.i18n.toggleSuccess, 'success' );
 
 				if ( data.state ) {

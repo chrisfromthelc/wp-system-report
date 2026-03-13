@@ -190,7 +190,8 @@
 				}
 				return response.json();
 			} )
-			.then( function ( data ) {
+			.then( function ( envelope ) {
+				var data = ( envelope && envelope.data ) ? envelope.data : envelope;
 				var statusEl = document.getElementById( 'sr-debug-status' );
 				var controlsEl = document.getElementById( 'sr-debug-controls' );
 
@@ -290,7 +291,8 @@
 				}
 				return response.json();
 			} )
-			.then( function ( data ) {
+			.then( function ( envelope ) {
+				var data = ( envelope && envelope.data ) ? envelope.data : envelope;
 				logLoaded = true;
 
 				if ( data.lines && data.lines.length > 0 ) {
@@ -380,7 +382,8 @@
 				}
 				return response.json();
 			} )
-			.then( function ( data ) {
+			.then( function ( envelope ) {
+				var data = ( envelope && envelope.data ) ? envelope.data : envelope;
 				showNotice( config.i18n.toggleSuccess, 'success' );
 
 				// Refresh the status display.

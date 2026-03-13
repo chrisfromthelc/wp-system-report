@@ -294,13 +294,16 @@ class Database_Optimizer implements Fixer {
 		 */
 		$threshold = (int) apply_filters( 'wp_system_report_optimize_overhead_threshold', MB_IN_BYTES );
 
+		// Order by DATA_FREE descending so MAX_TABLES_PER_RUN optimises
+		// the most impactful tables first.
 		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery,WordPress.DB.DirectDatabaseQuery.NoCaching -- Diagnostic query.
 		$tables = $wpdb->get_col(
 			$wpdb->prepare(
 				'SELECT TABLE_NAME FROM information_schema.TABLES
 				WHERE TABLE_SCHEMA = %s
 				AND TABLE_NAME LIKE %s
-				AND DATA_FREE >= %d',
+				AND DATA_FREE >= %d
+				ORDER BY DATA_FREE DESC',
 				$database_name,
 				$wpdb->esc_like( $wpdb->prefix ) . '%',
 				$threshold
