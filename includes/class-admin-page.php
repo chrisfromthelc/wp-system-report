@@ -30,8 +30,6 @@ class Admin_Page {
 
 	/**
 	 * Report generator instance.
-	 *
-	 * @var \SystemReport\Report_Generator
 	 */
 	private \SystemReport\Report_Generator $report_generator;
 
@@ -151,11 +149,24 @@ class Admin_Page {
 		// WP 6.7+ automatically prints Interactivity API state in admin_footer,
 		// so the manual hook is only needed for WP 6.5–6.6.x.
 		// print_client_interactivity_data() was deprecated in WP 6.7.0 (#96).
-		if ( function_exists( 'wp_interactivity' )
-			&& version_compare( $GLOBALS['wp_version'], '6.7', '<' )
-		) {
+		if ( $this->should_register_interactivity_compat() ) {
 			add_action( 'admin_footer', array( wp_interactivity(), 'print_client_interactivity_data' ), 8 );
 		}
+	}
+
+	/**
+	 * Whether to register the legacy print_client_interactivity_data hook.
+	 *
+	 * Returns true only on WordPress 6.5–6.6.x, where the Interactivity API
+	 * does not automatically output state in admin_footer. The hook was
+	 * deprecated in WordPress 6.7.0.
+	 *
+	 * @since 1.0.0
+	 * @return bool True if the compat hook should be registered.
+	 */
+	private function should_register_interactivity_compat(): bool {
+		return function_exists( 'wp_interactivity' )
+			&& version_compare( $GLOBALS['wp_version'], '6.7', '<' );
 	}
 
 	/**
