@@ -51,7 +51,7 @@ class DebugToggleTest extends WP_UnitTestCase {
 	private function create_temp_config( string $extra_content = '' ): string {
 		$this->temp_config = tempnam( sys_get_temp_dir(), 'sr_test_wpconfig_' );
 
-		$config = "<?php\n";
+		$config  = "<?php\n";
 		$config .= "define( 'DB_NAME', 'test_db' );\n";
 		$config .= "define( 'DB_USER', 'root' );\n";
 		$config .= "define( 'DB_PASSWORD', '' );\n";
@@ -131,7 +131,7 @@ class DebugToggleTest extends WP_UnitTestCase {
 	 * Test get_state reads existing constants.
 	 */
 	public function test_get_state_with_constants(): void {
-		$extra = "define( 'WP_DEBUG', true );\n";
+		$extra  = "define( 'WP_DEBUG', true );\n";
 		$extra .= "define( 'WP_DEBUG_LOG', true );\n";
 		$extra .= "define( 'WP_DEBUG_DISPLAY', false );";
 
@@ -547,5 +547,136 @@ class DebugToggleTest extends WP_UnitTestCase {
 
 		// The old-style .bak file next to wp-config.php must not exist.
 		$this->assertFileDoesNotExist( $path . '.bak' );
+	}
+
+	// ---------------------------------------------------------------
+	// WPConfigTransformer availability guard tests
+	// ---------------------------------------------------------------
+
+	/**
+	 * Test is_transformer_available returns true in the test environment.
+	 *
+	 * The wp-cli/wp-config-transformer package is loaded via Composer in the
+	 * test suite, so this should always be true during normal test runs.
+	 */
+	public function test_is_transformer_available_returns_true_when_class_exists(): void {
+		$toggle = new SystemReport\Debug_Toggle( '/tmp/dummy.php' );
+		$this->assertTrue( $toggle->is_transformer_available() );
+	}
+
+	/**
+	 * Test get_state returns a safe read-only state when WPConfigTransformer
+	 * is not available — without throwing a fatal error.
+	 *
+	 * Uses a test double that overrides is_transformer_available() to simulate
+	 * an environment where the class is absent (e.g. a plain REST API request).
+	 */
+	public function test_get_state_gracefully_degrades_when_transformer_unavailable(): void {
+		$path   = $this->create_temp_config();
+		$toggle = new class( $path ) extends SystemReport\Debug_Toggle {
+			/** Simulate WPConfigTransformer being absent. */
+			public function is_transformer_available(): bool {
+				return false;
+			}
+		};
+
+		$state = $toggle->get_state();
+
+		// All constant values should be null — we cannot read the file.
+		$this->assertNull( $state['wp_debug'] );
+		$this->assertNull( $state['wp_debug_log'] );
+		$this->assertNull( $state['wp_debug_display'] );
+
+		// can_modify must be false to signal the read-only / unavailable state.
+		$this->assertFalse( $state['can_modify'] );
+	}
+
+	/**
+	 * Test get_state structure is complete even when transformer is unavailable.
+	 *
+	 * The REST endpoint must not crash; it must always return an array with
+	 * all four expected keys.
+	 */
+	public function test_get_state_returns_expected_keys_when_transformer_unavailable(): void {
+		$path   = $this->create_temp_config();
+		$toggle = new class( $path ) extends SystemReport\Debug_Toggle {
+			/** Simulate WPConfigTransformer being absent. */
+			public function is_transformer_available(): bool {
+				return false;
+			}
+		};
+
+		$state = $toggle->get_state();
+
+		$this->assertArrayHasKey( 'wp_debug', $state );
+		$this->assertArrayHasKey( 'wp_debug_log', $state );
+		$this->assertArrayHasKey( 'wp_debug_display', $state );
+		$this->assertArrayHasKey( 'can_modify', $state );
+	}
+
+	/**
+	 * Test enable_debug returns an error string when WPConfigTransformer is
+	 * not available instead of throwing a fatal error.
+	 */
+	public function test_enable_debug_returns_error_string_when_transformer_unavailable(): void {
+		$path   = $this->create_temp_config();
+		$toggle = new class( $path ) extends SystemReport\Debug_Toggle {
+			/** Simulate WPConfigTransformer being absent. */
+			public function is_transformer_available(): bool {
+				return false;
+			}
+		};
+
+		$result = $toggle->enable_debug();
+
+		$this->assertIsString( $result, 'enable_debug should return an error string when WPConfigTransformer is unavailable' );
+		$this->assertStringContainsString( 'WPConfigTransformer', $result );
+	}
+
+	/**
+	 * Test disable_debug returns an error string when WPConfigTransformer is
+	 * not available instead of throwing a fatal error.
+	 */
+	public function test_disable_debug_returns_error_string_when_transformer_unavailable(): void {
+		$path   = $this->create_temp_config();
+		$toggle = new class( $path ) extends SystemReport\Debug_Toggle {
+			/** Simulate WPConfigTransformer being absent. */
+			public function is_transformer_available(): bool {
+				return false;
+			}
+		};
+
+		$result = $toggle->disable_debug();
+
+		$this->assertIsString( $result, 'disable_debug should return an error string when WPConfigTransformer is unavailable' );
+		$this->assertStringContainsString( 'WPConfigTransformer', $result );
+	}
+
+	/**
+	 * Test that after hook does NOT fire when enable_debug is blocked by
+	 * missing transformer.
+	 */
+	public function test_after_hook_not_fired_when_transformer_unavailable_on_enable(): void {
+		$path   = $this->create_temp_config();
+		$toggle = new class( $path ) extends SystemReport\Debug_Toggle {
+			/** Simulate WPConfigTransformer being absent. */
+			public function is_transformer_available(): bool {
+				return false;
+			}
+		};
+
+		$after_fired = false;
+		add_action(
+			'wp_system_report_after_debug_toggle',
+			function () use ( &$after_fired ) {
+				$after_fired = true;
+			},
+			10,
+			2
+		);
+
+		$toggle->enable_debug();
+
+		$this->assertFalse( $after_fired, 'after_debug_toggle should NOT fire when transformer is unavailable' );
 	}
 }
