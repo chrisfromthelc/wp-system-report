@@ -62,7 +62,7 @@ class Debug_Toggle {
 	 * @return bool True if WPConfigTransformer can be instantiated.
 	 */
 	public function is_transformer_available(): bool {
-		return class_exists( 'WPConfigTransformer' );
+		return class_exists( '\WPConfigTransformer' );
 	}
 
 	/**
@@ -100,17 +100,21 @@ class Debug_Toggle {
 	 * @return array{wp_debug: bool|null, wp_debug_log: bool|string|null, wp_debug_display: bool|null, can_modify: bool}
 	 */
 	public function get_state(): array {
+		if ( ! $this->is_transformer_available() ) {
+			return array(
+				'wp_debug'         => null,
+				'wp_debug_log'     => null,
+				'wp_debug_display' => null,
+				'can_modify'       => false,
+			);
+		}
+
 		$state = array(
 			'wp_debug'         => null,
 			'wp_debug_log'     => null,
 			'wp_debug_display' => null,
 			'can_modify'       => $this->can_modify(),
 		);
-
-		if ( ! $this->is_transformer_available() ) {
-			$state['can_modify'] = false;
-			return $state;
-		}
 
 		if ( ! file_exists( $this->config_path ) ) {
 			return $state;
@@ -158,7 +162,7 @@ class Debug_Toggle {
 	 */
 	public function enable_debug() {
 		if ( ! $this->is_transformer_available() ) {
-			return __( 'Cannot modify wp-config.php: WPConfigTransformer class is not available.', 'wp-system-report' );
+			return $this->transformer_unavailable_error();
 		}
 
 		if ( ! $this->can_modify() ) {
@@ -228,7 +232,7 @@ class Debug_Toggle {
 	 */
 	public function disable_debug() {
 		if ( ! $this->is_transformer_available() ) {
-			return __( 'Cannot modify wp-config.php: WPConfigTransformer class is not available.', 'wp-system-report' );
+			return $this->transformer_unavailable_error();
 		}
 
 		if ( ! $this->can_modify() ) {
@@ -273,6 +277,20 @@ class Debug_Toggle {
 		do_action( 'wp_system_report_after_debug_toggle', false, $this->config_path );
 
 		return true;
+	}
+
+	/**
+	 * Return the error message for a missing WPConfigTransformer.
+	 *
+	 * Centralizes the translatable string so it only appears once in the
+	 * codebase, satisfying i18n tooling which requires string literals inside
+	 * translation function calls.
+	 *
+	 * @since 1.2.0
+	 * @return string Translated error message.
+	 */
+	private function transformer_unavailable_error(): string {
+		return __( 'Cannot modify wp-config.php: WPConfigTransformer class is not available.', 'wp-system-report' );
 	}
 
 	/**
