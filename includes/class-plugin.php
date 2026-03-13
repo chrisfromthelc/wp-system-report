@@ -253,6 +253,7 @@ class Plugin {
 			new Fixers\Database_Optimizer(),
 			new Fixers\Security_Hardener(),
 			new Fixers\Cron_Repair(),
+			new Fixers\Permissions_Repair(),
 		);
 
 		foreach ( $fixers as $fixer ) {
