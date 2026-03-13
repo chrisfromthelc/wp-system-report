@@ -163,7 +163,9 @@ class SSE_Log_Controller extends \WP_REST_Controller {
 				// Remove the PHP time limit so long-running streams do not
 				// hit the default 30-second execution limit.
 				// phpcs:ignore WordPress.PHP.DevelopmentFunctions.prevent_path_disclosure_set_time_limit -- Required for SSE long-polling.
-				@set_time_limit( 0 ); // phpcs:ignore WordPress.PHP.NoSilencedErrors.Discouraged
+				if ( function_exists( 'set_time_limit' ) ) {
+					@set_time_limit( 0 ); // phpcs:ignore WordPress.PHP.NoSilencedErrors.Discouraged -- Disabled on many hosts; warning would corrupt SSE stream.
+				}
 
 				$streamer->stream();
 

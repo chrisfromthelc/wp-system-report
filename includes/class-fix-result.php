@@ -97,7 +97,7 @@ class Fix_Result implements \JsonSerializable {
 	 *
 	 * @return array<string, mixed> Result data suitable for JSON encoding.
 	 */
-	public function jsonSerialize(): mixed {
+	public function jsonSerialize(): array {
 		return $this->to_array();
 	}
 }

@@ -18,6 +18,14 @@ defined( 'ABSPATH' ) || exit;
 class Performance extends Abstract_Collector {
 
 	/**
+	 * Cached wp_options row count.
+	 *
+	 * Populated by collect_options_row_count() on first use and reused
+	 * by collect_persistent_cache_recommended() to avoid a duplicate query.
+	 */
+	private ?int $options_row_count = null;
+
+	/**
 	 * Known page-caching plugins keyed by main file path.
 	 *
 	 * @var array<string, string>
@@ -247,13 +255,20 @@ class Performance extends Abstract_Collector {
 	/**
 	 * Collect total wp_options row count.
 	 *
+	 * The result is stored in $this->options_row_count so that
+	 * collect_persistent_cache_recommended() can reuse it without
+	 * issuing a second identical query.
+	 *
 	 * @return \SystemReport\Field
 	 */
 	private function collect_options_row_count() {
 		global $wpdb;
 
 		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery,WordPress.DB.DirectDatabaseQuery.NoCaching -- One-time diagnostic query.
-		$count = (int) $wpdb->get_var( "SELECT COUNT(*) FROM {$wpdb->options}" );
+		$this->options_row_count = (int) $wpdb->get_var(
+			$wpdb->prepare( 'SELECT COUNT(*) FROM %i', $wpdb->options )
+		);
+		$count                   = $this->options_row_count;
 
 		$status = Status::Good;
 		if ( $count > 5000 ) {
@@ -323,9 +338,10 @@ class Performance extends Abstract_Collector {
 		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery,WordPress.DB.DirectDatabaseQuery.NoCaching -- One-time diagnostic query.
 		$count = (int) $wpdb->get_var(
 			$wpdb->prepare(
-				"SELECT COUNT(*) FROM {$wpdb->options}
+				'SELECT COUNT(*) FROM %i
 				WHERE option_name LIKE %s
-				AND option_value < %d",
+				AND option_value < %d',
+				$wpdb->options,
 				$wpdb->esc_like( '_transient_timeout_' ) . '%',
 				$time
 			)
@@ -395,11 +411,14 @@ class Performance extends Abstract_Collector {
 
 		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery,WordPress.DB.DirectDatabaseQuery.NoCaching -- One-time diagnostic query.
 		$results = $wpdb->get_results(
-			"SELECT option_name, LENGTH(option_value) AS val_size
-			FROM {$wpdb->options}
-			WHERE autoload IN ('yes', 'on')
-			ORDER BY val_size DESC
-			LIMIT 5"
+			$wpdb->prepare(
+				"SELECT option_name, LENGTH(option_value) AS val_size
+				FROM %i
+				WHERE autoload IN ('yes', 'on')
+				ORDER BY val_size DESC
+				LIMIT 5",
+				$wpdb->options
+			)
 		);
 
 		$parts = array();
@@ -442,10 +461,16 @@ class Performance extends Abstract_Collector {
 		}
 
 		// Heuristic: recommend if options table has many rows or site has many posts.
-		global $wpdb;
+		// Reuse the count already fetched by collect_options_row_count() when available.
+		if ( null === $this->options_row_count ) {
+			global $wpdb;
+			// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery,WordPress.DB.DirectDatabaseQuery.NoCaching -- One-time diagnostic query.
+			$this->options_row_count = (int) $wpdb->get_var(
+				$wpdb->prepare( 'SELECT COUNT(*) FROM %i', $wpdb->options )
+			);
+		}
 
-		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery,WordPress.DB.DirectDatabaseQuery.NoCaching -- One-time diagnostic query.
-		$option_count = (int) $wpdb->get_var( "SELECT COUNT(*) FROM {$wpdb->options}" );
+		$option_count = $this->options_row_count;
 		$post_count   = (int) wp_count_posts()->publish;
 
 		$recommended = ( $option_count > 1000 || $post_count > 500 );

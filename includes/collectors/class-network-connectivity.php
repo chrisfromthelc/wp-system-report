@@ -280,8 +280,18 @@ class Network_Connectivity extends Abstract_Collector {
 			);
 		}
 
-		$host    = $parsed['host'] ?? '';
-		$port    = $parsed['port'] ?? 443;
+		$host = $parsed['host'] ?? '';
+		$port = $parsed['port'] ?? 443;
+
+		/*
+		 * `verify_peer` is intentionally disabled here because the purpose of this
+		 * stream connection is solely to capture the raw peer certificate for
+		 * inspection (expiry date, issuer). Full chain validation is not needed for
+		 * this diagnostic check, and enabling it would cause the connection to fail
+		 * on sites with self-signed or misconfigured certificates — exactly the cases
+		 * we need to diagnose. The SSL verification posture of outbound WordPress
+		 * HTTP requests is reported separately via collect_ssl_verification().
+		 */
 		$context = stream_context_create(
 			array(
 				'ssl' => array(
@@ -333,7 +343,7 @@ class Network_Connectivity extends Abstract_Collector {
 		if ( $days_until < 0 ) {
 			$value  = __( 'Expired', 'wp-system-report' );
 			$status = Status::Critical;
-		} elseif ( $days_until <= 14 ) {
+		} elseif ( $days_until <= 30 ) {
 			/* translators: %d: number of days */
 			$value  = sprintf( __( 'Expires in %d days', 'wp-system-report' ), $days_until );
 			$status = Status::Warning;

@@ -11,11 +11,21 @@
 class SettingsTest extends WP_UnitTestCase {
 
 	/**
+	 * Reset static cache and option before each test.
+	 */
+	public function set_up() {
+		parent::set_up();
+		delete_option( SystemReport\Settings::OPTION_NAME );
+		SystemReport\Settings::delete();
+	}
+
+	/**
 	 * Clean up after each test.
 	 */
 	public function tear_down() {
 		parent::tear_down();
 		delete_option( SystemReport\Settings::OPTION_NAME );
+		SystemReport\Settings::delete();
 	}
 
 	/**

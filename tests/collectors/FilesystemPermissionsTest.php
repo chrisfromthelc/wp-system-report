@@ -257,11 +257,12 @@ class FilesystemPermissionsTest extends WP_UnitTestCase {
 	// -------------------------------------------------------
 
 	/**
-	 * Test that every field value is either "Writable" or "Not Writable".
+	 * Test that every field value is "Writable", "Not Writable", or "World-writable".
 	 *
-	 * The collector maps wp_is_writable() to one of these two string values
-	 * via the __() translation wrapper.  In an en_US test environment the
-	 * strings are untranslated and match exactly.
+	 * The collector maps wp_is_writable() to "Writable" or "Not Writable" for
+	 * directory fields, and emits "World-writable" for the conditional
+	 * WordPress Root Permissions field when the root is world-writable.
+	 * In an en_US test environment the strings are untranslated and match exactly.
 	 *
 	 * @return void
 	 */
@@ -273,8 +274,8 @@ class FilesystemPermissionsTest extends WP_UnitTestCase {
 		foreach ( $fields as $field ) {
 			$this->assertContains(
 				$field->value,
-				array( 'Writable', 'Not Writable' ),
-				"Field '{$field->label}' value must be 'Writable' or 'Not Writable'; got '{$field->value}'."
+				array( 'Writable', 'Not Writable', 'World-writable' ),
+				"Field '{$field->label}' value must be 'Writable', 'Not Writable', or 'World-writable'; got '{$field->value}'."
 			);
 		}
 	}
@@ -284,11 +285,15 @@ class FilesystemPermissionsTest extends WP_UnitTestCase {
 	// -------------------------------------------------------
 
 	/**
-	 * Test that each field's debug property contains a filesystem path.
+	 * Test that each directory field's debug property contains a filesystem path.
 	 *
 	 * The collector sets 'debug' => $path for every directory field, so the
 	 * debug value must be a non-empty string that starts with a directory
 	 * separator (absolute path).
+	 *
+	 * The "WordPress Root Permissions" field (emitted only when the root is
+	 * world-writable) stores an octal permission string in its debug property,
+	 * not a filesystem path, and is therefore excluded from this assertion.
 	 *
 	 * @return void
 	 */
@@ -298,6 +303,12 @@ class FilesystemPermissionsTest extends WP_UnitTestCase {
 		$this->assertNotEmpty( $fields );
 
 		foreach ( $fields as $field ) {
+			// The world-writable permissions field stores an octal string in debug,
+			// not a filesystem path, so skip it for this assertion.
+			if ( 'WordPress Root Permissions' === $field->label ) {
+				continue;
+			}
+
 			$this->assertIsString(
 				$field->debug,
 				"Field '{$field->label}' debug property must be a string path."

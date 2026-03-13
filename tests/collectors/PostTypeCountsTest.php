@@ -310,34 +310,49 @@ class PostTypeCountsTest extends WP_UnitTestCase {
 	// -------------------------------------------------------
 
 	/**
-	 * Test that collect() handles an otherwise-empty posts table gracefully.
+	 * Test that collect() gracefully returns an empty array when no posts exist
+	 * for any post type.
 	 *
-	 * WordPress always inserts at least a "Hello World" post and a sample page
-	 * during its test-suite setup, so we cannot truly empty the table.  Instead
-	 * we verify that the method does not throw or return a non-array value when
-	 * the underlying query returns zero rows (simulated via the filter).
+	 * wp_count_posts() is used internally and skips post types with a zero
+	 * total.  We register a transient post type with no posts and verify it
+	 * does not appear in the results.  This exercises the zero-total early
+	 * continue path without resorting to SQL-level filtering (which would
+	 * not intercept wp_count_posts() internals).
 	 */
 	public function test_empty_posts_table_returns_array(): void {
-		global $wpdb;
+		register_post_type(
+			'sr_test_empty',
+			array(
+				'label'  => 'SR Empty',
+				'public' => true,
+				'labels' => array( 'name' => 'SR Empty' ),
+			)
+		);
 
-		$posts_table = $wpdb->posts;
-
-		// Use a named callback so we can remove only our filter, not all query filters.
-		$zero_rows_filter = static function ( string $sql ) use ( $posts_table ): string {
-			if ( false !== strpos( $sql, 'GROUP BY post_type' ) ) {
-				// Replace with a query guaranteed to return no rows.
-				return "SELECT post_type, COUNT(1) AS count FROM {$posts_table} WHERE 1=0 GROUP BY post_type ORDER BY count DESC";
-			}
-			return $sql;
-		};
-
-		add_filter( 'query', $zero_rows_filter );
+		// Clear the transient so collect() runs fresh.
+		delete_transient( 'sr_post_type_counts' );
 
 		$fields = $this->collector->collect();
 
-		remove_filter( 'query', $zero_rows_filter );
+		$labels = array_map(
+			static function ( Field $field ): string {
+				return $field->label;
+			},
+			$fields
+		);
 
+		// A post type with zero posts must not appear in the output.
+		$this->assertNotContains(
+			'SR Empty',
+			$labels,
+			'Post types with zero posts must be omitted from the results.'
+		);
+
+		// The return value must always be an array (never null/false).
 		$this->assertIsArray( $fields );
+
+		// Clean up.
+		unregister_post_type( 'sr_test_empty' );
 	}
 
 	/**

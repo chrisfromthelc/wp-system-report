@@ -521,22 +521,27 @@ class CLI_Command extends \WP_CLI_Command {
 	 * @param string $format Formatter identifier.
 	 */
 	private function output_formatted( array $report, string $format ): void {
-		$formatter = match ( $format ) {
-			'plain' => new Formatters\Plain_Text_Formatter(),
-			'github' => new Formatters\GitHub_Formatter(),
-			'ai'    => new Formatters\AI_Formatter(),
-			'mcp'   => null,
-			default => null,
-		};
-
 		if ( 'mcp' === $format ) {
 			$mcp = new Formatters\MCP_Formatter();
 			\WP_CLI::line( wp_json_encode( $mcp->format_array( $report ), JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES ) );
 			return;
 		}
 
+		$formatter = match ( $format ) {
+			'plain'  => new Formatters\Plain_Text_Formatter(),
+			'github' => new Formatters\GitHub_Formatter(),
+			'ai'     => new Formatters\AI_Formatter(),
+			default  => null,
+		};
+
 		if ( null === $formatter ) {
-			\WP_CLI::error( "Unsupported format: {$format}" );
+			\WP_CLI::error(
+				sprintf(
+					/* translators: %s: requested format name */
+					__( 'Unsupported format: %s', 'wp-system-report' ),
+					$format
+				)
+			);
 		}
 
 		\WP_CLI::line( $formatter->format( $report ) );

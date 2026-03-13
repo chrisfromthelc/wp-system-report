@@ -131,7 +131,7 @@ class GitHub_Updater {
 		$info->homepage      = 'https://github.com/' . $this->repo;
 		$info->requires      = '6.2';
 		$info->tested        = $release['tested_wp'] ?? get_bloginfo( 'version' );
-		$info->requires_php  = '7.4';
+		$info->requires_php  = '8.1';
 		$info->download_link = $this->get_release_asset_url( $release );
 		$info->trunk         = $this->get_release_asset_url( $release );
 		$info->last_updated  = $release['published_at'] ?? '';

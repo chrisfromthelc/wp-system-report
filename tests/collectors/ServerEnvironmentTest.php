@@ -99,14 +99,14 @@ class ServerEnvironmentTest extends WP_UnitTestCase {
 	/**
 	 * Test that the "PHP Version" status matches the running PHP version.
 	 *
-	 * Status is Good for PHP >= 8.2, Warning for PHP < 8.2.
+	 * Status is Good for PHP >= 8.1 (the plugin's minimum), Warning below.
 	 */
 	public function test_php_version_status(): void {
 		$field = $this->find_field( 'PHP Version' );
 
 		$this->assertNotNull( $field, 'Expected "PHP Version" field to be present.' );
 
-		$expected_status = version_compare( phpversion(), '8.2', '>=' ) ? Status::Good : Status::Warning;
+		$expected_status = version_compare( phpversion(), '8.1', '>=' ) ? Status::Good : Status::Warning;
 
 		$this->assertSame( $expected_status, $field->status, 'PHP Version status should reflect the running PHP version.' );
 	}

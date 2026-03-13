@@ -54,3 +54,4 @@ error_log
 # Beads issue tracker
 .beads/
 AGENTS.md
+.mcp.json

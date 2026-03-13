@@ -19,6 +19,16 @@ defined( 'ABSPATH' ) || exit;
 class Block_Editor extends Abstract_Collector {
 
 	/**
+	 * Cached result of WP_Block_Type_Registry::get_all_registered().
+	 *
+	 * Populated once during collect() and reused by all sub-methods
+	 * to avoid redundant registry lookups.
+	 *
+	 * @var \WP_Block_Type[]|null
+	 */
+	private ?array $registered_blocks = null;
+
+	/**
 	 * Get the transient cache key.
 	 *
 	 * @return string Cache key.
@@ -61,6 +71,9 @@ class Block_Editor extends Abstract_Collector {
 	 * @return array Array of Field objects.
 	 */
 	public function collect(): array {
+		// Cache the registered-blocks list once for all sub-methods.
+		$this->registered_blocks = WP_Block_Type_Registry::get_instance()->get_all_registered();
+
 		$data = array();
 
 		$data[] = $this->collect_block_theme();
@@ -107,9 +120,8 @@ class Block_Editor extends Abstract_Collector {
 	 * @return \SystemReport\Field
 	 */
 	private function collect_registered_block_types() {
-		$registry = WP_Block_Type_Registry::get_instance();
-		$blocks   = $registry->get_all_registered();
-		$count    = count( $blocks );
+		$blocks = $this->registered_blocks ?? WP_Block_Type_Registry::get_instance()->get_all_registered();
+		$count  = count( $blocks );
 
 		$status = Status::Good;
 		if ( $count > 500 ) {
@@ -134,8 +146,7 @@ class Block_Editor extends Abstract_Collector {
 	 * @return \SystemReport\Field
 	 */
 	private function collect_block_sources() {
-		$registry = WP_Block_Type_Registry::get_instance();
-		$blocks   = $registry->get_all_registered();
+		$blocks = $this->registered_blocks ?? WP_Block_Type_Registry::get_instance()->get_all_registered();
 
 		$core_count   = 0;
 		$plugin_count = 0;
@@ -337,8 +348,7 @@ class Block_Editor extends Abstract_Collector {
 	 * @return \SystemReport\Field
 	 */
 	private function collect_editor_performance() {
-		$registry    = WP_Block_Type_Registry::get_instance();
-		$blocks      = $registry->get_all_registered();
+		$blocks      = $this->registered_blocks ?? WP_Block_Type_Registry::get_instance()->get_all_registered();
 		$block_count = count( $blocks );
 
 		$patterns      = \WP_Block_Patterns_Registry::get_instance()->get_all_registered();

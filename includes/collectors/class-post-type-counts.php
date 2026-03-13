@@ -49,35 +49,59 @@ class Post_Type_Counts extends Abstract_Collector {
 	}
 
 	/**
- * Get the collector priority.
- */
+	 * Get the collector priority.
+	 */
 	public function get_priority(): int {
 		return 40;
 	}
 
 	/**
- * Collect the data.
- */
-	public function collect(): array {
-		global $wpdb;
+	 * Statuses considered "published" for count purposes.
+	 *
+	 * Auto-draft and trash are excluded because they do not represent
+	 * real content. The `inherit` status is included because attachments
+	 * use it as their primary status — without it, the media library
+	 * would always report zero items.
+	 *
+	 * @var string[]
+	 */
+	private const COUNTED_STATUSES = array( 'publish', 'private', 'future', 'pending', 'draft', 'inherit' );
 
+	/**
+	 * Collect the data.
+	 */
+	public function collect(): array {
 		$data = array();
 
-		// Query post type counts. Table name is from $wpdb->posts (safe).
-		// phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared -- No user input; table name from $wpdb->posts.
-		$results = $wpdb->get_results( "SELECT post_type, COUNT(1) as count FROM {$wpdb->posts} GROUP BY post_type ORDER BY count DESC" );
+		// Retrieve all registered post types (public and non-public).
+		$post_types = get_post_types( array(), 'names' );
 
-		if ( $results ) {
-			foreach ( $results as $row ) {
-				$post_type       = $row->post_type;
-				$count           = $row->count;
-				$post_type_label = $this->get_post_type_label( $post_type );
+		foreach ( $post_types as $post_type ) {
+			// wp_count_posts() leverages WordPress's built-in caching layer
+			// (wp_cache_get/wp_cache_set) for each post type, which is more
+			// maintainable and consistent than a single raw SQL query even
+			// though it issues one query per type on a cold cache.
+			$counts = wp_count_posts( $post_type );
 
-				$data[] = $this->make_field(
-					$post_type_label,
-					number_format_i18n( $count )
-				);
+			if ( ! $counts ) {
+				continue;
 			}
+
+			// Sum only the statuses that represent real content.
+			$total = 0;
+			foreach ( self::COUNTED_STATUSES as $status ) {
+				$total += isset( $counts->$status ) ? (int) $counts->$status : 0;
+			}
+
+			// Skip post types with no content at all.
+			if ( 0 === $total ) {
+				continue;
+			}
+
+			$data[] = $this->make_field(
+				$this->get_post_type_label( $post_type ),
+				number_format_i18n( $total )
+			);
 		}
 
 		return $data;

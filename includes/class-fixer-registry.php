@@ -28,13 +28,27 @@ class Fixer_Registry {
 	/**
 	 * Register a fixer instance.
 	 *
-	 * If a fixer with the same ID is already registered, it will be
-	 * silently replaced by the new instance.
+	 * If a fixer with the same ID is already registered, a _doing_it_wrong()
+	 * notice is triggered and the existing fixer is replaced by the new instance.
 	 *
 	 * @param Fixer $fixer Fixer instance to register.
 	 */
 	public function register( Fixer $fixer ): void {
-		$this->fixers[ $fixer->get_id() ] = $fixer;
+		$id = $fixer->get_id();
+
+		if ( isset( $this->fixers[ $id ] ) ) {
+			_doing_it_wrong(
+				__METHOD__,
+				sprintf(
+					/* translators: %s: fixer ID */
+					esc_html__( 'A fixer with the ID "%s" is already registered. The existing fixer will be replaced.', 'wp-system-report' ),
+					esc_html( $id )
+				),
+				'1.0.0'
+			);
+		}
+
+		$this->fixers[ $id ] = $fixer;
 	}
 
 	/**

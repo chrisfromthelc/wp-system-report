@@ -54,7 +54,7 @@ class Custom_Content_Types extends Abstract_Collector {
 
 		$fields = array();
 
-		// Custom Post Types.
+		// Custom Post Types — cache result in a local variable.
 		$custom_post_types = get_post_types( array( '_builtin' => false ), 'objects' );
 		$cpt_list          = array();
 
@@ -67,7 +67,7 @@ class Custom_Content_Types extends Abstract_Collector {
 			! empty( $cpt_list ) ? implode( ', ', $cpt_list ) : __( 'None', 'wp-system-report' )
 		);
 
-		// Custom Taxonomies.
+		// Custom Taxonomies — cache result in a local variable.
 		$custom_taxonomies = get_taxonomies( array( '_builtin' => false ), 'objects' );
 		$taxonomy_list     = array();
 
@@ -98,16 +98,17 @@ class Custom_Content_Types extends Abstract_Collector {
 			! empty( $size_list ) ? implode( ', ', $size_list ) : __( 'None', 'wp-system-report' )
 		);
 
-		// Registered Shortcodes.
-		$shortcodes = ! empty( $shortcode_tags ) ? array_keys( $shortcode_tags ) : array();
+		// Registered Shortcodes — cache global in a local variable before use.
+		$shortcode_tags_local = is_array( $shortcode_tags ) ? $shortcode_tags : array();
+		$shortcodes           = array_keys( $shortcode_tags_local );
 
 		$fields[] = $this->make_field(
 			__( 'Registered Shortcodes', 'wp-system-report' ),
 			! empty( $shortcodes ) ? implode( ', ', $shortcodes ) : __( 'None', 'wp-system-report' )
 		);
 
-		// Active Sidebars.
-		$sidebars      = ! empty( $wp_registered_sidebars ) ? $wp_registered_sidebars : array();
+		// Active Sidebars — cache global in a local variable before use.
+		$sidebars      = is_array( $wp_registered_sidebars ) ? $wp_registered_sidebars : array();
 		$sidebar_count = count( $sidebars );
 		$sidebar_list  = array();
 
