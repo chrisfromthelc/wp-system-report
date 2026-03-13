@@ -517,6 +517,37 @@ class Report_History {
 	}
 
 	/**
+	 * Safely decompress a gzuncompress-encoded string, suppressing PHP warnings.
+	 *
+	 * Installs a scoped E_WARNING error handler that intercepts only warnings
+	 * originating from gzuncompress, allowing all other warnings to propagate
+	 * normally. Returns false when decompression fails so callers can fall
+	 * through to the next format attempt.
+	 *
+	 * @param string $data Binary data to decompress.
+	 * @return string|false Decompressed string on success, false on failure.
+	 */
+	private static function safe_gzuncompress( string $data ): string|false {
+		// phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_set_error_handler -- Temporary handler to intercept gzuncompress E_WARNING gracefully; all other warnings propagate.
+		set_error_handler(
+			static function ( int $errno, string $errstr ): bool {
+				// Only suppress warnings that originate from gzuncompress.
+				// Return false for anything else so it propagates normally.
+				return str_contains( $errstr, 'gzuncompress' );
+			},
+			E_WARNING
+		);
+
+		try {
+			$decompressed = gzuncompress( $data );
+		} finally {
+			restore_error_handler();
+		}
+
+		return $decompressed;
+	}
+
+	/**
 	 * Decompress a stored report blob.
 	 *
 	 * Falls back to treating data as raw JSON when zlib is unavailable
@@ -532,8 +563,7 @@ class Report_History {
 			$decoded_b64 = base64_decode( $data, true );
 
 			if ( false !== $decoded_b64 ) {
-				// phpcs:ignore WordPress.PHP.NoSilencedErrors.Discouraged -- gzuncompress emits E_WARNING on malformed data; suppressed to allow fallback.
-				$decompressed = @gzuncompress( $decoded_b64 );
+				$decompressed = self::safe_gzuncompress( $decoded_b64 );
 
 				if ( false !== $decompressed ) {
 					$decoded = json_decode( $decompressed, true );
@@ -544,8 +574,7 @@ class Report_History {
 			}
 
 			// Legacy fallback: try raw binary gzuncompress (pre-fix storage).
-			// phpcs:ignore WordPress.PHP.NoSilencedErrors.Discouraged -- gzuncompress emits E_WARNING on malformed data; suppressed to allow JSON fallback.
-			$decompressed = @gzuncompress( $data );
+			$decompressed = self::safe_gzuncompress( $data );
 
 			if ( false !== $decompressed ) {
 				$decoded = json_decode( $decompressed, true );

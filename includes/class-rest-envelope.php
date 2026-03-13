@@ -53,6 +53,8 @@ class REST_Envelope {
 			'plugin_version' => defined( 'WP_SYSTEM_REPORT_VERSION' ) ? WP_SYSTEM_REPORT_VERSION : 'unknown',
 		);
 
-		return array_merge( $defaults, $extra );
+		// Merge extra keys first so that $defaults always wins,
+		// preventing callers from overriding canonical meta keys.
+		return array_merge( $extra, $defaults );
 	}
 }

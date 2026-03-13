@@ -134,7 +134,7 @@ class Notification_Manager {
 					continue;
 				}
 
-				$status = $this->get_field_status( $field );
+				$status = Field::get_status_string( $field );
 
 				$entry = array(
 					'section' => $section_label,
@@ -154,26 +154,6 @@ class Notification_Manager {
 			'critical' => $critical,
 			'warnings' => $warnings,
 		);
-	}
-
-	/**
-	 * Get the status string from a field (handles both Field objects and arrays).
-	 *
-	 * @param mixed $field Field data (Field object or associative array).
-	 * @return string Status string value.
-	 */
-	private function get_field_status( mixed $field ): string {
-		if ( $field instanceof Field ) {
-			return $field->status->value;
-		}
-
-		$status = $field['status'] ?? 'info';
-
-		if ( $status instanceof Status ) {
-			return $status->value;
-		}
-
-		return (string) $status;
 	}
 
 	/**
@@ -293,7 +273,10 @@ class Notification_Manager {
 			$findings
 		);
 
-		foreach ( $email_args['recipients'] as $recipient ) {
+		// Send one email per recipient to avoid exposing addresses in the
+		// To: header. Using a shared To: field would leak every recipient's
+		// address to all others, which is a privacy concern.
+		foreach ( (array) $email_args['recipients'] as $recipient ) {
 			wp_mail( $recipient, $email_args['subject'], $email_args['body'] );
 		}
 	}

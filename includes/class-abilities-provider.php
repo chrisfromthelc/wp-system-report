@@ -321,9 +321,14 @@ class Abilities_Provider {
 					'type'       => 'object',
 					'required'   => array( 'fix_id' ),
 					'properties' => array(
-						'fix_id' => array(
+						'fix_id'    => array(
 							'type'        => 'string',
 							'description' => __( 'The unique identifier of the fixer to execute.', 'wp-system-report' ),
+						),
+						'confirmed' => array(
+							'type'        => 'boolean',
+							'description' => __( 'Required for medium and high risk fixers. Set to true to confirm execution.', 'wp-system-report' ),
+							'default'     => false,
 						),
 					),
 				),
@@ -528,6 +533,21 @@ class Abilities_Provider {
 					/* translators: %s: fixer label */
 					__( '%s: no issues detected, nothing to fix.', 'wp-system-report' ),
 					$fixer->get_label()
+				)
+			);
+		}
+
+		// Require explicit confirmation for medium and high risk fixers.
+		$risk_level = $fixer->get_risk_level();
+
+		if ( $risk_level->requires_confirmation() && empty( $input['confirmed'] ) ) {
+			return new \WP_Error(
+				'wp_system_report_confirmation_required',
+				sprintf(
+					/* translators: 1: fixer label, 2: risk level */
+					__( '%1$s is a %2$s risk operation. Set confirmed=true to proceed.', 'wp-system-report' ),
+					$fixer->get_label(),
+					$risk_level->value
 				)
 			);
 		}
