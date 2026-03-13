@@ -76,6 +76,79 @@ class Admin_Page {
 			WP_SYSTEM_REPORT_VERSION
 		);
 
+		if ( Features::has_interactivity() ) {
+			$this->enqueue_interactivity_assets( $current_tab );
+		} else {
+			$this->enqueue_vanilla_assets( $current_tab );
+		}
+	}
+
+	/**
+	 * Render the admin page.
+	 */
+	public function render_page(): void {
+		if ( ! current_user_can( $this->get_capability() ) ) {
+			wp_die( esc_html__( 'You do not have sufficient permissions to access this page.', 'wp-system-report' ) );
+		}
+
+		$sr_current_tab = $this->get_current_tab();
+		$report         = $this->report_generator->generate();
+
+		if ( Features::has_interactivity() ) {
+			$this->init_interactivity_state( $sr_current_tab );
+		}
+
+		include WP_SYSTEM_REPORT_DIR . 'templates/admin-page.php';
+	}
+
+	/**
+	 * Enqueue Interactivity API script modules for the current tab.
+	 *
+	 * @param string $current_tab Active tab slug.
+	 */
+	private function enqueue_interactivity_assets( string $current_tab ): void {
+		$iapi_dep = array( array( 'id' => '@wordpress/interactivity' ) );
+
+		if ( 'report' === $current_tab ) {
+			wp_enqueue_script_module(
+				'@wp-system-report/store-report',
+				WP_SYSTEM_REPORT_URL . 'assets/js/modules/store-report.js',
+				$iapi_dep,
+				WP_SYSTEM_REPORT_VERSION
+			);
+		}
+
+		if ( 'error-log' === $current_tab ) {
+			wp_enqueue_script_module(
+				'@wp-system-report/store-error-log',
+				WP_SYSTEM_REPORT_URL . 'assets/js/modules/store-error-log.js',
+				$iapi_dep,
+				WP_SYSTEM_REPORT_VERSION
+			);
+		}
+
+		if ( 'fixes' === $current_tab && Features::has_fixers() ) {
+			wp_enqueue_script_module(
+				'@wp-system-report/store-fixes',
+				WP_SYSTEM_REPORT_URL . 'assets/js/modules/store-fixes.js',
+				$iapi_dep,
+				WP_SYSTEM_REPORT_VERSION
+			);
+		}
+
+		// The Interactivity API state printer hooks into wp_footer by default.
+		// Admin pages use admin_footer, so we add the hook manually.
+		if ( function_exists( 'wp_interactivity' ) ) {
+			add_action( 'admin_footer', array( wp_interactivity(), 'print_client_interactivity_data' ), 8 );
+		}
+	}
+
+	/**
+	 * Enqueue vanilla JavaScript for the current tab (fallback for WP < 6.5).
+	 *
+	 * @param string $current_tab Active tab slug.
+	 */
+	private function enqueue_vanilla_assets( string $current_tab ): void {
 		if ( 'report' === $current_tab ) {
 			wp_enqueue_script(
 				'wp-system-report-admin',
@@ -186,17 +259,121 @@ class Admin_Page {
 	}
 
 	/**
-	 * Render the admin page.
+	 * Initialize Interactivity API state for the current tab.
+	 *
+	 * Merges tab-specific configuration, i18n, and default state
+	 * into the 'wp-system-report' namespace via wp_interactivity_state().
+	 *
+	 * @param string $tab Active tab slug.
 	 */
-	public function render_page(): void {
-		if ( ! current_user_can( $this->get_capability() ) ) {
-			wp_die( esc_html__( 'You do not have sufficient permissions to access this page.', 'wp-system-report' ) );
+	private function init_interactivity_state( string $tab ): void {
+		$rest_nonce = wp_create_nonce( 'wp_rest' );
+
+		$state = array(
+			'config' => array(
+				'restNonce' => $rest_nonce,
+			),
+			'i18n'   => array(
+				'copied'     => __( 'Copied!', 'wp-system-report' ),
+				'copyFailed' => __( 'Copying to clipboard failed. Please press Ctrl/Cmd+C to copy.', 'wp-system-report' ),
+				'loading'    => __( 'Loading...', 'wp-system-report' ),
+			),
+		);
+
+		if ( 'report' === $tab ) {
+			$state['config']['restUrl'] = rest_url( 'wp-system-report/v1/report' );
+			$state['i18n']              = array_merge(
+				$state['i18n'],
+				array(
+					'generating' => __( 'Generating...', 'wp-system-report' ),
+					'downloadAi' => __( 'Download for AI analysis', 'wp-system-report' ),
+					'aiFailed'   => __( 'Failed to generate AI report. Please try again.', 'wp-system-report' ),
+				)
+			);
+			$state['reportGenerated']   = false;
+			$state['aiGenerating']      = false;
+			$state['copyError']         = false;
+			$state['reportText']        = '';
 		}
 
-		$sr_current_tab = $this->get_current_tab();
-		$report         = $this->report_generator->generate();
+		if ( 'error-log' === $tab ) {
+			$state['config']['statusUrl'] = rest_url( 'wp-system-report/v1/error-log/status' );
+			$state['config']['logUrl']    = rest_url( 'wp-system-report/v1/error-log' );
+			$state['config']['toggleUrl'] = rest_url( 'wp-system-report/v1/error-log/toggle' );
+			$state['config']['reportUrl'] = rest_url( 'wp-system-report/v1/report' );
+			$state['i18n']                = array_merge(
+				$state['i18n'],
+				array(
+					'loadLog'       => __( 'Load error log', 'wp-system-report' ),
+					'toggleSuccess' => __( 'Debug settings updated. Changes will take effect on the next page load.', 'wp-system-report' ),
+					'toggleFailed'  => __( 'Failed to update debug settings.', 'wp-system-report' ),
+					'loadFailed'    => __( 'Failed to load error log.', 'wp-system-report' ),
+					'enabled'       => __( 'Enabled', 'wp-system-report' ),
+					'disabled'      => __( 'Disabled', 'wp-system-report' ),
+					'notSet'        => __( 'Not set', 'wp-system-report' ),
+				)
+			);
+			$state['errorLog']            = array(
+				'statusLoaded'   => false,
+				'logLoaded'      => false,
+				'isLoading'      => false,
+				'isToggling'     => false,
+				'canModify'      => false,
+				'wpDebug'        => null,
+				'wpDebugLog'     => null,
+				'wpDebugDisplay' => null,
+				'fileExists'     => false,
+				'filePath'       => '',
+				'fileSize'       => '',
+				'lines'          => 100,
+				'logContent'     => '',
+				'hasLines'       => false,
+				'includeReport'  => false,
+				'noticeMessage'  => '',
+				'noticeType'     => '',
+			);
+			$state['copyError']           = false;
+		}
 
-		include WP_SYSTEM_REPORT_DIR . 'templates/admin-page.php';
+		if ( 'fixes' === $tab && Features::has_fixers() ) {
+			$state['config']['fixesUrl'] = rest_url( 'wp-system-report/v1/fixes' );
+			$state['i18n']               = array_merge(
+				$state['i18n'],
+				array(
+					'loadFailed'     => __( 'Failed to load fixers.', 'wp-system-report' ),
+					'running'        => __( 'Running...', 'wp-system-report' ),
+					'runFix'         => __( 'Run Fix', 'wp-system-report' ),
+					'confirmTitle'   => __( 'Confirm Fix', 'wp-system-report' ),
+					'confirmMessage' => __( 'This operation may modify your site. Are you sure you want to proceed?', 'wp-system-report' ),
+					'success'        => __( 'Success', 'wp-system-report' ),
+					'failed'         => __( 'Failed', 'wp-system-report' ),
+					'nothingToFix'   => __( 'No issues detected', 'wp-system-report' ),
+					'executeFailed'  => __( 'Failed to execute fix.', 'wp-system-report' ),
+					'riskLow'        => __( 'Low Risk', 'wp-system-report' ),
+					'riskMedium'     => __( 'Medium Risk', 'wp-system-report' ),
+					'riskHigh'       => __( 'High Risk', 'wp-system-report' ),
+					'before'         => __( 'Before', 'wp-system-report' ),
+					'after'          => __( 'After', 'wp-system-report' ),
+					'resultDetails'  => __( 'Result Details', 'wp-system-report' ),
+				)
+			);
+			$state['fixes']              = array(
+				'isLoading'           => true,
+				'loaded'              => false,
+				'hasError'            => false,
+				'errorMessage'        => '',
+				'hasFixers'           => false,
+				'categories'          => array(),
+				'modalOpen'           => false,
+				'modalTitle'          => '',
+				'modalMessage'        => '',
+				'modalDescription'    => '',
+				'pendingFixId'        => null,
+				'lastFocusedSelector' => null,
+			);
+		}
+
+		wp_interactivity_state( 'wp-system-report', $state );
 	}
 
 	/**

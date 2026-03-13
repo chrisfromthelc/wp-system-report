@@ -90,6 +90,21 @@ class Features {
 	}
 
 	/**
+	 * Whether the Interactivity API admin UI is available.
+	 *
+	 * The Interactivity API became stable in WordPress 6.5. When available,
+	 * the admin UI uses reactive data-wp-* directives instead of vanilla JS.
+	 * Gated behind the Pro tier and WP version check.
+	 *
+	 * @return bool True when Interactivity API UI is available.
+	 */
+	public static function has_interactivity(): bool {
+		return self::is_pro()
+			&& function_exists( 'wp_interactivity_state' )
+			&& function_exists( 'wp_register_script_module' );
+	}
+
+	/**
 	 * Whether Abilities API integration is available.
 	 *
 	 * Abilities API integration exposes plugin capabilities as structured
