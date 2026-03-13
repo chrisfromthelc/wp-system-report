@@ -538,8 +538,11 @@ class Report_History {
 			E_WARNING
 		);
 
-		$decompressed = gzuncompress( $data );
-		restore_error_handler();
+		try {
+			$decompressed = gzuncompress( $data );
+		} finally {
+			restore_error_handler();
+		}
 
 		return $decompressed;
 	}
