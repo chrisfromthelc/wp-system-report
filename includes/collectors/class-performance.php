@@ -264,8 +264,10 @@ class Performance extends Abstract_Collector {
 	private function collect_options_row_count() {
 		global $wpdb;
 
-		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery,WordPress.DB.DirectDatabaseQuery.NoCaching,WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- One-time diagnostic query; $wpdb->options is a trusted core property, not user input.
-		$this->options_row_count = (int) $wpdb->get_var( "SELECT COUNT(*) FROM {$wpdb->options}" );
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery,WordPress.DB.DirectDatabaseQuery.NoCaching -- One-time diagnostic query.
+		$this->options_row_count = (int) $wpdb->get_var(
+			$wpdb->prepare( 'SELECT COUNT(*) FROM %i', $wpdb->options )
+		);
 		$count                   = $this->options_row_count;
 
 		$status = Status::Good;
@@ -336,9 +338,10 @@ class Performance extends Abstract_Collector {
 		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery,WordPress.DB.DirectDatabaseQuery.NoCaching -- One-time diagnostic query.
 		$count = (int) $wpdb->get_var(
 			$wpdb->prepare(
-				"SELECT COUNT(*) FROM {$wpdb->options}
+				'SELECT COUNT(*) FROM %i
 				WHERE option_name LIKE %s
-				AND option_value < %d",
+				AND option_value < %d',
+				$wpdb->options,
 				$wpdb->esc_like( '_transient_timeout_' ) . '%',
 				$time
 			)
@@ -406,13 +409,16 @@ class Performance extends Abstract_Collector {
 	private function collect_top_autoloaded_options() {
 		global $wpdb;
 
-		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery,WordPress.DB.DirectDatabaseQuery.NoCaching,WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- One-time diagnostic query; $wpdb->options is a trusted core property, not user input.
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery,WordPress.DB.DirectDatabaseQuery.NoCaching -- One-time diagnostic query.
 		$results = $wpdb->get_results(
-			"SELECT option_name, LENGTH(option_value) AS val_size
-			FROM {$wpdb->options}
-			WHERE autoload IN ('yes', 'on')
-			ORDER BY val_size DESC
-			LIMIT 5"
+			$wpdb->prepare(
+				"SELECT option_name, LENGTH(option_value) AS val_size
+				FROM %i
+				WHERE autoload IN ('yes', 'on')
+				ORDER BY val_size DESC
+				LIMIT 5",
+				$wpdb->options
+			)
 		);
 
 		$parts = array();
@@ -458,8 +464,10 @@ class Performance extends Abstract_Collector {
 		// Reuse the count already fetched by collect_options_row_count() when available.
 		if ( null === $this->options_row_count ) {
 			global $wpdb;
-			// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery,WordPress.DB.DirectDatabaseQuery.NoCaching,WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- One-time diagnostic query; $wpdb->options is a trusted core property, not user input.
-			$this->options_row_count = (int) $wpdb->get_var( "SELECT COUNT(*) FROM {$wpdb->options}" );
+			// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery,WordPress.DB.DirectDatabaseQuery.NoCaching -- One-time diagnostic query.
+			$this->options_row_count = (int) $wpdb->get_var(
+				$wpdb->prepare( 'SELECT COUNT(*) FROM %i', $wpdb->options )
+			);
 		}
 
 		$option_count = $this->options_row_count;
