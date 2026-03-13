@@ -52,8 +52,6 @@ class SSE_Log_Streamer {
 
 	/**
 	 * Error log reader instance.
-	 *
-	 * @var Error_Log_Reader
 	 */
 	private Error_Log_Reader $reader;
 
@@ -276,12 +274,12 @@ class SSE_Log_Streamer {
 
 		// Disable PHP output buffering.
 		if ( function_exists( 'apache_setenv' ) ) {
-			// phpcs:ignore WordPress.PHP.DiscouragedPHPFunctions.runtime_configuration_apache_setenv -- Required for SSE.
-			@apache_setenv( 'no-gzip', '1' ); // phpcs:ignore WordPress.PHP.NoSilencedErrors.Discouraged
+			// phpcs:ignore WordPress.PHP.DiscouragedPHPFunctions.runtime_configuration_apache_setenv, WordPress.PHP.NoSilencedErrors.Discouraged -- Required for SSE.
+			@apache_setenv( 'no-gzip', '1' );
 		}
 
-		// phpcs:ignore WordPress.PHP.DiscouragedPHPFunctions.runtime_configuration_ini_set -- Required to disable buffering for SSE.
-		@ini_set( 'zlib.output_compression', 'Off' ); // phpcs:ignore WordPress.PHP.NoSilencedErrors.Discouraged
+		// phpcs:ignore WordPress.PHP.IniSet.Risky, WordPress.PHP.NoSilencedErrors.Discouraged -- Required to disable buffering for SSE.
+		@ini_set( 'zlib.output_compression', 'Off' );
 	}
 
 	/**
@@ -304,8 +302,8 @@ class SSE_Log_Streamer {
 			return $result;
 		}
 
-		// phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_fopen -- Low-level file tail requires fopen.
-		$handle = @fopen( $path, 'r' ); // phpcs:ignore WordPress.PHP.NoSilencedErrors.Discouraged
+		// phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_fopen, WordPress.PHP.NoSilencedErrors.Discouraged -- Low-level file tail requires fopen.
+		$handle = @fopen( $path, 'r' );
 
 		if ( ! $handle ) {
 			return $result;
