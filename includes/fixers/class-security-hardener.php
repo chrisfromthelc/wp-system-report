@@ -260,11 +260,31 @@ class Security_Hardener implements Fixer {
 	}
 
 	/**
+	 * Permitted header names that may be sent by the hardener.
+	 *
+	 * Only headers in this list will be emitted at runtime, preventing
+	 * arbitrary header injection if the stored option is tampered with.
+	 *
+	 * @var array<string, true>
+	 */
+	private const ALLOWED_HEADER_NAMES = array(
+		'X-Content-Type-Options'    => true,
+		'X-Frame-Options'           => true,
+		'Referrer-Policy'           => true,
+		'Strict-Transport-Security' => true,
+		'Permissions-Policy'        => true,
+	);
+
+	/**
 	 * Apply runtime security hardening based on stored options.
 	 *
 	 * Called from the plugin's hook registration. This method:
 	 * - Adds the `xmlrpc_enabled` filter to disable XML-RPC
 	 * - Adds the `send_headers` action to send security headers
+	 *
+	 * Header names are validated against an explicit allowlist and both
+	 * names and values are rejected if they contain CR/LF characters to
+	 * prevent HTTP response-splitting attacks.
 	 */
 	public static function apply_runtime_hardening(): void {
 		$options = get_option( self::OPTION_KEY, array() );
@@ -278,9 +298,21 @@ class Security_Hardener implements Fixer {
 				'send_headers',
 				function () use ( $options ): void {
 					foreach ( $options['security_headers'] as $name => $value ) {
-						if ( ! headers_sent() ) {
-							header( sprintf( '%s: %s', $name, $value ) );
+						if ( headers_sent() ) {
+							break;
 						}
+
+						// Only permit explicitly allowed header names.
+						if ( ! isset( self::ALLOWED_HEADER_NAMES[ $name ] ) ) {
+							continue;
+						}
+
+						// Reject values containing CR or LF to prevent response-splitting.
+						if ( preg_match( '/[\r\n]/', $name . $value ) ) {
+							continue;
+						}
+
+						header( sprintf( '%s: %s', $name, $value ) );
 					}
 				}
 			);

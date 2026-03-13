@@ -214,6 +214,10 @@ class Report_History {
 			if ( false === $compressed ) {
 				return false;
 			}
+
+			// Base64-encode the binary data so it survives UTF-8 storage.
+			// phpcs:ignore WordPress.PHP.DiscouragedPHPFunctions.obfuscation_base64_encode -- Encoding binary gzcompress output for safe DB storage, not obfuscation.
+			$compressed = base64_encode( $compressed );
 		} else {
 			// Store raw JSON when zlib is not available.
 			$compressed = $json;
@@ -523,6 +527,23 @@ class Report_History {
 	 */
 	private function decompress_report( string $data ): ?array {
 		if ( function_exists( 'gzuncompress' ) ) {
+			// Try base64-decoded gzuncompress first (current storage format).
+			// phpcs:ignore WordPress.PHP.DiscouragedPHPFunctions.obfuscation_base64_decode -- Decoding base64-encoded gzcompress output from DB storage, not obfuscation.
+			$decoded_b64 = base64_decode( $data, true );
+
+			if ( false !== $decoded_b64 ) {
+				// phpcs:ignore WordPress.PHP.NoSilencedErrors.Discouraged -- gzuncompress emits E_WARNING on malformed data; suppressed to allow fallback.
+				$decompressed = @gzuncompress( $decoded_b64 );
+
+				if ( false !== $decompressed ) {
+					$decoded = json_decode( $decompressed, true );
+					if ( is_array( $decoded ) ) {
+						return $decoded;
+					}
+				}
+			}
+
+			// Legacy fallback: try raw binary gzuncompress (pre-fix storage).
 			// phpcs:ignore WordPress.PHP.NoSilencedErrors.Discouraged -- gzuncompress emits E_WARNING on malformed data; suppressed to allow JSON fallback.
 			$decompressed = @gzuncompress( $data );
 
