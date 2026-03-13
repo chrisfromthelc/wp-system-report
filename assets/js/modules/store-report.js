@@ -109,9 +109,9 @@ const { state, actions } = store( 'wp-system-report', {
 			const { ref } = getElement();
 			const redacted = actions.applyRedactions( state.reportText );
 			const githubReport =
-				'<details><summary>System Status Report</summary>\n\n``' +
+				'<details><summary>System Status Report</summary>\n\n```\n' +
 				redacted +
-				'``\n</details>';
+				'\n```\n</details>';
 			actions.copyToClipboard( githubReport, ref );
 		},
 

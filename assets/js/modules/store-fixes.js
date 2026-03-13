@@ -27,44 +27,6 @@ const { state, actions } = store( 'wp-system-report', {
 
 	actions: {
 		/**
-		 * Get the risk badge CSS class.
-		 *
-		 * @param {string} riskLevel Risk level value.
-		 * @return {string} CSS class name.
-		 */
-		getRiskBadgeClass( riskLevel ) {
-			switch ( riskLevel ) {
-				case 'low':
-					return 'sr-risk-low';
-				case 'medium':
-					return 'sr-risk-medium';
-				case 'high':
-					return 'sr-risk-high';
-				default:
-					return 'sr-risk-low';
-			}
-		},
-
-		/**
-		 * Get the translated risk label.
-		 *
-		 * @param {string} riskLevel Risk level value.
-		 * @return {string} Translated label.
-		 */
-		getRiskLabel( riskLevel ) {
-			switch ( riskLevel ) {
-				case 'low':
-					return state.i18n.riskLow || 'Low';
-				case 'medium':
-					return state.i18n.riskMedium || 'Medium';
-				case 'high':
-					return state.i18n.riskHigh || 'High';
-				default:
-					return riskLevel;
-			}
-		},
-
-		/**
 		 * Capitalize the first letter.
 		 *
 		 * @param {string} str Input string.
@@ -267,9 +229,8 @@ const { state, actions } = store( 'wp-system-report', {
 		/**
 		 * Handle modal keyboard events (Escape to close, Tab trap).
 		 */
-		handleModalKeydown() {
+		handleModalKeydown( event ) {
 			const { ref } = getElement();
-			const event = window.event;
 
 			if ( event.key === 'Escape' ) {
 				event.preventDefault();

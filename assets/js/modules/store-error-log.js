@@ -49,23 +49,17 @@ const { state, actions } = store( 'wp-system-report', {
 		get toggleBtnsDisabled() {
 			return state.errorLog.isToggling;
 		},
-		get wpDebugBadgeClass() {
-			return actions.getBadgeClass( state.errorLog.wpDebug );
-		},
 		get wpDebugBadgeText() {
 			return actions.getBadgeText( state.errorLog.wpDebug );
-		},
-		get wpDebugLogBadgeClass() {
-			return actions.getBadgeClass( state.errorLog.wpDebugLog );
 		},
 		get wpDebugLogBadgeText() {
 			return actions.getBadgeText( state.errorLog.wpDebugLog );
 		},
-		get wpDebugDisplayBadgeClass() {
-			return actions.getBadgeClass( state.errorLog.wpDebugDisplay );
-		},
 		get wpDebugDisplayBadgeText() {
 			return actions.getBadgeText( state.errorLog.wpDebugDisplay );
+		},
+		get copyErrorVisible() {
+			return state.copyError;
 		},
 		get toggleNoticeVisible() {
 			return !! state.errorLog.noticeMessage;
@@ -76,22 +70,6 @@ const { state, actions } = store( 'wp-system-report', {
 	},
 
 	actions: {
-		/**
-		 * Get badge CSS class for a debug value.
-		 *
-		 * @param {*} value Debug constant value.
-		 * @return {string} CSS class name.
-		 */
-		getBadgeClass( value ) {
-			if ( value === null || value === undefined ) {
-				return 'sr-badge sr-badge-null';
-			}
-			if ( value ) {
-				return 'sr-badge sr-badge-on';
-			}
-			return 'sr-badge sr-badge-off';
-		},
-
 		/**
 		 * Get badge display text for a debug value.
 		 *
