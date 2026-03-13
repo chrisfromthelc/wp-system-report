@@ -91,12 +91,8 @@ class Site_Health extends Abstract_Collector {
 					}
 
 					try {
-						// Execute the test callback.
-						$test_result = null;
+						$test_result = $this->run_site_health_test( $site_health, $test_config['test'] );
 
-						if ( is_callable( $test_config['test'] ) ) {
-							$test_result = call_user_func( $test_config['test'] );
-						}
 						// Skip if test failed or returned invalid result.
 						if ( ! is_array( $test_result ) ) {
 							continue;
@@ -182,5 +178,41 @@ class Site_Health extends Abstract_Collector {
 		}
 
 		return $fields;
+	}
+
+	/**
+	 * Execute a single Site Health test callback.
+	 *
+	 * WordPress core registers most tests with a short string name (e.g.
+	 * 'wordpress_version') that maps to a method on the WP_Site_Health instance
+	 * via the pattern get_test_{$name}(). Third-party tests may register a
+	 * callable directly. This method mirrors the resolution logic found in
+	 * WP_Site_Health::get_page_data().
+	 *
+	 * @param \WP_Site_Health $site_health The Site Health instance.
+	 * @param string|callable $test        The test callback or method suffix.
+	 * @return array|null The test result array, or null on failure.
+	 */
+	private function run_site_health_test( \WP_Site_Health $site_health, string|callable $test ): ?array {
+		// String tests reference a method on WP_Site_Health: get_test_{$name}().
+		if ( is_string( $test ) && ! is_callable( $test ) ) {
+			$method = sprintf( 'get_test_%s', $test );
+
+			if ( method_exists( $site_health, $method ) && is_callable( array( $site_health, $method ) ) ) {
+				$result = $site_health->{$method}();
+
+				/** This filter is documented in wp-admin/includes/class-wp-site-health.php */
+				// phpcs:ignore WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedHooknameFound -- WordPress core filter.
+				return is_array( $result ) ? apply_filters( 'site_status_test_result', $result ) : null;
+			}
+
+			return null;
+		}
+
+		// Callable tests (arrays, closures, invocable objects, global function names).
+		$result = call_user_func( $test );
+
+		// phpcs:ignore WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedHooknameFound -- WordPress core filter.
+		return is_array( $result ) ? apply_filters( 'site_status_test_result', $result ) : null;
 	}
 }
