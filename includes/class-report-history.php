@@ -84,10 +84,18 @@ class Report_History {
 	 * creation in wp-admin/includes/schema.php. The schema uses two spaces
 	 * after PRIMARY KEY (a dbDelta requirement) and KEY for secondary indexes.
 	 *
+	 * No-ops when the report history feature gate is disabled, keeping
+	 * call sites simple (activation hook, admin_init) and avoiding
+	 * accidental table creation in Free tier.
+	 *
 	 * Should be called on plugin activation and checked via
 	 * needs_schema_update() on admin_init.
 	 */
 	public static function create_table(): void {
+		if ( ! Features::has_report_history() ) {
+			return;
+		}
+
 		global $wpdb;
 
 		$table_name      = self::get_table_name();
@@ -132,9 +140,16 @@ class Report_History {
 	/**
 	 * Check whether the schema needs to be created or upgraded.
 	 *
+	 * Returns false when the report history feature gate is disabled,
+	 * so call sites can remain simple.
+	 *
 	 * @return bool True if the schema needs updating.
 	 */
 	public static function needs_schema_update(): bool {
+		if ( ! Features::has_report_history() ) {
+			return false;
+		}
+
 		$installed = get_option( self::SCHEMA_OPTION, '' );
 		return self::SCHEMA_VERSION !== $installed;
 	}
