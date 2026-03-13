@@ -231,6 +231,13 @@ class Media_Uploads extends Abstract_Collector {
 	private function collect_orphaned_attachments() {
 		global $wpdb;
 
+		/*
+		 * This query uses COUNT(1) with a correlated NOT EXISTS subquery. No LIMIT
+		 * is required because COUNT(1) always returns a single scalar row regardless
+		 * of how many matching rows exist. The NOT EXISTS subquery is correlated on
+		 * posts.ID, which is the primary key and therefore indexed; the database
+		 * optimizer resolves it efficiently as an anti-join or index-only lookup.
+		 */
 		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery,WordPress.DB.DirectDatabaseQuery.NoCaching -- One-time diagnostic query.
 		$count = (int) $wpdb->get_var(
 			"SELECT COUNT(1)

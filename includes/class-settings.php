@@ -22,8 +22,19 @@ class Settings {
 	const OPTION_NAME = 'wp_system_report_settings';
 
 	/**
- * Default settings values.
- */
+	 * In-memory cache of the raw option array.
+	 *
+	 * Populated on the first call to get_option() and reused for the
+	 * remainder of the request. Set to null to invalidate (e.g. after
+	 * update() or delete()).
+	 *
+	 * @var array<string, mixed>|null
+	 */
+	private static ?array $cache = null;
+
+	/**
+	 * Default settings values.
+	 */
 	private static array $defaults = array(
 		'error_log_lines'           => 100,
 		'notifications_enabled'     => false,
@@ -40,6 +51,23 @@ class Settings {
 	);
 
 	/**
+	 * Load the raw settings array from the database, with in-memory caching.
+	 *
+	 * get_option() is called at most once per request. All read methods go
+	 * through this helper so the cache is consistently populated and used.
+	 *
+	 * @return array<string, mixed> Raw settings array (may be empty).
+	 */
+	private static function load(): array {
+		if ( null === self::$cache ) {
+			$settings    = get_option( self::OPTION_NAME, array() );
+			self::$cache = is_array( $settings ) ? $settings : array();
+		}
+
+		return self::$cache;
+	}
+
+	/**
 	 * Get a settings value.
 	 *
 	 * @param string $key           Setting key.
@@ -48,11 +76,7 @@ class Settings {
 	 * @return mixed Setting value.
 	 */
 	public static function get( string $key, $default_value = null ) {
-		$settings = get_option( self::OPTION_NAME, array() );
-
-		if ( ! is_array( $settings ) ) {
-			$settings = array();
-		}
+		$settings = self::load();
 
 		if ( array_key_exists( $key, $settings ) ) {
 			return $settings[ $key ];
@@ -72,42 +96,46 @@ class Settings {
 	 * @return array All settings.
 	 */
 	public static function get_all(): array {
-		$settings = get_option( self::OPTION_NAME, array() );
-
-		if ( ! is_array( $settings ) ) {
-			$settings = array();
-		}
-
-		return array_merge( self::$defaults, $settings );
+		return array_merge( self::$defaults, self::load() );
 	}
 
 	/**
 	 * Update a settings value.
 	 *
-	 * The value is sanitized before saving.
+	 * The value is sanitized before saving. The in-memory cache is
+	 * invalidated so subsequent reads reflect the new value.
 	 *
 	 * @param string $key   Setting key.
 	 * @param mixed  $value Setting value.
 	 * @return bool True if updated, false otherwise.
 	 */
 	public static function update( string $key, $value ): bool {
-		$settings = get_option( self::OPTION_NAME, array() );
-
-		if ( ! is_array( $settings ) ) {
-			$settings = array();
-		}
-
+		$settings         = self::load();
 		$settings[ $key ] = self::sanitize( $key, $value );
 
-		return update_option( self::OPTION_NAME, $settings );
+		// Invalidate cache before writing so a failed update_option() does not
+		// leave stale data in memory.
+		self::$cache = null;
+
+		$result = update_option( self::OPTION_NAME, $settings );
+
+		// Repopulate cache with the value we just persisted.
+		if ( $result ) {
+			self::$cache = $settings;
+		}
+
+		return $result;
 	}
 
 	/**
 	 * Delete all plugin settings.
 	 *
+	 * The in-memory cache is cleared so subsequent reads return defaults.
+	 *
 	 * @return bool True if deleted, false otherwise.
 	 */
 	public static function delete(): bool {
+		self::$cache = null;
 		return delete_option( self::OPTION_NAME );
 	}
 

@@ -385,10 +385,9 @@ class Cron_Repair implements Fixer {
 	private function reschedule_overdue_events( array $overdue ): int {
 		$rescheduled  = 0;
 		$current_time = time();
+		$cron_array   = $this->get_cron_array();
 
 		foreach ( $overdue as $event ) {
-			$cron_array = $this->get_cron_array();
-
 			// The event may have already been removed or rescheduled.
 			if ( ! isset( $cron_array[ $event['timestamp'] ][ $event['hook'] ] ) ) {
 				continue;

@@ -56,28 +56,46 @@ class Post_Type_Counts extends Abstract_Collector {
 	}
 
 	/**
+	 * Statuses considered "published" for count purposes.
+	 *
+	 * Auto-draft, trash, and inherit (attachment revisions) are excluded
+	 * because they do not represent real published content.
+	 *
+	 * @var string[]
+	 */
+	private const COUNTED_STATUSES = array( 'publish', 'private', 'future', 'pending', 'draft' );
+
+	/**
  * Collect the data.
  */
 	public function collect(): array {
-		global $wpdb;
-
 		$data = array();
 
-		// Query post type counts. Table name is from $wpdb->posts (safe).
-		// phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared -- No user input; table name from $wpdb->posts.
-		$results = $wpdb->get_results( "SELECT post_type, COUNT(1) as count FROM {$wpdb->posts} GROUP BY post_type ORDER BY count DESC" );
+		// Retrieve all registered post types (public and non-public).
+		$post_types = get_post_types( array(), 'names' );
 
-		if ( $results ) {
-			foreach ( $results as $row ) {
-				$post_type       = $row->post_type;
-				$count           = $row->count;
-				$post_type_label = $this->get_post_type_label( $post_type );
+		foreach ( $post_types as $post_type ) {
+			$counts = wp_count_posts( $post_type );
 
-				$data[] = $this->make_field(
-					$post_type_label,
-					number_format_i18n( $count )
-				);
+			if ( ! $counts ) {
+				continue;
 			}
+
+			// Sum only the statuses that represent real content.
+			$total = 0;
+			foreach ( self::COUNTED_STATUSES as $status ) {
+				$total += isset( $counts->$status ) ? (int) $counts->$status : 0;
+			}
+
+			// Skip post types with no content at all.
+			if ( 0 === $total ) {
+				continue;
+			}
+
+			$data[] = $this->make_field(
+				$this->get_post_type_label( $post_type ),
+				number_format_i18n( $total )
+			);
 		}
 
 		return $data;

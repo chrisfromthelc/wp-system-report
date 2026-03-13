@@ -63,10 +63,10 @@ class Server_Environment extends Abstract_Collector {
 			$server_software
 		);
 
-		// PHP Version — plugin requires PHP 8.1+, so the only meaningful
-		// threshold is the currently recommended version.
+		// PHP Version — plugin requires PHP 8.1+, so any version below 8.1
+		// is a warning. The recommended threshold matches the minimum requirement.
 		$php_version        = phpversion();
-		$php_version_status = version_compare( $php_version, '8.2', '<' ) ? Status::Warning : Status::Good;
+		$php_version_status = version_compare( $php_version, '8.1', '<' ) ? Status::Warning : Status::Good;
 
 		$data[] = $this->make_field(
 			__( 'PHP Version', 'wp-system-report' ),

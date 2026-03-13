@@ -402,19 +402,7 @@ class Update_Health extends Abstract_Collector {
 			}
 		}
 
-		// Check for failed plugin updates.
-		$auto_updates_history = get_site_option( 'auto_updates_complete', array() );
-		$failed_auto          = 0;
-
-		if ( is_array( $auto_updates_history ) ) {
-			foreach ( $auto_updates_history as $entry ) {
-				if ( isset( $entry['success'] ) && false === $entry['success'] ) {
-					++$failed_auto;
-				}
-			}
-		}
-
-		$total_failed = $failed + $failed_auto;
+		$total_failed = $failed;
 
 		if ( 0 === $total_failed ) {
 			return $this->make_field(

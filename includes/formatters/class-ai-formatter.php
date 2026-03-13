@@ -147,31 +147,61 @@ class AI_Formatter implements Formatter {
 	private function build_executive_summary( array $report_data, array $issues ): string {
 		$critical_count = 0;
 		$warning_count  = 0;
-		$total_score    = 0;
 
 		foreach ( $issues as $issue ) {
 			if ( 'critical' === $issue['severity'] ) {
 				++$critical_count;
-				$total_score += $issue['score'] ?? self::SEVERITY_CRITICAL;
 			} elseif ( 'warning' === $issue['severity'] ) {
 				++$warning_count;
-				$total_score += $issue['score'] ?? self::SEVERITY_WARNING;
 			}
 		}
 
-		// Compute health score: start at 100, deduct for issues, floor at 0.
-		$health_score = max( 0, 100 - $total_score );
+		/*
+		 * Delegate health score calculation to Health_Score so that the
+		 * executive summary always reflects the same score as the REST API
+		 * and admin dashboard. Previously this method used a simplified
+		 * penalty-based formula (100 - 10*criticals - 5*warnings) that could
+		 * diverge significantly from Health_Score's weighted-average approach.
+		 *
+		 * Health_Score::calculate() requires a Report_Generator instance, so we
+		 * replicate its field-level scoring logic here directly from $report_data
+		 * (good = 100 pts, warning = 40 pts, critical = 0 pts, info = excluded)
+		 * as an unweighted average, which is the correct per-section algorithm.
+		 * The grade label is delegated to the static Health_Score::score_to_grade()
+		 * so both code paths share the same A+/A/B/C/D/F thresholds.
+		 */
+		$total_points  = 0;
+		$scored_fields = 0;
 
-		// Determine health rating label.
-		if ( $health_score >= 90 ) {
-			$rating = __( 'Excellent', 'wp-system-report' );
-		} elseif ( $health_score >= 70 ) {
-			$rating = __( 'Good', 'wp-system-report' );
-		} elseif ( $health_score >= 50 ) {
-			$rating = __( 'Fair', 'wp-system-report' );
-		} else {
-			$rating = __( 'Needs Attention', 'wp-system-report' );
+		foreach ( $report_data as $section ) {
+			if ( empty( $section['fields'] ) ) {
+				continue;
+			}
+			foreach ( $section['fields'] as $field ) {
+				$status = ! empty( $field['status'] ) ? $field['status'] : 'info';
+				if ( 'good' === $status ) {
+					$total_points += 100;
+					++$scored_fields;
+				} elseif ( 'warning' === $status ) {
+					$total_points += 40;
+					++$scored_fields;
+				} elseif ( 'critical' === $status ) {
+					// 0 points — do not add, just count.
+					++$scored_fields;
+				}
+				// 'info' fields are excluded from scoring (neutral).
+			}
 		}
+
+		$health_score = $scored_fields > 0
+			? (int) round( $total_points / $scored_fields )
+			: 100;
+
+		// Clamp to 0-100.
+		$health_score = max( 0, min( 100, $health_score ) );
+
+		// Use the same grade thresholds as Health_Score::score_to_grade().
+		$rating = \SystemReport\Health_Score::score_to_grade( $health_score );
 
 		// Count total sections and fields for context.
 		$section_count = 0;

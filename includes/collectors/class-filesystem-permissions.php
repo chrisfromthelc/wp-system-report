@@ -67,6 +67,30 @@ class Filesystem_Permissions extends Abstract_Collector {
 			)
 		);
 
+		/*
+		 * Check whether the web root is world-writable (permission mode 0o002 set).
+		 * A world-writable web root allows any system user to write files into the
+		 * WordPress installation directory, which is a serious security risk. Even
+		 * if the web server process cannot exploit this directly, it can indicate
+		 * dangerously permissive server configuration.
+		 *
+		 * fileperms() returns the full mode integer (e.g. 0o40755). Masking with
+		 * 0002 isolates the "others write" bit.
+		 */
+		$wp_root_perms = fileperms( $wp_root_path );
+		if ( false !== $wp_root_perms && ( $wp_root_perms & 0002 ) ) {
+			$fields[] = $this->make_field(
+				__( 'WordPress Root Permissions', 'wp-system-report' ),
+				__( 'World-writable', 'wp-system-report' ),
+				array(
+					'debug'       => decoct( $wp_root_perms & 0777 ),
+					'status'      => Status::Critical,
+					'description' => __( 'The WordPress root directory is world-writable (others have write permission). This is a serious security risk and should be corrected immediately.', 'wp-system-report' ),
+					'recommended' => __( 'Remove world-write permission (e.g. chmod 755)', 'wp-system-report' ),
+				)
+			);
+		}
+
 		// Check wp-content directory.
 		$content_dir_path     = WP_CONTENT_DIR;
 		$content_dir_writable = wp_is_writable( $content_dir_path );

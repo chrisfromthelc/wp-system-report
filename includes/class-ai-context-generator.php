@@ -242,6 +242,13 @@ class AI_Context_Generator {
 		$output .= '- **PHP**: ' . phpversion() . "\n";
 		$output .= '- **Multisite**: ' . ( is_multisite() ? 'Yes' : 'No' ) . "\n";
 
+		/*
+		 * The lookups below match on `export_label` (stable, untranslated) with
+		 * `label` as a fallback. The string literals correspond to the export_label
+		 * values set by the Database and Server_Environment collectors. If those
+		 * collectors ever rename their export labels, these strings must be updated.
+		 */
+
 		// Extract database version from report if available.
 		$db_section = $report_data['database'] ?? null;
 		if ( $db_section && ! empty( $db_section['fields'] ) ) {
@@ -276,7 +283,20 @@ class AI_Context_Generator {
 	private function render_environment( array $report_data ): string {
 		$output = "## Environment\n\n";
 
-		// Key configuration items to extract.
+		/*
+		 * Field matching uses `export_label` (with `label` as a fallback) rather
+		 * than the translated `label` string. `export_label` is set by each
+		 * collector to a stable, untranslated identifier and is therefore safe to
+		 * match against even on non-English sites.
+		 *
+		 * The string values in the lists below correspond to the `export_label`
+		 * constants defined by the known collectors. If a collector is renamed or
+		 * its export labels change, these lists must be updated to match.
+		 *
+		 * @see WordPress\Collectors\WordPress_Environment
+		 * @see WordPress\Collectors\Server_Environment
+		 * @see WordPress\Collectors\Database
+		 */
 		$key_items = array(
 			'wordpress_environment' => array(
 				'Home URL',
@@ -316,6 +336,7 @@ class AI_Context_Generator {
 					continue;
 				}
 
+				// Prefer export_label (stable, untranslated) over label (translated).
 				$field_label = $field['export_label'] ?? $field['label'];
 				if ( in_array( $field_label, $labels, true ) ) {
 					$output .= '- **' . $field_label . '**: ' . $field['value'] . "\n";
