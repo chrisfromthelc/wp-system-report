@@ -111,20 +111,37 @@ class ActivePluginsTest extends WP_UnitTestCase {
 	// -------------------------------------------------------
 
 	/**
-	 * Test that the collector lists at least one active plugin.
+	 * Test that the collector lists active plugins when at least one is active.
 	 *
-	 * The WP test suite loads the plugin under test, so there is always at
-	 * least one entry in active_plugins when the suite boots.
+	 * The WP test suite loads the plugin under test via muplugins_loaded,
+	 * which does NOT add it to the active_plugins option. We must explicitly
+	 * activate a known plugin for this test.
 	 *
 	 * @return void
 	 */
 	public function test_active_plugins_listed(): void {
+		if ( ! function_exists( 'get_plugins' ) ) {
+			require_once ABSPATH . 'wp-admin/includes/plugin.php';
+		}
+
+		$all_plugins = get_plugins();
+
+		if ( empty( $all_plugins ) ) {
+			$this->markTestSkipped( 'No plugins installed; cannot test active plugin listing.' );
+		}
+
+		// Activate the first installed plugin explicitly.
+		reset( $all_plugins );
+		$plugin_path = key( $all_plugins );
+		update_option( 'active_plugins', array( $plugin_path ) );
+
+		delete_transient( 'sr_active_plugins' );
 		$fields = $this->collector->collect();
 
-		// There must be at least one field (the plugin under test is active).
+		// There must be at least one field.
 		$this->assertNotEmpty(
 			$fields,
-			'Expected at least one field because the plugin under test is active.'
+			'Expected at least one field when a plugin is explicitly activated.'
 		);
 
 		// None of the fields should be the "No Active Plugins" placeholder.
@@ -138,7 +155,7 @@ class ActivePluginsTest extends WP_UnitTestCase {
 		$this->assertNotContains(
 			'No Active Plugins',
 			$labels,
-			'Did not expect "No Active Plugins" placeholder when plugins are active.'
+			'Did not expect "No Active Plugins" placeholder when a plugin is active.'
 		);
 	}
 
