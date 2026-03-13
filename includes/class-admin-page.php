@@ -91,6 +91,9 @@ class Admin_Page {
 			wp_die( esc_html__( 'You do not have sufficient permissions to access this page.', 'wp-system-report' ) );
 		}
 
+		// Flush all collector caches so the admin always sees fresh data.
+		$this->report_generator->flush_all_caches();
+
 		$sr_current_tab = $this->get_current_tab();
 
 		// Only generate the full report when on the report tab to avoid
