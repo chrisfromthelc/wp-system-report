@@ -85,11 +85,16 @@ class Fixer_Controller extends \WP_REST_Controller {
 					'callback'            => array( $this, 'execute_fix' ),
 					'permission_callback' => array( $this, 'permissions_check' ),
 					'args'                => array(
-						'fix_id' => array(
+						'fix_id'    => array(
 							'description'       => __( 'The fixer identifier.', 'wp-system-report' ),
 							'type'              => 'string',
 							'required'          => true,
 							'sanitize_callback' => 'sanitize_key',
+						),
+						'confirmed' => array(
+							'description' => __( 'Explicit confirmation flag, required for medium and high risk fixers.', 'wp-system-report' ),
+							'type'        => 'boolean',
+							'default'     => false,
 						),
 					),
 				),
@@ -174,6 +179,20 @@ class Fixer_Controller extends \WP_REST_Controller {
 					$fix_id
 				),
 				array( 'status' => 404 )
+			);
+		}
+
+		// Require explicit confirmation for medium and high risk fixers.
+		if ( $fixer->get_risk_level()->requires_confirmation() && ! $request->get_param( 'confirmed' ) ) {
+			return new \WP_Error(
+				'wp_system_report_confirmation_required',
+				sprintf(
+					/* translators: 1: fixer ID, 2: risk level */
+					__( 'Fixer "%1$s" has %2$s risk and requires explicit confirmation. Resend with confirmed=true.', 'wp-system-report' ),
+					$fix_id,
+					$fixer->get_risk_level()->get_label()
+				),
+				array( 'status' => 409 )
 			);
 		}
 

@@ -20,9 +20,18 @@ use WPConfigTransformer;
 class Debug_Toggle {
 
 	/**
- * Path to wp-config.php.
- */
+	 * Path to wp-config.php.
+	 */
 	private string $config_path;
+
+	/**
+	 * Randomised backup filename token, generated once per instance.
+	 *
+	 * Using a CSPRNG-derived token instead of a deterministic MD5 hash
+	 * prevents an attacker who can predict the config path from knowing
+	 * the backup file location.
+	 */
+	private string $backup_token = '';
 
 	/**
 	 * Constructor.
@@ -250,14 +259,22 @@ class Debug_Toggle {
 	/**
 	 * Get the backup file path in the system temp directory.
 	 *
-	 * Uses an MD5 hash of the config path to create a unique, predictable
-	 * filename that is stored outside the webroot.
+	 * Uses a CSPRNG-derived token (generated once per instance) so that
+	 * the backup filename is not predictable from the config path alone.
 	 *
 	 * @return string Absolute path to the backup file.
 	 */
 	private function get_backup_path(): string {
-		$hash = md5( $this->config_path );
-		return get_temp_dir() . 'wp-system-report-config-' . $hash . '.bak';
+		if ( '' === $this->backup_token ) {
+			try {
+				$this->backup_token = bin2hex( random_bytes( 16 ) );
+			} catch ( \Throwable $e ) {
+				// Fall back to a deterministic hash if no CSPRNG is available.
+				$this->backup_token = md5( $this->config_path );
+			}
+		}
+
+		return get_temp_dir() . 'wp-system-report-config-' . $this->backup_token . '.bak';
 	}
 
 	/**

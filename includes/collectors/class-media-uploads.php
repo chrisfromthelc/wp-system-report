@@ -131,19 +131,29 @@ class Media_Uploads extends Abstract_Collector {
 		$upload_dir = wp_upload_dir();
 		$basedir    = $upload_dir['basedir'];
 
-		$size = $this->get_directory_size( $basedir );
+		$truncated = false;
+		$size      = $this->get_directory_size( $basedir, $truncated );
 
 		$status = Status::Info;
 		if ( $size > GB_IN_BYTES * 10 ) {
 			$status = Status::Warning;
 		}
 
+		$formatted = $this->format_size( $size );
+		if ( $truncated ) {
+			/* translators: %s: formatted file size */
+			$formatted = sprintf( __( '%s+ (estimate, file cap reached)', 'wp-system-report' ), $formatted );
+		}
+
 		return $this->make_field(
 			__( 'Upload Directory Size', 'wp-system-report' ),
-			$this->format_size( $size ),
+			$formatted,
 			array(
 				'status'      => $status,
-				'description' => __( 'Total size of all files in the uploads directory.', 'wp-system-report' ),
+				'debug'       => $truncated ? $size . ' (truncated)' : $size,
+				'description' => $truncated
+					? __( 'Partial total — directory exceeds 50 000 files.', 'wp-system-report' )
+					: __( 'Total size of all files in the uploads directory.', 'wp-system-report' ),
 			)
 		);
 	}
@@ -399,17 +409,32 @@ class Media_Uploads extends Abstract_Collector {
 	}
 
 	/**
+	 * Maximum number of files to count before aborting directory size calculation.
+	 *
+	 * Prevents runaway I/O on enormous upload directories. When exceeded the
+	 * method returns the partial total accumulated so far.
+	 */
+	private const MAX_FILES_TO_COUNT = 50000;
+
+	/**
 	 * Calculate the total size of a directory recursively.
 	 *
-	 * @param string $path Directory path.
-	 * @return int Size in bytes.
+	 * Caps the walk at {@see MAX_FILES_TO_COUNT} files to avoid unbounded
+	 * I/O on very large upload directories.
+	 *
+	 * @param string $path      Directory path.
+	 * @param bool   $truncated Optional. Set to true by reference when the cap is reached.
+	 * @return int Size in bytes (may be a partial total if the cap is hit).
 	 */
-	private function get_directory_size( string $path ): int {
+	private function get_directory_size( string $path, bool &$truncated = false ): int {
+		$truncated = false;
+
 		if ( ! is_dir( $path ) ) {
 			return 0;
 		}
 
-		$size = 0;
+		$size  = 0;
+		$count = 0;
 
 		$iterator = new \RecursiveIteratorIterator(
 			new \RecursiveDirectoryIterator( $path, \FilesystemIterator::SKIP_DOTS ),
@@ -419,6 +444,12 @@ class Media_Uploads extends Abstract_Collector {
 		foreach ( $iterator as $file ) {
 			if ( $file->isFile() ) {
 				$size += $file->getSize();
+				++$count;
+
+				if ( $count >= self::MAX_FILES_TO_COUNT ) {
+					$truncated = true;
+					break;
+				}
 			}
 		}
 

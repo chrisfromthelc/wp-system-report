@@ -224,7 +224,8 @@ class FixerControllerTest extends WP_UnitTestCase {
 	public function test_execute_fixer_returns_envelope(): void {
 		wp_set_current_user( $this->admin_id );
 
-		$request  = new WP_REST_Request( 'POST', '/wp-system-report/v1/fixes/security_hardener' );
+		$request = new WP_REST_Request( 'POST', '/wp-system-report/v1/fixes/security_hardener' );
+		$request->set_param( 'confirmed', true );
 		$response = rest_get_server()->dispatch( $request );
 		$data     = $response->get_data();
 
@@ -243,7 +244,8 @@ class FixerControllerTest extends WP_UnitTestCase {
 	public function test_execute_fixer_result_structure(): void {
 		wp_set_current_user( $this->admin_id );
 
-		$request  = new WP_REST_Request( 'POST', '/wp-system-report/v1/fixes/security_hardener' );
+		$request = new WP_REST_Request( 'POST', '/wp-system-report/v1/fixes/security_hardener' );
+		$request->set_param( 'confirmed', true );
 		$response = rest_get_server()->dispatch( $request );
 		$data     = $response->get_data();
 
@@ -278,6 +280,7 @@ class FixerControllerTest extends WP_UnitTestCase {
 
 		// Run the security hardener first to clear issues.
 		$request = new WP_REST_Request( 'POST', '/wp-system-report/v1/fixes/security_hardener' );
+		$request->set_param( 'confirmed', true );
 		rest_get_server()->dispatch( $request );
 
 		// Run it again — should say nothing to fix.
@@ -287,5 +290,20 @@ class FixerControllerTest extends WP_UnitTestCase {
 		// Either applied=false (can_fix returned false) or the fixer returned a noop success.
 		$this->assertSame( 200, $response->get_status() );
 		$this->assertTrue( $data['data']['result']['success'] );
+	}
+
+	/**
+	 * Test that a medium/high risk fixer requires confirmed=true.
+	 */
+	public function test_execute_fixer_requires_confirmation_for_risky_fixers(): void {
+		wp_set_current_user( $this->admin_id );
+
+		// POST without confirmed=true to a medium-risk fixer.
+		$request  = new WP_REST_Request( 'POST', '/wp-system-report/v1/fixes/security_hardener' );
+		$response = rest_get_server()->dispatch( $request );
+		$data     = $response->get_data();
+
+		$this->assertSame( 409, $response->get_status() );
+		$this->assertSame( 'wp_system_report_confirmation_required', $data['code'] );
 	}
 }

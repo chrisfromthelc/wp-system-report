@@ -92,7 +92,12 @@ class Admin_Page {
 		}
 
 		$sr_current_tab = $this->get_current_tab();
-		$report         = $this->report_generator->generate();
+
+		// Only generate the full report when on the report tab to avoid
+		// running all 23 collectors on every admin page load.
+		$report = ( 'report' === $sr_current_tab )
+			? $this->report_generator->generate()
+			: array();
 
 		if ( Features::has_interactivity() ) {
 			$this->init_interactivity_state( $sr_current_tab );
