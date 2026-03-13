@@ -1,6 +1,6 @@
 # Collectors
 
-WP System Report ships with 17 collectors that gather diagnostic data from every major aspect of a WordPress installation. Collectors are executed in priority order (lowest number first) and their results are combined into the final report.
+WP System Report ships with 23 collectors that gather diagnostic data from every major aspect of a WordPress installation. Collectors are executed in priority order (lowest number first) and their results are combined into the final report.
 
 ## Core Diagnostics
 
@@ -232,6 +232,134 @@ Site settings including permalink structure, user roles, comments, media, and ti
 | Rewrite Rules Count | Total registered rewrite rules |
 | PHP Error Log | Error log file path and size |
 | .htaccess Present | Whether `.htaccess` exists |
+
+---
+
+### Email Delivery (priority 180)
+
+**ID:** `email_delivery` | **Cached:** 1 hour (`sr_email_delivery`)
+
+Email configuration, mail transport method, SMTP status, and mail service plugins.
+
+| Field | Status Conditions | Description |
+|-------|-------------------|-------------|
+| Admin Email | Critical if empty, Info otherwise | Site administrator email used as the default sender (marked private) |
+| From Address | Info | The address used in the `From` header, resolved via `wp_mail_from` filter |
+| From Name | Warning if still `"WordPress"`, Good otherwise | The name used in the `From` header |
+| Mail Transport | Good if SMTP, Info for PHP `mail()` | Active transport method (`PHP mail()`, `SMTP`, or custom `phpmailer_init` override) |
+| SMTP Host | Good if not `localhost`, Info otherwise | SMTP server hostname |
+| SMTP Port | Good for 465/587, Warning for 25, Info otherwise | Recommended: 587 (STARTTLS) or 465 (SSL) |
+| SMTP Encryption | Good for SSL/TLS or STARTTLS, Info for none | Encryption in use, inferred from `SMTP_PORT` constant |
+| Mail Plugin | Good if detected, Info if none | Known mail delivery plugins: WP Mail SMTP, FluentSMTP, Post SMTP, Mailgun, SendGrid, WP Offload SES, and others |
+| PHPMailer Override | Info | Whether any code hooks into `phpmailer_init` |
+| Sendmail Path | Info | Path to sendmail binary from `php.ini` |
+| PHP mail() Disabled | Critical if disabled, Good otherwise | Whether `mail` appears in `disable_functions` |
+
+---
+
+### Media & Uploads (priority 190)
+
+**ID:** `media_uploads` | **Cached:** 1 hour (`sr_media_uploads`)
+
+Media library statistics, upload directory health, image processing capabilities, and upload limits.
+
+| Field | Status Conditions | Description |
+|-------|-------------------|-------------|
+| Upload Directory | Critical if `wp_upload_dir()` returns an error, Info otherwise | Base path for media uploads |
+| Upload Dir Writable | Good if writable, Critical if not | Whether PHP can write to the uploads directory |
+| Upload Directory Size | Warning if > 10 GB, Info otherwise | Total disk usage; shows an estimate if the directory exceeds 50,000 files |
+| Total Attachments | Info | Count of all media library items |
+| Media by Type | Info | Attachment breakdown: Images, Videos, Audio, PDFs, Other |
+| Orphaned Attachments | Warning if > 100, Info if > 0, Good otherwise | Attachments whose parent post no longer exists |
+| Upload / Post Max Alignment | Good if aligned, Warning if `upload_max_filesize` > `post_max_size` | PHP upload limit consistency check |
+| WP Max Upload Size | Warning if < 2 MB, Info otherwise | Effective maximum upload size |
+| Image Editor | Good for Imagick, Info for GD, Critical if none | Active WordPress image processing library |
+| Registered Image Sizes | Warning if > 15, Info otherwise | Total image sizes including count of custom additions |
+| Big Image Threshold | Warning if disabled (0), Info otherwise | Maximum pixel dimension before uploaded images are scaled down (default: 2560px) |
+
+---
+
+### Performance (priority 200)
+
+**ID:** `performance` | **Cached:** 1 hour (`sr_performance`)
+
+Object cache, page cache, OPcache status, `wp_options` table health, and database overhead.
+
+| Field | Status Conditions | Description |
+|-------|-------------------|-------------|
+| Object Cache Backend | Good for Redis/Memcached/APCu, Info for default | The persistent object cache backend in use |
+| Object Cache Drop-in | Good if present, Info if absent | Whether `wp-content/object-cache.php` exists |
+| Page Cache Plugin | Good if detected, Info if none | Known page-caching plugins: WP Super Cache, W3 Total Cache, WP Rocket, LiteSpeed Cache, and others |
+| OPcache | Good if enabled (Warning if wasted memory > 10%), Warning if disabled or unavailable | PHP OPcache hit rate, memory used, and wasted percentage |
+| Total wp_options Rows | Warning if > 5,000, Info if > 2,000, Good otherwise | Total row count in the options table |
+| wp_options Table Size | Warning if > 10 MB, Good otherwise | Combined data and index size of the options table |
+| Expired Transients | Warning if > 500, Info if > 100, Good otherwise | Stale transient entries that can be cleaned up |
+| Database Overhead | Warning if > 100 MB, Info if > 10 MB, Good otherwise | Total fragmentation (free space) across all tables |
+| Top Autoloaded Options | Info | The 5 largest autoloaded options by value size (marked private) |
+| Persistent Object Cache | Good if active, Warning if recommended (> 1,000 options rows or > 500 published posts), Info otherwise | Whether a persistent cache is in use or advised |
+
+---
+
+### Update Health (priority 210)
+
+**ID:** `update_health` | **Cached:** 1 hour (`sr_update_health`)
+
+WordPress core, plugin, and theme update status, auto-update configuration, and failed update history.
+
+| Field | Status Conditions | Description |
+|-------|-------------------|-------------|
+| Core Update Status | Good if current, Warning for available update, Critical for available security update | Whether WordPress core is up to date |
+| Core Update Channel | Good for Stable, Warning for Beta/RC or Development | Release channel derived from the version string |
+| Core Auto-Updates | Good for minor or all updates, Warning if disabled | `WP_AUTO_UPDATE_CORE` / `AUTOMATIC_UPDATER_DISABLED` setting |
+| Plugin Updates Available | Good if all current, Warning if > 5 pending, Info otherwise | Count of plugins with available updates |
+| Plugin Auto-Updates | Good if all enabled, Warning if none enabled, Info otherwise | How many installed plugins have auto-updates turned on |
+| Theme Updates Available | Good if all current, Warning if > 3 pending, Info otherwise | Count of themes with available updates |
+| Theme Auto-Updates | Good if all enabled, Warning if none enabled, Info otherwise | How many installed themes have auto-updates turned on |
+| Last Update Check | Good if < 12 hours ago, Info if < 24 hours, Warning otherwise | When WordPress last polled for updates |
+| Failed Updates | Good if none, Warning for 1–2 failures, Critical for > 2 | Failed update attempts found in core update history |
+| Translation Updates | Good if current, Info if pending | Pending translation updates for core, plugins, and themes |
+
+---
+
+### Network & Connectivity (priority 220)
+
+**ID:** `network_connectivity` | **Cached:** 1 hour (`sr_network_connectivity`)
+
+Outbound HTTP connectivity, proxy configuration, loopback request health, and SSL certificate status.
+
+| Field | Status Conditions | Description |
+|-------|-------------------|-------------|
+| WordPress.org API | Good if HTTP 200, Warning for other codes, Critical on error | Connectivity to `api.wordpress.org` for update checks |
+| WordPress.org Downloads | Good if 2xx/3xx, Warning otherwise, Critical on error | Connectivity to `downloads.wordpress.org` for package downloads |
+| Loopback Request | Good if HTTP 200, Warning for other codes, Critical on error | Whether the site can make HTTP requests to itself (required for cron and Site Health) |
+| HTTP Proxy | Info | Proxy host and port if `WP_PROXY_HOST` is defined |
+| HTTP Transport | Good if any available, Critical if none | Available HTTP transports: cURL and/or PHP Streams |
+| SSL Certificate | Good if > 30 days remaining, Warning if ≤ 30 days, Critical if expired | Certificate validity and days until expiry with issuer name |
+| SSL Verification | Good if enabled, Warning if disabled | Whether WordPress verifies SSL certificates for outbound requests (`https_ssl_verify` filter) |
+| External HTTP Blocked | Good if not blocked, Warning if `WP_HTTP_BLOCK_EXTERNAL` is set | Whether outbound HTTP is restricted, with any `WP_ACCESSIBLE_HOSTS` exceptions listed |
+| DNS Resolution | Good if working, Critical if failed, Info if `dns_get_record()` unavailable | Whether the server can resolve DNS names |
+| cURL Version | Good if available, Warning if unavailable | cURL library version and SSL library string |
+
+---
+
+### Block Editor (priority 230)
+
+**ID:** `block_editor` | **Cached:** 1 hour (`sr_block_editor`)
+
+Registered block types, block patterns, FSE/block theme detection, template parts, and editor performance indicators.
+
+| Field | Status Conditions | Description |
+|-------|-------------------|-------------|
+| Block Theme (FSE) | Good if active, Info otherwise | Whether the active theme is a Full Site Editing theme with templates and template parts |
+| Registered Block Types | Good if ≤ 300, Info if 301–500, Warning if > 500 | Total registered block types; a high count may impact editor load time |
+| Block Sources | Info | Breakdown of registered blocks by source: Core, Plugin, Theme, Other |
+| Registered Block Patterns | Info | Total block patterns from core, plugins, and the active theme |
+| Pattern Categories | Info | Total registered block pattern categories |
+| Template Parts | Info (N/A for classic themes) | Number of template parts available in the active block theme |
+| Global Styles (theme.json) | Good if present and readable, Warning if present but unreadable, Info if absent | Whether the active theme includes a `theme.json` file, with schema version |
+| Remote Block Patterns | Info | Whether remote patterns from the WordPress.org pattern directory are loaded (`should_load_remote_block_patterns` filter) |
+| Editor Performance | Good if no concerns, Warning if > 400 block types, > 200 patterns, or > 100 dynamic blocks | Flags potential editor performance issues from excessive registrations |
+| Classic Editor Override | Good if not active, Info if Classic Editor or Disable Gutenberg plugin is active | Whether a plugin is replacing the block editor with the classic editor |
 
 ---
 

@@ -3,7 +3,7 @@
 ## Requirements
 
 - WordPress 6.2 or later (tested up to 6.9.1)
-- PHP 7.4 or later
+- PHP 8.1 or later
 
 ## Installation
 
