@@ -320,14 +320,16 @@ class PostTypeCountsTest extends WP_UnitTestCase {
 	public function test_empty_posts_table_returns_array(): void {
 		global $wpdb;
 
+		$posts_table = $wpdb->posts;
+
 		// Redirect the query to a sub-select that always returns zero rows so
 		// we can test the "no results" branch without mutating real data.
 		add_filter(
 			'query',
-			static function ( string $sql ): string {
+			static function ( string $sql ) use ( $posts_table ): string {
 				if ( false !== strpos( $sql, 'GROUP BY post_type' ) ) {
 					// Replace with a query guaranteed to return no rows.
-					return 'SELECT post_type, COUNT(1) AS count FROM wp_posts WHERE 1=0 GROUP BY post_type ORDER BY count DESC';
+					return "SELECT post_type, COUNT(1) AS count FROM {$posts_table} WHERE 1=0 GROUP BY post_type ORDER BY count DESC";
 				}
 				return $sql;
 			}
