@@ -358,6 +358,7 @@ class CollectorsTest extends WP_UnitTestCase {
 					),
 				),
 			),
+			'version'        => 2,
 		);
 
 		// Temporarily filter _get_cron_array() to return the synthetic array.

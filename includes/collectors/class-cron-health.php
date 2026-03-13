@@ -90,8 +90,8 @@ class Cron_Health extends Abstract_Collector {
 		// converted to int (e.g. by gmdate() or human_time_diff()). See issue #95.
 		$next_run_timestamp = null;
 		if ( ! empty( $cron_array ) ) {
-			$timestamps         = array_keys( $cron_array );
-			$next_run_timestamp = (int) min( $timestamps );
+			$timestamps         = array_map( 'intval', array_keys( $cron_array ) );
+			$next_run_timestamp = min( $timestamps );
 		}
 
 		if ( $next_run_timestamp ) {
@@ -182,7 +182,7 @@ class Cron_Health extends Abstract_Collector {
 		// when passed to gmdate() or human_time_diff(). See issue #95.
 		$doing_cron = get_transient( 'doing_cron' );
 
-		if ( $doing_cron ) {
+		if ( $doing_cron && is_numeric( $doing_cron ) ) {
 			$doing_cron_int   = (int) $doing_cron;
 			$last_run_display = sprintf(
 				// translators: %s: Human-readable time difference.
