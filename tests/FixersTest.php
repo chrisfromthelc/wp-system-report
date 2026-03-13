@@ -11,6 +11,7 @@ use SystemReport\Fixers\Autoload_Optimizer;
 use SystemReport\Fixers\Database_Optimizer;
 use SystemReport\Fixers\Security_Hardener;
 use SystemReport\Fixers\Cron_Repair;
+use SystemReport\Fixers\Permissions_Repair;
 use SystemReport\Risk_Level;
 
 /**
@@ -1145,5 +1146,277 @@ class FixersTest extends WP_UnitTestCase {
 			wp_next_scheduled( 'sr_test_custom_core_hook' ),
 			'sr_test_custom_core_hook'
 		);
+	}
+
+	// ---------------------------------------------------------------
+	// Permissions Repair — test helpers
+	// ---------------------------------------------------------------
+
+	/**
+	 * Temporary directories created during tests.
+	 *
+	 * @var array<int, string>
+	 */
+	private array $temp_dirs = array();
+
+	/**
+	 * Create a temporary directory with the given permissions.
+	 *
+	 * @param int  $perms            Permission mode (e.g. 0755).
+	 * @param bool $must_be_writable Whether the fixer should consider this dir as must-be-writable.
+	 * @param string $label          Label for the directory.
+	 * @return array{label: string, path: string, must_be_writable: bool} Directory definition.
+	 */
+	private function create_test_dir( int $perms = 0755, bool $must_be_writable = true, string $label = 'Test Dir' ): array {
+		$path = sys_get_temp_dir() . '/sr_test_perms_' . uniqid( '', true );
+		// phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_mkdir -- Test helper creating temp dirs.
+		mkdir( $path, $perms );
+		// mkdir's mode is affected by umask; explicitly set the desired mode.
+		// phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_chmod -- Test helper setting exact permissions.
+		chmod( $path, $perms );
+		$this->temp_dirs[] = $path;
+
+		return array(
+			'label'            => $label,
+			'path'             => $path,
+			'must_be_writable' => $must_be_writable,
+		);
+	}
+
+	/**
+	 * Clean up temporary directories created during tests.
+	 *
+	 * Called automatically by tear_down. Restores 0755 before removal
+	 * to ensure cleanup succeeds even if a test left restrictive perms.
+	 */
+	private function cleanup_test_dirs(): void {
+		foreach ( $this->temp_dirs as $path ) {
+			if ( is_dir( $path ) ) {
+				// phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_chmod -- Test cleanup.
+				chmod( $path, 0755 );
+				// phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_rmdir -- Test cleanup.
+				rmdir( $path );
+			}
+		}
+		$this->temp_dirs = array();
+	}
+
+	/**
+	 * Tear down test fixtures.
+	 */
+	public function tear_down(): void {
+		$this->cleanup_test_dirs();
+		parent::tear_down();
+	}
+
+	// ---------------------------------------------------------------
+	// Permissions Repair — metadata
+	// ---------------------------------------------------------------
+
+	/**
+	 * Test Permissions Repair fixer metadata.
+	 */
+	public function test_permissions_repair_metadata(): void {
+		$fixer = new Permissions_Repair();
+
+		$this->assertSame( 'permissions_repair', $fixer->get_id() );
+		$this->assertSame( 'Filesystem Permissions Repair', $fixer->get_label() );
+		$this->assertNotEmpty( $fixer->get_description() );
+		$this->assertSame( 'filesystem', $fixer->get_category() );
+		$this->assertSame( Risk_Level::Medium, $fixer->get_risk_level() );
+	}
+
+	/**
+	 * Test Permissions Repair requires confirmation (medium risk).
+	 */
+	public function test_permissions_repair_requires_confirmation(): void {
+		$fixer = new Permissions_Repair();
+		$this->assertTrue( $fixer->get_risk_level()->requires_confirmation() );
+	}
+
+	// ---------------------------------------------------------------
+	// Permissions Repair — can_fix detection
+	// ---------------------------------------------------------------
+
+	/**
+	 * Test can_fix returns false when directory permissions are correct.
+	 */
+	public function test_permissions_repair_can_fix_false_when_correct(): void {
+		$dir   = $this->create_test_dir( 0755, true, 'Good Dir' );
+		$fixer = new Permissions_Repair( array( $dir ) );
+
+		$this->assertFalse( $fixer->can_fix() );
+	}
+
+	/**
+	 * Test can_fix returns true when a directory is world-writable.
+	 */
+	public function test_permissions_repair_can_fix_true_when_world_writable(): void {
+		$dir   = $this->create_test_dir( 0777, false, 'World Writable Dir' );
+		$fixer = new Permissions_Repair( array( $dir ) );
+
+		$this->assertTrue( $fixer->can_fix() );
+	}
+
+	/**
+	 * Test can_fix returns true when a must-be-writable directory is not writable.
+	 */
+	public function test_permissions_repair_can_fix_true_when_not_writable(): void {
+		$dir   = $this->create_test_dir( 0555, true, 'Read-Only Dir' );
+		$fixer = new Permissions_Repair( array( $dir ) );
+
+		$this->assertTrue( $fixer->can_fix() );
+	}
+
+	// ---------------------------------------------------------------
+	// Permissions Repair — fix execution
+	// ---------------------------------------------------------------
+
+	/**
+	 * Test fix corrects a world-writable directory to 0755.
+	 */
+	public function test_permissions_repair_fix_corrects_world_writable(): void {
+		$dir   = $this->create_test_dir( 0777, false, 'World Writable' );
+		$fixer = new Permissions_Repair( array( $dir ) );
+
+		$result = $fixer->fix();
+
+		$this->assertTrue( $result->success );
+		$this->assertStringContainsString( 'World Writable', $result->message );
+		$this->assertStringContainsString( '0755', $result->message );
+
+		// Verify actual permissions changed.
+		$actual_perms = fileperms( $dir['path'] ) & 0777;
+		$this->assertSame( 0755, $actual_perms );
+
+		// Before should have problems, after should not.
+		$this->assertGreaterThan( 0, $result->before['problem_count'] );
+		$this->assertSame( 0, $result->after['problem_count'] );
+	}
+
+	/**
+	 * Test fix corrects a non-writable directory to 0755.
+	 */
+	public function test_permissions_repair_fix_corrects_not_writable(): void {
+		$dir   = $this->create_test_dir( 0555, true, 'Restricted' );
+		$fixer = new Permissions_Repair( array( $dir ) );
+
+		$result = $fixer->fix();
+
+		$this->assertTrue( $result->success );
+		$this->assertStringContainsString( 'Restricted', $result->message );
+
+		// Verify writability is restored.
+		$this->assertTrue( wp_is_writable( $dir['path'] ) );
+	}
+
+	/**
+	 * Test fix handles multiple problematic directories.
+	 */
+	public function test_permissions_repair_fix_multiple_directories(): void {
+		$dir_a = $this->create_test_dir( 0777, false, 'Dir A' );
+		$dir_b = $this->create_test_dir( 0555, true, 'Dir B' );
+		$fixer = new Permissions_Repair( array( $dir_a, $dir_b ) );
+
+		$result = $fixer->fix();
+
+		$this->assertTrue( $result->success );
+
+		// Before should show 2 problems, after should show 0.
+		$this->assertSame( 2, $result->before['problem_count'] );
+		$this->assertSame( 0, $result->after['problem_count'] );
+	}
+
+	/**
+	 * Test fix returns success noop when all permissions are already correct.
+	 */
+	public function test_permissions_repair_fix_noop_when_correct(): void {
+		$dir   = $this->create_test_dir( 0755, true, 'Already Correct' );
+		$fixer = new Permissions_Repair( array( $dir ) );
+
+		$result = $fixer->fix();
+
+		$this->assertTrue( $result->success );
+		$this->assertStringContainsString( 'correct', $result->message );
+	}
+
+	/**
+	 * Test fix returns before/after snapshots with expected keys.
+	 */
+	public function test_permissions_repair_returns_snapshots(): void {
+		$dir   = $this->create_test_dir( 0777, false, 'Snapshot Dir' );
+		$fixer = new Permissions_Repair( array( $dir ) );
+
+		$result = $fixer->fix();
+
+		$this->assertTrue( $result->success );
+		$this->assertArrayHasKey( 'directories', $result->before );
+		$this->assertArrayHasKey( 'problems', $result->before );
+		$this->assertArrayHasKey( 'problem_count', $result->before );
+		$this->assertArrayHasKey( 'directories', $result->after );
+		$this->assertArrayHasKey( 'problems', $result->after );
+		$this->assertArrayHasKey( 'problem_count', $result->after );
+	}
+
+	/**
+	 * Test fix returns failure on directory owned by another user.
+	 *
+	 * Skipped when running as root since root can chmod any file.
+	 */
+	public function test_permissions_repair_fix_failure_on_unowned(): void {
+		// Skip if running as root — root can chmod anything.
+		if ( 0 === posix_getuid() ) {
+			$this->markTestSkipped( 'Cannot test permission failure as root.' );
+		}
+
+		// Use a system directory that this process cannot chmod.
+		$fixer = new Permissions_Repair(
+			array(
+				array(
+					'label'            => 'System Dir',
+					'path'             => '/usr',
+					'must_be_writable' => true,
+				),
+			)
+		);
+
+		// /usr is typically not world-writable and not writable by the web server,
+		// but if it happens to have no detectable problem, skip.
+		if ( ! $fixer->can_fix() ) {
+			$this->markTestSkipped( '/usr permissions do not trigger a fixable condition.' );
+		}
+
+		$result = $fixer->fix();
+
+		$this->assertFalse( $result->success );
+		$this->assertNotEmpty( $result->errors );
+	}
+
+	// ---------------------------------------------------------------
+	// Permissions Repair — registration
+	// ---------------------------------------------------------------
+
+	/**
+	 * Test Permissions Repair is registered in the Plugin's default fixers.
+	 */
+	public function test_permissions_repair_registered_in_plugin(): void {
+		$plugin   = SystemReport\Plugin::get_instance();
+		$registry = $plugin->get_fixer_registry();
+		$fixer    = $registry->get( 'permissions_repair' );
+
+		$this->assertNotNull( $fixer );
+		$this->assertInstanceOf( Permissions_Repair::class, $fixer );
+	}
+
+	/**
+	 * Test Permissions Repair appears under the 'filesystem' category.
+	 */
+	public function test_registry_filesystem_category(): void {
+		$fixer = new Permissions_Repair();
+		$this->registry->register( $fixer );
+
+		$filesystem = $this->registry->get_by_category( 'filesystem' );
+		$this->assertCount( 1, $filesystem );
+		$this->assertSame( $fixer, $filesystem['permissions_repair'] );
 	}
 }

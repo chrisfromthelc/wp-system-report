@@ -95,6 +95,7 @@ class Filesystem_Permissions extends Abstract_Collector {
 							__( 'Remove world-write (others write) permission appropriate for your server\'s owner/group configuration. Current permissions: %s', 'wp-system-report' ),
 							decoct( $wp_root_perms & 0777 )
 						),
+						'fix_id'      => 'permissions_repair',
 					)
 				);
 			}
@@ -117,14 +118,18 @@ class Filesystem_Permissions extends Abstract_Collector {
 		$upload_dir       = wp_upload_dir();
 		$uploads_path     = $upload_dir['basedir'];
 		$uploads_writable = wp_is_writable( $uploads_path );
-		$fields[]         = $this->make_field(
+		$uploads_options  = array(
+			'debug'       => $uploads_path,
+			'status'      => $uploads_writable ? Status::Good : Status::Critical,
+			'description' => $uploads_path,
+		);
+		if ( ! $uploads_writable ) {
+			$uploads_options['fix_id'] = 'permissions_repair';
+		}
+		$fields[] = $this->make_field(
 			__( 'Uploads Directory', 'wp-system-report' ),
 			$uploads_writable ? __( 'Writable', 'wp-system-report' ) : __( 'Not Writable', 'wp-system-report' ),
-			array(
-				'debug'       => $uploads_path,
-				'status'      => $uploads_writable ? Status::Good : Status::Critical,
-				'description' => $uploads_path,
-			)
+			$uploads_options
 		);
 
 		// Check plugins directory.
