@@ -22,8 +22,6 @@ class Performance extends Abstract_Collector {
 	 *
 	 * Populated by collect_options_row_count() on first use and reused
 	 * by collect_persistent_cache_recommended() to avoid a duplicate query.
-	 *
-	 * @var int|null
 	 */
 	private ?int $options_row_count = null;
 

@@ -432,7 +432,7 @@ class FormattersTest extends WP_UnitTestCase {
 	 * Test AI executive summary health score reflects issues.
 	 */
 	public function test_ai_executive_summary_health_score() {
-		// Report with 1 critical issue = 10 points deducted, score = 90.
+		// Report with 1 critical field: field scoring gives 0 pts / 1 scored field = 0/100.
 		$report = array(
 			'section' => array(
 				'id'          => 'section',
@@ -453,7 +453,7 @@ class FormattersTest extends WP_UnitTestCase {
 		$formatter = new AI_Formatter();
 		$output    = $formatter->format( $report );
 
-		$this->assertStringContainsString( 'Health Score: 90/100', $output );
+		$this->assertStringContainsString( 'Health Score: 0/100', $output );
 	}
 
 	/**
@@ -480,10 +480,9 @@ class FormattersTest extends WP_UnitTestCase {
 		$formatter = new AI_Formatter();
 		$output    = $formatter->format( $clean_report );
 
-		if ( version_compare( phpversion(), '8.1', '>=' ) ) {
-			$this->assertStringContainsString( 'Health Score: 100/100', $output );
-			$this->assertStringContainsString( 'Excellent', $output );
-		}
+		// 1 good field = 100 pts / 1 scored field = 100/100 (A+).
+		$this->assertStringContainsString( 'Health Score: 100/100', $output );
+		$this->assertStringContainsString( 'A+', $output );
 	}
 
 	/**

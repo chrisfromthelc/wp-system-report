@@ -240,7 +240,7 @@ class GitHubUpdaterTest extends WP_UnitTestCase {
 		$this->assertSame( 'WP System Report', $result->name );
 		$this->assertSame( 'wp-system-report', $result->slug );
 		$this->assertSame( '2.0.0', $result->version );
-		$this->assertSame( '7.4', $result->requires_php );
+		$this->assertSame( '8.1', $result->requires_php );
 		$this->assertSame( '6.2', $result->requires );
 		$this->assertArrayHasKey( 'description', $result->sections );
 		$this->assertArrayHasKey( 'changelog', $result->sections );
