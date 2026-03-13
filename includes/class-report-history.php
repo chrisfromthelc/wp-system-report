@@ -537,7 +537,7 @@ class Report_History {
 				$decompress_error = null;
 				// phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_set_error_handler -- Temporary handler to capture gzuncompress E_WARNING gracefully.
 				set_error_handler(
-					static function ( $errno, $errstr ) use ( &$decompress_error ) {
+					static function ( $errno, $errstr ) use ( &$decompress_error ): bool {
 						$decompress_error = $errstr;
 						return true;
 					},
@@ -559,7 +559,7 @@ class Report_History {
 			$decompress_error = null;
 			// phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_set_error_handler -- Temporary handler to capture gzuncompress E_WARNING gracefully.
 			set_error_handler(
-				static function ( $errno, $errstr ) use ( &$decompress_error ) {
+				static function ( $errno, $errstr ) use ( &$decompress_error ): bool {
 					$decompress_error = $errstr;
 					return true;
 				},
