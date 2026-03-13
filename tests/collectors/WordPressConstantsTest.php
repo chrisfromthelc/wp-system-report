@@ -212,18 +212,18 @@ class WordPressConstantsTest extends WP_UnitTestCase {
 	// -------------------------------------------------------
 
 	/**
-	 * Test that collect() returns exactly 23 fields by default.
+	 * Test that collect() returns exactly 24 fields by default.
 	 *
-	 * The default constant list hard-codes 23 entries. No filter is applied
+	 * The default constant list hard-codes 24 entries. No filter is applied
 	 * during this test.
 	 */
 	public function test_field_count_matches_constants(): void {
 		$fields = $this->collector->collect();
 
 		$this->assertCount(
-			23,
+			24,
 			$fields,
-			'WordPress Constants collector should return exactly 23 fields by default.'
+			'WordPress Constants collector should return exactly 24 fields by default.'
 		);
 	}
 
@@ -251,7 +251,7 @@ class WordPressConstantsTest extends WP_UnitTestCase {
 	/**
 	 * Test that the wp_system_report_constants filter increases the field count.
 	 *
-	 * Adding one constant via the filter should yield 24 fields.
+	 * Adding one constant via the filter should yield 25 fields.
 	 */
 	public function test_constants_filter(): void {
 		add_filter(
@@ -267,9 +267,9 @@ class WordPressConstantsTest extends WP_UnitTestCase {
 		);
 
 		$this->assertCount(
-			24,
+			25,
 			$fields,
-			'Adding one constant via the filter should yield 24 fields total.'
+			'Adding one constant via the filter should yield 25 fields total.'
 		);
 	}
 

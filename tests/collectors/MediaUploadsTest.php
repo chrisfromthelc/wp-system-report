@@ -178,6 +178,9 @@ class MediaUploadsTest extends WP_UnitTestCase {
 		// Create two attachment posts.
 		$this->factory->attachment->create_many( 2 );
 
+		// Clear the wp_count_posts cache so the collector sees the new rows.
+		wp_cache_delete( 'posts-attachment', 'counts' );
+
 		$fields_after = $this->collector->collect();
 		$field_after  = $this->find_field_by_label( $fields_after, 'Total Attachments' );
 		$this->assertNotNull( $field_after, 'Total Attachments field should be present after creating attachments.' );
