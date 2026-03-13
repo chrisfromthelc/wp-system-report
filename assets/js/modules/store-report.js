@@ -28,6 +28,9 @@ const { state, actions } = store( 'wp-system-report', {
 		get copyErrorVisible() {
 			return state.copyError;
 		},
+		get aiErrorVisible() {
+			return !! state.aiError;
+		},
 	},
 	actions: {
 		/**
@@ -155,6 +158,7 @@ const { state, actions } = store( 'wp-system-report', {
 		 */
 		*downloadForAi() {
 			state.aiGenerating = true;
+			state.aiError = '';
 
 			try {
 				const response = yield fetch(
@@ -179,8 +183,7 @@ const { state, actions } = store( 'wp-system-report', {
 			} catch ( error ) {
 				/* eslint-disable-next-line no-console */
 				console.error( 'WP System Report AI download failed:', error );
-				/* eslint-disable-next-line no-alert */
-				alert( state.i18n.aiFailed );
+				state.aiError = error.message || state.i18n.aiFailed;
 			} finally {
 				state.aiGenerating = false;
 			}

@@ -294,6 +294,7 @@ class Admin_Page {
 			);
 			$state['reportGenerated']   = false;
 			$state['aiGenerating']      = false;
+			$state['aiError']           = '';
 			$state['copyError']         = false;
 			$state['reportText']        = '';
 		}
@@ -306,13 +307,15 @@ class Admin_Page {
 			$state['i18n']                = array_merge(
 				$state['i18n'],
 				array(
-					'loadLog'       => __( 'Load error log', 'wp-system-report' ),
-					'toggleSuccess' => __( 'Debug settings updated. Changes will take effect on the next page load.', 'wp-system-report' ),
-					'toggleFailed'  => __( 'Failed to update debug settings.', 'wp-system-report' ),
-					'loadFailed'    => __( 'Failed to load error log.', 'wp-system-report' ),
-					'enabled'       => __( 'Enabled', 'wp-system-report' ),
-					'disabled'      => __( 'Disabled', 'wp-system-report' ),
-					'notSet'        => __( 'Not set', 'wp-system-report' ),
+					'loadLog'         => __( 'Load error log', 'wp-system-report' ),
+					'toggleSuccess'   => __( 'Debug settings updated. Changes will take effect on the next page load.', 'wp-system-report' ),
+					'toggleFailed'    => __( 'Failed to update debug settings.', 'wp-system-report' ),
+					'loadFailed'      => __( 'Failed to load error log.', 'wp-system-report' ),
+					'enabled'         => __( 'Enabled', 'wp-system-report' ),
+					'disabled'        => __( 'Disabled', 'wp-system-report' ),
+					'notSet'          => __( 'Not set', 'wp-system-report' ),
+					'reportHeading'   => __( 'WP SYSTEM REPORT', 'wp-system-report' ),
+					'errorLogHeading' => __( 'ERROR LOG', 'wp-system-report' ),
 				)
 			);
 			$state['errorLog']            = array(

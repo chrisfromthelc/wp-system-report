@@ -98,12 +98,6 @@ const { state, actions } = store( 'wp-system-report', {
 
 		/**
 		 * Load debug status from the REST API.
-		 *
-		 * @see loadStatus
-		 */
-
-		/**
-		 * Load debug status from the REST API.
 		 */
 		*loadStatus() {
 			try {
@@ -141,6 +135,10 @@ const { state, actions } = store( 'wp-system-report', {
 			} catch ( error ) {
 				/* eslint-disable-next-line no-console */
 				console.error( 'WP System Report: Failed to load status', error );
+				actions.showToggleNotice(
+					error.message || state.i18n.loadFailed,
+					'error'
+				);
 			}
 		},
 
@@ -163,7 +161,7 @@ const { state, actions } = store( 'wp-system-report', {
 				);
 
 				if ( ! response.ok ) {
-					const err = yield response.json();
+					const err = yield response.json().catch( () => ( {} ) );
 					throw new Error( err.message || state.i18n.loadFailed );
 				}
 
@@ -279,6 +277,10 @@ const { state, actions } = store( 'wp-system-report', {
 			const logContent = state.errorLog.logContent;
 			const includeReport = state.errorLog.includeReport;
 			const reportUrl = includeReport ? state.config.reportUrl : null;
+			const headings = {
+				report: state.i18n.reportHeading,
+				log: state.i18n.errorLogHeading,
+			};
 
 			if ( reportUrl ) {
 				ref.disabled = true;
@@ -289,7 +291,8 @@ const { state, actions } = store( 'wp-system-report', {
 					const content = yield fetchCombinedContent(
 						logContent,
 						reportUrl,
-						state.config.restNonce
+						state.config.restNonce,
+						headings
 					);
 					const isCombined = content !== logContent;
 					downloadFile(
@@ -321,6 +324,10 @@ const { state, actions } = store( 'wp-system-report', {
 			const logContent = state.errorLog.logContent;
 			const includeReport = state.errorLog.includeReport;
 			const reportUrl = includeReport ? state.config.reportUrl : null;
+			const headings = {
+				report: state.i18n.reportHeading,
+				log: state.i18n.errorLogHeading,
+			};
 
 			const onSuccess = () => showCopySuccess( ref, state.i18n.copied );
 			const onError = () => {
@@ -336,7 +343,8 @@ const { state, actions } = store( 'wp-system-report', {
 					const content = yield fetchCombinedContent(
 						logContent,
 						reportUrl,
-						state.config.restNonce
+						state.config.restNonce,
+						headings
 					);
 					copyToClipboard( content, onSuccess, onError );
 				} finally {

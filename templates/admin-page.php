@@ -64,6 +64,14 @@ $sr_iapi = \SystemReport\Features::has_interactivity();
 					<?php esc_html_e( 'Download for AI analysis', 'wp-system-report' ); ?>
 				</button>
 			</p>
+			<?php if ( $sr_iapi ) : ?>
+				<div class="notice notice-error inline sr-ai-error"
+					data-wp-bind--hidden="!state.aiErrorVisible"
+					hidden
+				>
+					<p data-wp-text="state.aiError"></p>
+				</div>
+			<?php endif; ?>
 			<div id="sr-debug-report"
 				<?php if ( $sr_iapi ) : ?>
 					data-wp-bind--hidden="!state.debugReportVisible"

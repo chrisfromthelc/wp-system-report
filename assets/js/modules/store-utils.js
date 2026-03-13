@@ -99,12 +99,20 @@ export function buildFilename( prefix, ext ) {
  * back to the plain log content on failure. Designed to be yielded
  * inside an Interactivity API generator action.
  *
- * @param {string} logContent  The error log text.
- * @param {string} reportUrl   REST URL for the system report.
- * @param {string} restNonce   WP REST nonce.
+ * @param {string} logContent     The error log text.
+ * @param {string} reportUrl      REST URL for the system report.
+ * @param {string} restNonce      WP REST nonce.
+ * @param {Object} headings       Section headings (localized).
+ * @param {string} headings.report Heading for the report section.
+ * @param {string} headings.log    Heading for the error log section.
  * @return {Promise<string>} Combined or plain log content.
  */
-export async function fetchCombinedContent( logContent, reportUrl, restNonce ) {
+export async function fetchCombinedContent(
+	logContent,
+	reportUrl,
+	restNonce,
+	headings
+) {
 	if ( ! reportUrl ) {
 		return logContent;
 	}
@@ -121,15 +129,16 @@ export async function fetchCombinedContent( logContent, reportUrl, restNonce ) {
 		}
 
 		const reportText = await response.text();
+		const divider = '===================================';
 		return (
-			'===================================\n' +
-			'WP SYSTEM REPORT\n' +
-			'===================================\n\n' +
+			divider + '\n' +
+			headings.report + '\n' +
+			divider + '\n\n' +
 			reportText +
 			'\n\n' +
-			'===================================\n' +
-			'ERROR LOG\n' +
-			'===================================\n\n' +
+			divider + '\n' +
+			headings.log + '\n' +
+			divider + '\n\n' +
 			logContent
 		);
 	} catch ( e ) {
