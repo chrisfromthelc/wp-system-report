@@ -75,13 +75,6 @@ const { state, actions } = store( 'wp-system-report', {
 		},
 
 		/**
-		 * Initialize the fixes tab.
-		 */
-		*initFixes() {
-			yield actions.loadFixes();
-		},
-
-		/**
 		 * Load all fixers from the REST API.
 		 */
 		*loadFixes() {
@@ -111,6 +104,18 @@ const { state, actions } = store( 'wp-system-report', {
 				if ( fixers.length === 0 ) {
 					state.fixes.hasFixers = false;
 				} else {
+					// Map risk_level to localized labels.
+					const riskLabels = {
+						low: state.i18n.riskLow,
+						medium: state.i18n.riskMedium,
+						high: state.i18n.riskHigh,
+					};
+					fixers.forEach( ( fixer ) => {
+						fixer.risk_label =
+							riskLabels[ fixer.risk_level ] ||
+							fixer.risk_level;
+					} );
+
 					state.fixes.hasFixers = true;
 					state.fixes.categories = actions.groupByCategory( fixers );
 				}
@@ -329,9 +334,6 @@ const { state, actions } = store( 'wp-system-report', {
 						afterJson: result.after
 							? JSON.stringify( result.after, null, 2 )
 							: '',
-						detailsLabel: state.i18n.resultDetails,
-						beforeLabel: state.i18n.before + ':',
-						afterLabel: state.i18n.after + ':',
 					},
 				} );
 
@@ -349,16 +351,12 @@ const { state, actions } = store( 'wp-system-report', {
 						statusLabel: state.i18n.failed + ':',
 						message:
 							error.message ||
-							state.i18n.executeFailed ||
-							'Fix execution failed.',
+							state.i18n.executeFailed,
 						hasDetails: false,
 						hasBefore: false,
 						hasAfter: false,
 						beforeJson: '',
 						afterJson: '',
-						detailsLabel: '',
-						beforeLabel: '',
-						afterLabel: '',
 					},
 				} );
 			}
@@ -400,8 +398,8 @@ const { state, actions } = store( 'wp-system-report', {
 		/**
 		 * Initialize the fixes tab on mount.
 		 */
-		initFixes() {
-			actions.initFixes();
+		*initFixes() {
+			yield actions.loadFixes();
 		},
 	},
 } );

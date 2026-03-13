@@ -80,7 +80,7 @@ defined( 'ABSPATH' ) || exit;
 									data-wp-class--sr-risk-low="context.item.risk_level === 'low'"
 									data-wp-class--sr-risk-medium="context.item.risk_level === 'medium'"
 									data-wp-class--sr-risk-high="context.item.risk_level === 'high'"
-									data-wp-text="context.item.risk_level"
+									data-wp-text="context.item.risk_label"
 								></span>
 							</div>
 							<!-- Description -->

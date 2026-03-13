@@ -107,6 +107,8 @@ class Admin_Page {
 	 * @param string $current_tab Active tab slug.
 	 */
 	private function enqueue_interactivity_assets( string $current_tab ): void {
+		// Script Modules API (WP 6.5+) uses array-of-arrays format, not flat strings.
+		// @see https://developer.wordpress.org/reference/functions/wp_enqueue_script_module/
 		$iapi_dep = array( array( 'id' => '@wordpress/interactivity' ) );
 
 		if ( 'report' === $current_tab ) {

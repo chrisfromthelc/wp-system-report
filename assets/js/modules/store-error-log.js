@@ -96,11 +96,10 @@ const { state, actions } = store( 'wp-system-report', {
 		},
 
 		/**
-		 * Load the debug status on init.
+		 * Load debug status from the REST API.
+		 *
+		 * @see loadStatus
 		 */
-		*initErrorLog() {
-			yield actions.loadStatus();
-		},
 
 		/**
 		 * Load debug status from the REST API.
@@ -417,8 +416,8 @@ const { state, actions } = store( 'wp-system-report', {
 		/**
 		 * Initialize the error log tab on mount.
 		 */
-		initErrorLog() {
-			actions.initErrorLog();
+		*initErrorLog() {
+			yield actions.loadStatus();
 		},
 	},
 } );
