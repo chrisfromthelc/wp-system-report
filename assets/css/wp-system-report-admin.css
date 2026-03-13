@@ -140,6 +140,39 @@
 	vertical-align: text-bottom;
 }
 
+.sr-inline-fix-link {
+	display: inline-block;
+	margin-left: 8px;
+	padding: 1px 8px;
+	font-size: 12px;
+	font-weight: 500;
+	line-height: 20px;
+	color: #2271b1;
+	background: #f0f6fc;
+	border: 1px solid #2271b1;
+	border-radius: 3px;
+	text-decoration: none;
+	vertical-align: middle;
+	white-space: nowrap;
+	cursor: pointer;
+	transition: background-color 0.1s ease;
+}
+
+.sr-inline-fix-link:hover,
+.sr-inline-fix-link:focus {
+	color: #fff;
+	background: #2271b1;
+}
+
+.sr-inline-fix-link .dashicons {
+	font-size: 14px;
+	width: 14px;
+	height: 14px;
+	line-height: 20px;
+	vertical-align: text-bottom;
+	margin-right: 2px;
+}
+
 /* ============================================
  * Error Log Tab
  * ============================================ */
