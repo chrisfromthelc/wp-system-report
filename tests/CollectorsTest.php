@@ -570,4 +570,53 @@ class CollectorsTest extends WP_UnitTestCase {
 
 		delete_transient( sr_versioned_cache_key( 'sr_network_connectivity' ) );
 	}
+
+	// -------------------------------------------------------
+	// flush_cache() tests.
+	// -------------------------------------------------------
+
+	/**
+	 * Test that flush_cache deletes the versioned transient.
+	 */
+	public function test_flush_cache_deletes_versioned_transient() {
+		$collector = $this->collectors['site_health'];
+		$cache_key = sr_versioned_cache_key( 'sr_site_health' );
+
+		// Prime the cache.
+		$collector->get_cached_data();
+		$this->assertNotFalse( get_transient( $cache_key ), 'Transient should exist after caching.' );
+
+		// Flush and verify.
+		$collector->flush_cache();
+		$this->assertFalse( get_transient( $cache_key ), 'Transient should be deleted after flush.' );
+	}
+
+	/**
+	 * Test that flush_cache is a no-op for uncached collectors.
+	 */
+	public function test_flush_cache_noop_for_uncached_collectors() {
+		$collector = $this->collectors['wordpress_environment'];
+
+		// Should not throw — uncached collectors return null from get_cache_key().
+		$collector->flush_cache();
+		$this->assertTrue( true, 'flush_cache completed without error for uncached collector.' );
+	}
+
+	/**
+	 * Test that get_cached_data returns fresh data after flush_cache.
+	 */
+	public function test_get_cached_data_returns_fresh_after_flush() {
+		$collector = $this->collectors['post_type_counts'];
+		$cache_key = sr_versioned_cache_key( 'sr_post_type_counts' );
+
+		// Prime with sentinel data.
+		set_transient( $cache_key, array( 'sentinel' => true ), HOUR_IN_SECONDS );
+		$stale = $collector->get_cached_data();
+		$this->assertArrayHasKey( 'sentinel', $stale, 'Should return stale sentinel data from cache.' );
+
+		// Flush and re-collect — should be fresh (no sentinel key).
+		$collector->flush_cache();
+		$fresh = $collector->get_cached_data();
+		$this->assertArrayNotHasKey( 'sentinel', $fresh, 'Should return fresh data after flush.' );
+	}
 }

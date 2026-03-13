@@ -289,17 +289,6 @@ class Plugin {
 		if ( Features::has_abilities() ) {
 			add_action( 'admin_notices', array( $this, 'maybe_show_mcp_adapter_notice' ) );
 		}
-
-		// Cache invalidation hooks.
-		add_action( 'switch_theme', array( $this, 'clear_theme_cache' ) );
-		add_action( 'activate_plugin', array( $this, 'clear_plugin_cache' ) );
-		add_action( 'deactivate_plugin', array( $this, 'clear_plugin_cache' ) );
-		add_action(
-			'upgrader_process_complete',
-			array( $this, 'clear_upgrade_cache' ),
-			10,
-			2
-		);
 	}
 
 	/**
@@ -410,42 +399,5 @@ class Plugin {
 		}
 
 		include WP_SYSTEM_REPORT_DIR . 'templates/mcp-adapter-notice.php';
-	}
-
-	/**
-	 * Clear theme-related caches.
-	 */
-	public function clear_theme_cache(): void {
-		delete_transient( 'sr_theme_info' );
-		delete_transient( 'sr_site_health' );
-	}
-
-	/**
-	 * Clear plugin-related caches.
-	 */
-	public function clear_plugin_cache(): void {
-		delete_transient( 'sr_active_plugins' );
-		delete_transient( 'sr_inactive_plugins' );
-		delete_transient( 'sr_dropins_mu_plugins' );
-		delete_transient( 'sr_site_health' );
-	}
-
-	/**
-	 * Clear caches after upgrades.
-	 *
-	 * @param \WP_Upgrader $upgrader Upgrader instance.
-	 * @param array        $extra    Extra data about the upgrade.
-	 */
-	public function clear_upgrade_cache( $upgrader, $extra ): void {
-		if ( empty( $extra ) || empty( $extra['type'] ) ) {
-			return;
-		}
-
-		if ( 'plugin' === $extra['type'] ) {
-			$this->clear_plugin_cache();
-			$this->clear_theme_cache();
-		} elseif ( 'theme' === $extra['type'] ) {
-			$this->clear_theme_cache();
-		}
 	}
 }

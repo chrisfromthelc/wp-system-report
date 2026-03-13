@@ -214,6 +214,85 @@ class ReportGeneratorTest extends WP_UnitTestCase {
 		$this->assertSame( 'Second', $collectors['dupe']->get_label() );
 	}
 
+	// -------------------------------------------------------
+	// Cache flush tests.
+	// -------------------------------------------------------
+
+	/**
+	 * Test that flush_all_caches deletes transients for cached collectors.
+	 */
+	public function test_flush_all_caches_deletes_transients(): void {
+		$collector = new \SystemReport\Collectors\Site_Health();
+		$this->generator->register_collector( $collector );
+
+		// Prime the cache.
+		$collector->get_cached_data();
+		$cache_key = sr_versioned_cache_key( 'sr_site_health' );
+		$this->assertNotFalse( get_transient( $cache_key ), 'Transient should exist after priming.' );
+
+		// Flush and verify it's gone.
+		$this->generator->flush_all_caches();
+		$this->assertFalse( get_transient( $cache_key ), 'Transient should be deleted after flush.' );
+	}
+
+	/**
+	 * Test that flush_all_caches safely skips interface-only collectors.
+	 */
+	public function test_flush_all_caches_skips_interface_only_collectors(): void {
+		$mock = $this->create_mock_collector( 'plain', 'Plain', '', 10 );
+		$this->generator->register_collector( $mock );
+
+		// Should not throw — interface-only collectors have no flush_cache().
+		$this->generator->flush_all_caches();
+		$this->assertTrue( true, 'flush_all_caches completed without error.' );
+	}
+
+	/**
+	 * Test that generate returns fresh data after a flush.
+	 */
+	public function test_generate_returns_fresh_data_after_flush(): void {
+		$collector = new \SystemReport\Collectors\Post_Type_Counts();
+		$this->generator->register_collector( $collector );
+
+		$cache_key = sr_versioned_cache_key( 'sr_post_type_counts' );
+
+		// Prime with stale sentinel data.
+		set_transient( $cache_key, array( 'stale' => true ), HOUR_IN_SECONDS );
+		$stale_report = $this->generator->generate();
+		$this->assertArrayHasKey( 'stale', $stale_report['post_type_counts']['fields'] );
+
+		// Flush and re-generate — should no longer contain sentinel.
+		$this->generator->flush_all_caches();
+		$fresh_report = $this->generator->generate();
+		$this->assertArrayNotHasKey( 'stale', $fresh_report['post_type_counts']['fields'] );
+	}
+
+	/**
+	 * Test that flush_all_caches handles a mix of cached and uncached collectors.
+	 */
+	public function test_flush_all_caches_handles_mixed_collectors(): void {
+		// Cached collector.
+		$cached = new \SystemReport\Collectors\Site_Health();
+		$this->generator->register_collector( $cached );
+
+		// Uncached collector.
+		$uncached = new \SystemReport\Collectors\WordPress_Environment();
+		$this->generator->register_collector( $uncached );
+
+		// Interface-only mock.
+		$mock = $this->create_mock_collector( 'mock', 'Mock', '', 50 );
+		$this->generator->register_collector( $mock );
+
+		// Prime the cached collector.
+		$cached->get_cached_data();
+		$cache_key = sr_versioned_cache_key( 'sr_site_health' );
+		$this->assertNotFalse( get_transient( $cache_key ) );
+
+		// Flush should handle all three gracefully.
+		$this->generator->flush_all_caches();
+		$this->assertFalse( get_transient( $cache_key ), 'Cached collector transient should be deleted.' );
+	}
+
 	/**
 	 * Create a mock collector.
 	 *

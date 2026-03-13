@@ -83,6 +83,24 @@ abstract class Abstract_Collector implements Collector {
 	}
 
 	/**
+	 * Delete the cached transient for this collector.
+	 *
+	 * Called on admin page load so the next collect() runs fresh.
+	 * No-op for collectors that do not define a cache key.
+	 *
+	 * @since 2.0.0
+	 */
+	public function flush_cache(): void {
+		$base_key = $this->get_cache_key();
+
+		if ( null === $base_key ) {
+			return;
+		}
+
+		delete_transient( $this->build_versioned_cache_key( $base_key ) );
+	}
+
+	/**
 	 * Build a Field value object with sensible defaults.
 	 *
 	 * Accepts both Status enum instances and legacy string values

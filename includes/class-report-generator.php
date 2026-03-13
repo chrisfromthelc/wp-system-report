@@ -110,6 +110,25 @@ class Report_Generator {
 	}
 
 	/**
+	 * Flush all collector caches.
+	 *
+	 * Iterates every registered collector that extends Abstract_Collector
+	 * and deletes its transient so the next generate() call returns fresh data.
+	 *
+	 * Called on the System Report admin page load to guarantee the admin
+	 * always sees current information.
+	 *
+	 * @since 2.0.0
+	 */
+	public function flush_all_caches(): void {
+		foreach ( $this->collectors as $collector ) {
+			if ( $collector instanceof Collectors\Abstract_Collector ) {
+				$collector->flush_cache();
+			}
+		}
+	}
+
+	/**
 	 * Generate data for a single collector section.
 	 *
 	 * @param string $id Collector ID.
