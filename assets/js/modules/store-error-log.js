@@ -107,7 +107,7 @@ const { state, actions } = store( 'wp-system-report', {
 				} );
 
 				if ( ! response.ok ) {
-					throw new Error( 'Status request failed' );
+					throw new Error( state.i18n.loadFailed );
 				}
 
 				const data = yield response.json();

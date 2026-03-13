@@ -33,6 +33,9 @@ const { state, actions } = store( 'wp-system-report', {
 		 * @return {string} Capitalized string.
 		 */
 		capitalize( str ) {
+			if ( ! str ) {
+				return '';
+			}
 			return str.charAt( 0 ).toUpperCase() + str.slice( 1 );
 		},
 

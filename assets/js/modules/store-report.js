@@ -171,7 +171,7 @@ const { state, actions } = store( 'wp-system-report', {
 				);
 
 				if ( ! response.ok ) {
-					throw new Error( 'Network response was not ok' );
+					throw new Error( state.i18n.aiFailed );
 				}
 
 				const data = yield response.text();
