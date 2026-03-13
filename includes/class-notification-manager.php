@@ -273,7 +273,12 @@ class Notification_Manager {
 			$findings
 		);
 
-		wp_mail( $email_args['recipients'], $email_args['subject'], $email_args['body'] );
+		// Send one email per recipient to avoid exposing addresses in the
+		// To: header. Using a shared To: field would leak every recipient's
+		// address to all others, which is a privacy concern.
+		foreach ( (array) $email_args['recipients'] as $recipient ) {
+			wp_mail( $recipient, $email_args['subject'], $email_args['body'] );
+		}
 	}
 
 	/**
