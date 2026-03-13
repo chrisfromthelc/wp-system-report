@@ -245,9 +245,10 @@ class PerformanceTest extends WP_UnitTestCase {
 			$field,
 			'Expected an "Expired Transients" field to be present in the results.'
 		);
-		$this->assertNotEmpty(
+		$this->assertNotSame(
+			'',
 			$field->value,
-			'"Expired Transients" field value must not be empty.'
+			'"Expired Transients" field value must not be blank.'
 		);
 	}
 
