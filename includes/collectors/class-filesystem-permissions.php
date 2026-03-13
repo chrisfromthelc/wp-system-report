@@ -17,8 +17,8 @@ defined( 'ABSPATH' ) || exit;
 class Filesystem_Permissions extends Abstract_Collector {
 
 	/**
- * Get the collector ID.
- */
+	 * Get the collector ID.
+	 */
 	public function get_id(): string {
 		return 'filesystem_permissions';
 	}
@@ -42,15 +42,15 @@ class Filesystem_Permissions extends Abstract_Collector {
 	}
 
 	/**
- * Get the collector priority.
- */
+	 * Get the collector priority.
+	 */
 	public function get_priority(): int {
 		return 110;
 	}
 
 	/**
- * Collect the data.
- */
+	 * Collect the data.
+	 */
 	public function collect(): array {
 		$fields = array();
 
@@ -76,19 +76,24 @@ class Filesystem_Permissions extends Abstract_Collector {
 		 *
 		 * fileperms() returns the full mode integer (e.g. 0o40755). Masking with
 		 * 0002 isolates the "others write" bit.
+		 *
+		 * Some hosts restrict stat operations on certain paths, which can cause
+		 * fileperms() to emit warnings. Guard with is_readable() to avoid noisy logs.
 		 */
-		$wp_root_perms = fileperms( $wp_root_path );
-		if ( false !== $wp_root_perms && ( $wp_root_perms & 0002 ) ) {
-			$fields[] = $this->make_field(
-				__( 'WordPress Root Permissions', 'wp-system-report' ),
-				__( 'World-writable', 'wp-system-report' ),
-				array(
-					'debug'       => decoct( $wp_root_perms & 0777 ),
-					'status'      => Status::Critical,
-					'description' => __( 'The WordPress root directory is world-writable (others have write permission). This is a serious security risk and should be corrected immediately.', 'wp-system-report' ),
-					'recommended' => __( 'Remove world-write permission (e.g. chmod 755)', 'wp-system-report' ),
-				)
-			);
+		if ( is_readable( $wp_root_path ) ) {
+			$wp_root_perms = fileperms( $wp_root_path );
+			if ( false !== $wp_root_perms && ( $wp_root_perms & 0002 ) ) {
+				$fields[] = $this->make_field(
+					__( 'WordPress Root Permissions', 'wp-system-report' ),
+					__( 'World-writable', 'wp-system-report' ),
+					array(
+						'debug'       => decoct( $wp_root_perms & 0777 ),
+						'status'      => Status::Critical,
+						'description' => __( 'The WordPress root directory is world-writable (others have write permission). This is a serious security risk and should be corrected immediately.', 'wp-system-report' ),
+						'recommended' => __( 'Remove world-write permission (e.g. chmod 755)', 'wp-system-report' ),
+					)
+				);
+			}
 		}
 
 		// Check wp-content directory.
