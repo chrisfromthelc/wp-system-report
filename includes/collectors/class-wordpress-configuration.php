@@ -17,8 +17,8 @@ defined( 'ABSPATH' ) || exit;
 class WordPress_Configuration extends Abstract_Collector {
 
 	/**
- * Get the collector ID.
- */
+	 * Get the collector ID.
+	 */
 	public function get_id(): string {
 		return 'wordpress_configuration';
 	}
@@ -42,15 +42,15 @@ class WordPress_Configuration extends Abstract_Collector {
 	}
 
 	/**
- * Get the collector priority.
- */
+	 * Get the collector priority.
+	 */
 	public function get_priority(): int {
 		return 160;
 	}
 
 	/**
- * Collect the data.
- */
+	 * Collect the data.
+	 */
 	public function collect(): array {
 		$fields = array();
 
@@ -78,11 +78,11 @@ class WordPress_Configuration extends Abstract_Collector {
 
 		// User Roles with counts (cached to avoid expensive COUNT query per request).
 		$wp_roles   = wp_roles();
-		$user_stats = get_transient( 'sr_count_users' );
+		$user_stats = get_transient( 'wp_system_report_count_users' );
 
 		if ( false === $user_stats ) {
 			$user_stats = count_users();
-			set_transient( 'sr_count_users', $user_stats, HOUR_IN_SECONDS );
+			set_transient( 'wp_system_report_count_users', $user_stats, HOUR_IN_SECONDS );
 		}
 		$role_info = array();
 
