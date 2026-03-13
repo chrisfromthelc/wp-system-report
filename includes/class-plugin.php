@@ -57,6 +57,16 @@ class Plugin {
 	private \SystemReport\Error_Log_Controller $error_log_controller;
 
 	/**
+	 * SSE log streamer instance.
+	 */
+	private \SystemReport\SSE_Log_Streamer $sse_log_streamer;
+
+	/**
+	 * SSE log controller instance.
+	 */
+	private \SystemReport\SSE_Log_Controller $sse_log_controller;
+
+	/**
 	 * Fixer controller instance.
 	 */
 	private \SystemReport\Fixer_Controller $fixer_controller;
@@ -159,6 +169,8 @@ class Plugin {
 		$this->error_log_reader     = new Error_Log_Reader();
 		$this->debug_toggle         = new Debug_Toggle();
 		$this->error_log_controller = new Error_Log_Controller( $this->error_log_reader, $this->debug_toggle );
+		$this->sse_log_streamer     = new SSE_Log_Streamer( $this->error_log_reader );
+		$this->sse_log_controller   = new SSE_Log_Controller( $this->sse_log_streamer );
 		$this->fixer_controller     = new Fixer_Controller( $this->fixer_registry );
 		$this->health_score         = new Health_Score( $this->report_generator );
 
@@ -256,6 +268,7 @@ class Plugin {
 		add_action( 'admin_menu', array( $this->admin_page, 'register_menu' ) );
 		add_action( 'rest_api_init', array( $this->rest_controller, 'register_routes' ) );
 		add_action( 'rest_api_init', array( $this->error_log_controller, 'register_routes' ) );
+		add_action( 'rest_api_init', array( $this->sse_log_controller, 'register_routes' ) );
 		add_action( 'rest_api_init', array( $this->fixer_controller, 'register_routes' ) );
 		add_action( 'rest_api_init', array( $this->notification_controller, 'register_routes' ) );
 
