@@ -49,8 +49,8 @@ class Post_Type_Counts extends Abstract_Collector {
 	}
 
 	/**
- * Get the collector priority.
- */
+	 * Get the collector priority.
+	 */
 	public function get_priority(): int {
 		return 40;
 	}
@@ -58,16 +58,18 @@ class Post_Type_Counts extends Abstract_Collector {
 	/**
 	 * Statuses considered "published" for count purposes.
 	 *
-	 * Auto-draft, trash, and inherit (attachment revisions) are excluded
-	 * because they do not represent real published content.
+	 * Auto-draft and trash are excluded because they do not represent
+	 * real content. The `inherit` status is included because attachments
+	 * use it as their primary status — without it, the media library
+	 * would always report zero items.
 	 *
 	 * @var string[]
 	 */
-	private const COUNTED_STATUSES = array( 'publish', 'private', 'future', 'pending', 'draft' );
+	private const COUNTED_STATUSES = array( 'publish', 'private', 'future', 'pending', 'draft', 'inherit' );
 
 	/**
- * Collect the data.
- */
+	 * Collect the data.
+	 */
 	public function collect(): array {
 		$data = array();
 
@@ -75,6 +77,10 @@ class Post_Type_Counts extends Abstract_Collector {
 		$post_types = get_post_types( array(), 'names' );
 
 		foreach ( $post_types as $post_type ) {
+			// wp_count_posts() leverages WordPress's built-in caching layer
+			// (wp_cache_get/wp_cache_set) for each post type, which is more
+			// maintainable and consistent than a single raw SQL query even
+			// though it issues one query per type on a cold cache.
 			$counts = wp_count_posts( $post_type );
 
 			if ( ! $counts ) {

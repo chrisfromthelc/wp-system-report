@@ -90,7 +90,11 @@ class Filesystem_Permissions extends Abstract_Collector {
 						'debug'       => decoct( $wp_root_perms & 0777 ),
 						'status'      => Status::Critical,
 						'description' => __( 'The WordPress root directory is world-writable (others have write permission). This is a serious security risk and should be corrected immediately.', 'wp-system-report' ),
-						'recommended' => __( 'Remove world-write permission (e.g. chmod 755)', 'wp-system-report' ),
+						'recommended' => sprintf(
+						/* translators: %s: current permission mode (e.g. 0777) */
+							__( 'Remove world-write (others write) permission appropriate for your server\'s owner/group configuration. Current permissions: %s', 'wp-system-report' ),
+							decoct( $wp_root_perms & 0777 )
+						),
 					)
 				);
 			}

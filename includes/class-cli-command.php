@@ -535,7 +535,13 @@ class CLI_Command extends \WP_CLI_Command {
 		};
 
 		if ( null === $formatter ) {
-			\WP_CLI::error( "Unsupported format: {$format}" );
+			\WP_CLI::error(
+				sprintf(
+					/* translators: %s: requested format name */
+					__( 'Unsupported format: %s', 'wp-system-report' ),
+					$format
+				)
+			);
 		}
 
 		\WP_CLI::line( $formatter->format( $report ) );
