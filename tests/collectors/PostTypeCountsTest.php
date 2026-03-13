@@ -322,36 +322,35 @@ class PostTypeCountsTest extends WP_UnitTestCase {
 
 		$posts_table = $wpdb->posts;
 
-		// Redirect the query to a sub-select that always returns zero rows so
-		// we can test the "no results" branch without mutating real data.
-		add_filter(
-			'query',
-			static function ( string $sql ) use ( $posts_table ): string {
-				if ( false !== strpos( $sql, 'GROUP BY post_type' ) ) {
-					// Replace with a query guaranteed to return no rows.
-					return "SELECT post_type, COUNT(1) AS count FROM {$posts_table} WHERE 1=0 GROUP BY post_type ORDER BY count DESC";
-				}
-				return $sql;
+		// Use a named callback so we can remove only our filter, not all query filters.
+		$zero_rows_filter = static function ( string $sql ) use ( $posts_table ): string {
+			if ( false !== strpos( $sql, 'GROUP BY post_type' ) ) {
+				// Replace with a query guaranteed to return no rows.
+				return "SELECT post_type, COUNT(1) AS count FROM {$posts_table} WHERE 1=0 GROUP BY post_type ORDER BY count DESC";
 			}
-		);
+			return $sql;
+		};
+
+		add_filter( 'query', $zero_rows_filter );
 
 		$fields = $this->collector->collect();
 
-		remove_all_filters( 'query' );
+		remove_filter( 'query', $zero_rows_filter );
 
 		$this->assertIsArray( $fields );
 	}
 
 	/**
-	 * Test that the collector returns at least one field in a standard WP install.
+	 * Test that the collector returns at least one field when posts exist.
 	 *
-	 * WordPress test setup inserts default content (posts, pages, nav menus),
-	 * so the posts table is never completely empty.
+	 * Explicitly creates a post to guarantee the table is not empty,
+	 * rather than relying on default WP test-suite content.
 	 */
-	public function test_collect_returns_results_in_standard_install(): void {
+	public function test_collect_returns_results_when_posts_exist(): void {
+		$this->factory->post->create();
+
 		$fields = $this->collector->collect();
 		$this->assertIsArray( $fields );
-		// The WP test suite always has at least some rows in the posts table.
 		$this->assertNotEmpty( $fields );
 	}
 }
