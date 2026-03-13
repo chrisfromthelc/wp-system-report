@@ -17,8 +17,8 @@ defined( 'ABSPATH' ) || exit;
 class Site_Health extends Abstract_Collector {
 
 	/**
- * Get the collector ID.
- */
+	 * Get the collector ID.
+	 */
 	public function get_id(): string {
 		return 'site_health';
 	}
@@ -42,22 +42,22 @@ class Site_Health extends Abstract_Collector {
 	}
 
 	/**
- * Get the collector priority.
- */
+	 * Get the collector priority.
+	 */
 	public function get_priority(): int {
 		return 120;
 	}
 
 	/**
- * Get the transient cache key.
- */
+	 * Get the transient cache key.
+	 */
 	protected function get_cache_key(): string {
 		return 'sr_site_health';
 	}
 
 	/**
- * Collect the data.
- */
+	 * Collect the data.
+	 */
 	public function collect(): array {
 		// Load required WordPress files.
 		if ( ! class_exists( 'WP_Site_Health' ) ) {
@@ -91,12 +91,8 @@ class Site_Health extends Abstract_Collector {
 					}
 
 					try {
-						// Execute the test callback.
-						$test_result = null;
+						$test_result = $this->run_site_health_test( $site_health, $test_config['test'] );
 
-						if ( is_callable( $test_config['test'] ) ) {
-							$test_result = call_user_func( $test_config['test'] );
-						}
 						// Skip if test failed or returned invalid result.
 						if ( ! is_array( $test_result ) ) {
 							continue;
@@ -182,5 +178,44 @@ class Site_Health extends Abstract_Collector {
 		}
 
 		return $fields;
+	}
+
+	/**
+	 * Execute a single Site Health test callback.
+	 *
+	 * WordPress core registers most tests with a short string name (e.g.
+	 * 'wordpress_version') that maps to a method on the WP_Site_Health instance
+	 * via the pattern get_test_{$name}(). Third-party tests may register a
+	 * callable directly. This method mirrors the resolution logic found in
+	 * WP_Site_Health::get_page_data(), where string tests are first resolved
+	 * to an instance method before falling back to a global callable check.
+	 *
+	 * @since 2.0.0
+	 *
+	 * @param \WP_Site_Health $site_health The Site Health instance.
+	 * @param string|callable $test        The test callback or method suffix.
+	 * @return array|null The test result array, or null on failure.
+	 */
+	private function run_site_health_test( \WP_Site_Health $site_health, string|callable $test ): ?array {
+		if ( is_string( $test ) ) {
+			// String tests: first try the core convention get_test_{$name}().
+			$method = sprintf( 'get_test_%s', $test );
+
+			if ( method_exists( $site_health, $method ) && is_callable( array( $site_health, $method ) ) ) {
+				$result = $site_health->{$method}();
+			} elseif ( is_callable( $test ) ) {
+				// Fall back to treating the string as a global callable.
+				$result = call_user_func( $test );
+			} else {
+				return null;
+			}
+		} else {
+			// Non-string callables (arrays, closures, invocable objects).
+			$result = call_user_func( $test );
+		}
+
+		/** This filter is documented in wp-admin/includes/class-wp-site-health.php */
+		// phpcs:ignore WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedHooknameFound -- WordPress core filter.
+		return is_array( $result ) ? apply_filters( 'site_status_test_result', $result ) : null;
 	}
 }
