@@ -251,8 +251,7 @@ class Block_Editor extends Abstract_Collector {
 	 * @return \SystemReport\Field
 	 */
 	private function collect_global_styles() {
-		$theme = wp_get_theme();
-
+		$theme           = wp_get_theme();
 		$theme_json_path = $theme->get_stylesheet_directory() . '/theme.json';
 		$has_theme_json  = file_exists( $theme_json_path );
 
@@ -267,7 +266,26 @@ class Block_Editor extends Abstract_Collector {
 			);
 		}
 
-		// phpcs:ignore WordPress.WP.AlternativeFunctions.file_get_contents_file_get_contents -- Reading local theme file.
+		// Use WP_Theme_JSON_Resolver when available (WP 5.8+) to read the
+		// merged theme.json data instead of raw file_get_contents().
+		if ( class_exists( 'WP_Theme_JSON_Resolver' ) ) {
+			$theme_json = \WP_Theme_JSON_Resolver::get_theme_data();
+			$raw_data   = $theme_json->get_data();
+			$version    = $raw_data['version'] ?? __( 'unknown', 'wp-system-report' );
+
+			return $this->make_field(
+				__( 'Global Styles (theme.json)', 'wp-system-report' ),
+				/* translators: %s: theme.json schema version */
+				sprintf( __( 'Present (v%s)', 'wp-system-report' ), $version ),
+				array(
+					'status'      => Status::Good,
+					'description' => __( 'Whether the active theme uses theme.json for global styles and settings.', 'wp-system-report' ),
+				)
+			);
+		}
+
+		// Fallback for older WordPress versions without WP_Theme_JSON_Resolver.
+		// phpcs:ignore WordPress.WP.AlternativeFunctions.file_get_contents_file_get_contents -- Fallback for pre-5.8 WordPress.
 		$contents = file_get_contents( $theme_json_path );
 		if ( false === $contents ) {
 			return $this->make_field(

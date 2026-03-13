@@ -273,15 +273,23 @@ class Report_Diff {
 	 * @return array<string, Field|array> Fields indexed by label.
 	 */
 	private function index_fields( array $fields ): array {
-		$indexed = array();
+		$indexed    = array();
+		$label_seen = array();
 
 		foreach ( $fields as $field ) {
-			$key = $this->get_field_label( $field );
+			$label = $this->get_field_label( $field );
 
-			// Use label as the key; skip duplicates (keep first).
-			if ( ! isset( $indexed[ $key ] ) ) {
-				$indexed[ $key ] = $field;
+			// Use a composite key (label + positional index) so duplicate
+			// labels are preserved instead of silently dropped.
+			if ( isset( $label_seen[ $label ] ) ) {
+				++$label_seen[ $label ];
+				$key = $label . '::' . $label_seen[ $label ];
+			} else {
+				$label_seen[ $label ] = 0;
+				$key                  = $label;
 			}
+
+			$indexed[ $key ] = $field;
 		}
 
 		return $indexed;

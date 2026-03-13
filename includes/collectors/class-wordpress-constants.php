@@ -186,9 +186,10 @@ class WordPress_Constants extends Abstract_Collector {
 				$status = Status::Good;
 			}
 
-			// DISABLE_WP_CRON is warning when enabled.
+			// DISABLE_WP_CRON is informational when enabled; the cron_health
+			// collector already raises a Warning for the operational impact.
 			if ( 'DISABLE_WP_CRON' === $constant && $value ) {
-				$status = Status::Warning;
+				$status = Status::Info;
 			}
 
 			// FORCE_SSL_ADMIN is good when enabled.

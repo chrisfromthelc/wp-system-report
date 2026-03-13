@@ -86,7 +86,13 @@ class GitHub_Formatter implements Formatter {
 		$redactions = apply_filters( 'wp_system_report_redactions', $redactions );
 
 		foreach ( $redactions as $redaction ) {
-			$report = preg_replace( $redaction['pattern'], $redaction['replacement'], $report );
+			$result = preg_replace( $redaction['pattern'], $redaction['replacement'], $report );
+
+			// Keep the previous value when preg_replace returns null
+			// (invalid pattern), preventing silent data loss.
+			if ( null !== $result ) {
+				$report = $result;
+			}
 		}
 
 		return $report;

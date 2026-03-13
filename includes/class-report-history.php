@@ -532,8 +532,20 @@ class Report_History {
 			$decoded_b64 = base64_decode( $data, true );
 
 			if ( false !== $decoded_b64 ) {
-				// phpcs:ignore WordPress.PHP.NoSilencedErrors.Discouraged -- gzuncompress emits E_WARNING on malformed data; suppressed to allow fallback.
-				$decompressed = @gzuncompress( $decoded_b64 );
+				// Use a custom error handler to capture E_WARNING from
+				// gzuncompress on malformed data instead of suppressing it.
+				$decompress_error = null;
+				// phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_set_error_handler -- Temporary handler to capture gzuncompress E_WARNING gracefully.
+				set_error_handler(
+					static function ( $errno, $errstr ) use ( &$decompress_error ) {
+						$decompress_error = $errstr;
+						return true;
+					},
+					E_WARNING
+				);
+
+				$decompressed = gzuncompress( $decoded_b64 );
+				restore_error_handler();
 
 				if ( false !== $decompressed ) {
 					$decoded = json_decode( $decompressed, true );
@@ -544,8 +556,18 @@ class Report_History {
 			}
 
 			// Legacy fallback: try raw binary gzuncompress (pre-fix storage).
-			// phpcs:ignore WordPress.PHP.NoSilencedErrors.Discouraged -- gzuncompress emits E_WARNING on malformed data; suppressed to allow JSON fallback.
-			$decompressed = @gzuncompress( $data );
+			$decompress_error = null;
+			// phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_set_error_handler -- Temporary handler to capture gzuncompress E_WARNING gracefully.
+			set_error_handler(
+				static function ( $errno, $errstr ) use ( &$decompress_error ) {
+					$decompress_error = $errstr;
+					return true;
+				},
+				E_WARNING
+			);
+
+			$decompressed = gzuncompress( $data );
+			restore_error_handler();
 
 			if ( false !== $decompressed ) {
 				$decoded = json_decode( $decompressed, true );
