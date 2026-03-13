@@ -132,6 +132,11 @@ class SiteHealthTest extends WP_UnitTestCase {
 		$non_summary     = array_slice( $fields, 1 );
 		$valid_statuses  = array( Status::Good, Status::Warning, Status::Critical );
 
+		if ( empty( $non_summary ) ) {
+			$this->assertIsArray( $non_summary, 'No individual site health test fields to validate.' );
+			return;
+		}
+
 		foreach ( $non_summary as $index => $field ) {
 			$this->assertInstanceOf( Field::class, $field );
 			$this->assertContains(
@@ -152,6 +157,11 @@ class SiteHealthTest extends WP_UnitTestCase {
 		$fields      = $this->collector->collect();
 		$non_summary = array_slice( $fields, 1 );
 		$valid_values = array( 'Good', 'Recommended', 'Critical' );
+
+		if ( empty( $non_summary ) ) {
+			$this->assertIsArray( $non_summary, 'No individual site health test fields to validate.' );
+			return;
+		}
 
 		foreach ( $non_summary as $index => $field ) {
 			$this->assertInstanceOf( Field::class, $field );

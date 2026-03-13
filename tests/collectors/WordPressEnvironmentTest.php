@@ -182,10 +182,15 @@ class WordPressEnvironmentTest extends WP_UnitTestCase {
 	 * Test that search engine visibility is Status::Good when allowed.
 	 */
 	public function test_search_engine_visibility_allowed_is_good(): void {
-		update_option( 'blog_public', '1' );
+		$force_one = static function () {
+			return '1';
+		};
+		add_filter( 'option_blog_public', $force_one );
 
 		$fields = $this->collector->collect();
 		$field  = $this->find_field_in( $fields, 'Search Engine Visibility' );
+
+		remove_filter( 'option_blog_public', $force_one );
 
 		$this->assertNotNull( $field, 'Expected "Search Engine Visibility" field to be present.' );
 		$this->assertSame( Status::Good, $field->status, 'Search engine visibility should be Good when blog_public is 1.' );
@@ -195,10 +200,18 @@ class WordPressEnvironmentTest extends WP_UnitTestCase {
 	 * Test that search engine visibility is Status::Warning when discouraged.
 	 */
 	public function test_search_engine_visibility_discouraged_is_warning(): void {
-		update_option( 'blog_public', '0' );
+		// Use a filter to guarantee the option value is the string '0'.
+		// update_option alone can be unreliable in CI environments where
+		// the alloptions cache may retain the original value.
+		$force_zero = static function () {
+			return '0';
+		};
+		add_filter( 'option_blog_public', $force_zero );
 
 		$fields = $this->collector->collect();
 		$field  = $this->find_field_in( $fields, 'Search Engine Visibility' );
+
+		remove_filter( 'option_blog_public', $force_zero );
 
 		$this->assertNotNull( $field, 'Expected "Search Engine Visibility" field to be present.' );
 		$this->assertSame( Status::Warning, $field->status, 'Search engine visibility should be Warning when blog_public is 0.' );

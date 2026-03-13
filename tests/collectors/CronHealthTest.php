@@ -292,7 +292,7 @@ class CronHealthTest extends WP_UnitTestCase {
 		$this->assertSame( Status::Info, $field->status );
 		// The value should contain a time-relative description.
 		$this->assertNotEmpty( $field->value );
-		$this->assertStringNotEqualsIgnoringCase( 'Unknown', $field->value );
+		$this->assertNotSame( 'Unknown', $field->value );
 	}
 
 	// -------------------------------------------------------
