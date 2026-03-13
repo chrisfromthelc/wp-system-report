@@ -9,13 +9,16 @@ namespace SystemReport;
 
 defined( 'ABSPATH' ) || exit;
 
-use WPConfigTransformer;
-
 /**
  * Toggles WP_DEBUG, WP_DEBUG_LOG, and WP_DEBUG_DISPLAY in wp-config.php.
  *
  * Uses the wp-cli/wp-config-transformer library for safe, regex-based editing
  * of wp-config.php. Creates a backup before every write operation.
+ *
+ * When the WPConfigTransformer class is not available (e.g. in environments
+ * where the wp-cli/wp-config-transformer package is not loaded), all read
+ * operations degrade gracefully to a read-only state and all write operations
+ * return an error string rather than throwing a fatal error.
  */
 class Debug_Toggle {
 
@@ -48,6 +51,21 @@ class Debug_Toggle {
 	}
 
 	/**
+	 * Check whether the WPConfigTransformer class is available.
+	 *
+	 * The wp-cli/wp-config-transformer package is required for reading and
+	 * writing debug constants. When it is absent (e.g. in a plain WordPress
+	 * REST API request without WP-CLI loaded) this method returns false so
+	 * that callers can degrade gracefully instead of fataling.
+	 *
+	 * @since 1.2.0
+	 * @return bool True if WPConfigTransformer can be instantiated.
+	 */
+	public function is_transformer_available(): bool {
+		return class_exists( '\WPConfigTransformer' );
+	}
+
+	/**
 	 * Check whether wp-config.php can be modified.
 	 *
 	 * Returns false if:
@@ -75,9 +93,22 @@ class Debug_Toggle {
 	 *
 	 * Reads the actual constant definitions from the file, not the runtime values.
 	 *
+	 * When WPConfigTransformer is not available, returns a state with all
+	 * constant values set to null and can_modify set to false to signal that
+	 * the environment is read-only from the perspective of this class.
+	 *
 	 * @return array{wp_debug: bool|null, wp_debug_log: bool|string|null, wp_debug_display: bool|null, can_modify: bool}
 	 */
 	public function get_state(): array {
+		if ( ! $this->is_transformer_available() ) {
+			return array(
+				'wp_debug'         => null,
+				'wp_debug_log'     => null,
+				'wp_debug_display' => null,
+				'can_modify'       => false,
+			);
+		}
+
 		$state = array(
 			'wp_debug'         => null,
 			'wp_debug_log'     => null,
@@ -90,7 +121,7 @@ class Debug_Toggle {
 		}
 
 		try {
-			$transformer = new WPConfigTransformer( $this->config_path );
+			$transformer = new \WPConfigTransformer( $this->config_path );
 
 			if ( $transformer->exists( 'constant', 'WP_DEBUG' ) ) {
 				$state['wp_debug'] = $this->parse_bool_value(
@@ -130,6 +161,10 @@ class Debug_Toggle {
 	 * @return bool|string True on success, error message string on failure.
 	 */
 	public function enable_debug() {
+		if ( ! $this->is_transformer_available() ) {
+			return $this->transformer_unavailable_error();
+		}
+
 		if ( ! $this->can_modify() ) {
 			return __( 'wp-config.php is not writable or file modifications are disabled.', 'wp-system-report' );
 		}
@@ -154,7 +189,7 @@ class Debug_Toggle {
 		}
 
 		try {
-			$transformer = new WPConfigTransformer( $this->config_path );
+			$transformer = new \WPConfigTransformer( $this->config_path );
 			$raw_option  = array( 'raw' => true );
 
 			$this->update_or_add( $transformer, 'WP_DEBUG', 'true', $raw_option );
@@ -196,6 +231,10 @@ class Debug_Toggle {
 	 * @return bool|string True on success, error message string on failure.
 	 */
 	public function disable_debug() {
+		if ( ! $this->is_transformer_available() ) {
+			return $this->transformer_unavailable_error();
+		}
+
 		if ( ! $this->can_modify() ) {
 			return __( 'wp-config.php is not writable or file modifications are disabled.', 'wp-system-report' );
 		}
@@ -215,7 +254,7 @@ class Debug_Toggle {
 		}
 
 		try {
-			$transformer = new WPConfigTransformer( $this->config_path );
+			$transformer = new \WPConfigTransformer( $this->config_path );
 			$raw_option  = array( 'raw' => true );
 
 			$this->update_or_add( $transformer, 'WP_DEBUG', 'false', $raw_option );
@@ -241,14 +280,28 @@ class Debug_Toggle {
 	}
 
 	/**
+	 * Return the error message for a missing WPConfigTransformer.
+	 *
+	 * Centralizes the translatable string so it only appears once in the
+	 * codebase, satisfying i18n tooling which requires string literals inside
+	 * translation function calls.
+	 *
+	 * @since 1.2.0
+	 * @return string Translated error message.
+	 */
+	private function transformer_unavailable_error(): string {
+		return __( 'Cannot modify wp-config.php: WPConfigTransformer class is not available.', 'wp-system-report' );
+	}
+
+	/**
 	 * Update a constant if it exists, or add it if it doesn't.
 	 *
-	 * @param WPConfigTransformer $transformer Config transformer instance.
-	 * @param string              $name        Constant name.
-	 * @param string              $value       Constant value.
-	 * @param array               $options     Transformer options.
+	 * @param \WPConfigTransformer $transformer Config transformer instance.
+	 * @param string               $name        Constant name.
+	 * @param string               $value       Constant value.
+	 * @param array                $options     Transformer options.
 	 */
-	private function update_or_add( WPConfigTransformer $transformer, string $name, string $value, array $options ): void {
+	private function update_or_add( \WPConfigTransformer $transformer, string $name, string $value, array $options ): void {
 		if ( $transformer->exists( 'constant', $name ) ) {
 			$transformer->update( 'constant', $name, $value, $options );
 		} else {
@@ -309,8 +362,8 @@ class Debug_Toggle {
 	}
 
 	/**
- * Delete the backup file after a successful operation.
- */
+	 * Delete the backup file after a successful operation.
+	 */
 	private function delete_backup(): void {
 		$backup_path = $this->get_backup_path();
 
@@ -376,10 +429,10 @@ class Debug_Toggle {
 	}
 
 	/**
- * Release a previously acquired file lock.
- *
- * @param resource $handle File handle from acquire_lock().
- */
+	 * Release a previously acquired file lock.
+	 *
+	 * @param resource $handle File handle from acquire_lock().
+	 */
 	private function release_lock( $handle ): void {
 		flock( $handle, LOCK_UN );
 		// phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_fclose
