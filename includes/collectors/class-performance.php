@@ -264,7 +264,7 @@ class Performance extends Abstract_Collector {
 	private function collect_options_row_count() {
 		global $wpdb;
 
-		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery,WordPress.DB.DirectDatabaseQuery.NoCaching -- One-time diagnostic query.
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery,WordPress.DB.DirectDatabaseQuery.NoCaching,WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- One-time diagnostic query; $wpdb->options is a trusted core property, not user input.
 		$this->options_row_count = (int) $wpdb->get_var( "SELECT COUNT(*) FROM {$wpdb->options}" );
 		$count                   = $this->options_row_count;
 
@@ -406,7 +406,7 @@ class Performance extends Abstract_Collector {
 	private function collect_top_autoloaded_options() {
 		global $wpdb;
 
-		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery,WordPress.DB.DirectDatabaseQuery.NoCaching -- One-time diagnostic query.
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery,WordPress.DB.DirectDatabaseQuery.NoCaching,WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- One-time diagnostic query; $wpdb->options is a trusted core property, not user input.
 		$results = $wpdb->get_results(
 			"SELECT option_name, LENGTH(option_value) AS val_size
 			FROM {$wpdb->options}
@@ -458,7 +458,7 @@ class Performance extends Abstract_Collector {
 		// Reuse the count already fetched by collect_options_row_count() when available.
 		if ( null === $this->options_row_count ) {
 			global $wpdb;
-			// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery,WordPress.DB.DirectDatabaseQuery.NoCaching -- One-time diagnostic query.
+			// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery,WordPress.DB.DirectDatabaseQuery.NoCaching,WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- One-time diagnostic query; $wpdb->options is a trusted core property, not user input.
 			$this->options_row_count = (int) $wpdb->get_var( "SELECT COUNT(*) FROM {$wpdb->options}" );
 		}
 
