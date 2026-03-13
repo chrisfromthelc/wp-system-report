@@ -25,7 +25,7 @@ class SiteHealthTest extends WP_UnitTestCase {
 	 */
 	public function set_up(): void {
 		parent::set_up();
-		delete_transient( 'sr_site_health' );
+		delete_transient( sr_versioned_cache_key( 'sr_site_health' ) );
 		$this->collector = new \SystemReport\Collectors\Site_Health();
 	}
 
@@ -33,7 +33,7 @@ class SiteHealthTest extends WP_UnitTestCase {
 	 * Remove the cache transient and filter hooks after each test.
 	 */
 	public function tear_down(): void {
-		delete_transient( 'sr_site_health' );
+		delete_transient( sr_versioned_cache_key( 'sr_site_health' ) );
 		remove_all_filters( 'site_status_tests' );
 		remove_all_filters( 'site_status_test_result' );
 		parent::tear_down();
@@ -306,13 +306,13 @@ class SiteHealthTest extends WP_UnitTestCase {
 	 */
 	public function test_caching_works(): void {
 		// Ensure the transient is not already set.
-		delete_transient( 'sr_site_health' );
+		delete_transient( sr_versioned_cache_key( 'sr_site_health' ) );
 
 		$data = $this->collector->get_cached_data();
 		$this->assertIsArray( $data );
 
 		// The transient should now be populated.
-		$cached = get_transient( 'sr_site_health' );
+		$cached = get_transient( sr_versioned_cache_key( 'sr_site_health' ) );
 		$this->assertNotFalse( $cached, "'sr_site_health' transient should be set after get_cached_data()." );
 	}
 
@@ -324,11 +324,84 @@ class SiteHealthTest extends WP_UnitTestCase {
 	 */
 	public function test_caching_returns_transient_value(): void {
 		$sentinel = array( 'sentinel' => true );
-		set_transient( 'sr_site_health', $sentinel, HOUR_IN_SECONDS );
+		set_transient( sr_versioned_cache_key( 'sr_site_health' ), $sentinel, HOUR_IN_SECONDS );
 
 		$data = $this->collector->get_cached_data();
 
 		$this->assertSame( $sentinel, $data, 'get_cached_data() should return the cached transient value.' );
+	}
+
+	/**
+	 * Test that stale cache from a previous plugin version is ignored.
+	 *
+	 * This is the primary regression test for the bug where an old
+	 * transient (set by a broken collector before a fix was deployed)
+	 * kept serving stale "0 issues" data even after the code was fixed.
+	 *
+	 * The versioned cache key ensures that a version bump automatically
+	 * invalidates all collector transients.
+	 */
+	public function test_stale_cache_from_old_version_is_ignored(): void {
+		// Simulate stale data stored under a different plugin version key.
+		$stale_key  = 'sr_site_health_0_0_0';
+		$stale_data = array( 'stale' => true );
+		set_transient( $stale_key, $stale_data, HOUR_IN_SECONDS );
+
+		// The collector should NOT return the stale data because the current
+		// versioned key does not match the old one.
+		$data = $this->collector->get_cached_data();
+
+		$this->assertIsArray( $data );
+		$this->assertNotSame( $stale_data, $data, 'Stale cache from a different version should be ignored.' );
+
+		// Verify the fresh data is stored under the current versioned key.
+		$current_cached = get_transient( sr_versioned_cache_key( 'sr_site_health' ) );
+		$this->assertNotFalse( $current_cached, 'Fresh data should be stored under the current versioned key.' );
+
+		// Clean up.
+		delete_transient( $stale_key );
+	}
+
+	/**
+	 * Test that the versioned cache key includes the plugin version.
+	 *
+	 * The transient key must differ from the base key, proving that
+	 * version information is embedded in the actual storage key.
+	 */
+	public function test_cache_key_includes_plugin_version(): void {
+		$versioned = sr_versioned_cache_key( 'sr_site_health' );
+
+		$this->assertNotSame( 'sr_site_health', $versioned, 'Versioned key should differ from the base key.' );
+		$this->assertStringStartsWith( 'sr_site_health_', $versioned, 'Versioned key should start with the base key.' );
+		$this->assertStringContainsString(
+			str_replace( '.', '_', WP_SYSTEM_REPORT_VERSION ),
+			$versioned,
+			'Versioned key should contain the plugin version.'
+		);
+	}
+
+	/**
+	 * Test that the cache TTL filter receives the base (non-versioned) key.
+	 *
+	 * External code filtering by cache key should not need to know about
+	 * the internal version suffix.
+	 */
+	public function test_cache_ttl_filter_receives_base_key(): void {
+		$received_key = null;
+		add_filter(
+			'wp_system_report_cache_ttl',
+			function ( $ttl, $key ) use ( &$received_key ) {
+				$received_key = $key;
+				return $ttl;
+			},
+			10,
+			2
+		);
+
+		delete_transient( sr_versioned_cache_key( 'sr_site_health' ) );
+		$this->collector->get_cached_data();
+
+		$this->assertSame( 'sr_site_health', $received_key, 'TTL filter should receive the base cache key, not the versioned one.' );
 	}
 
 	// -------------------------------------------------------

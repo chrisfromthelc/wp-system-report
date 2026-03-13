@@ -32,33 +32,54 @@ abstract class Abstract_Collector implements Collector {
 	 * Get cached or fresh data from this collector.
 	 *
 	 * If the collector defines a cache key, results are stored in a transient.
+	 * The transient key includes the plugin version so that caches are
+	 * automatically invalidated when the plugin is updated.
 	 *
 	 * @return array Collected field data.
 	 */
 	public function get_cached_data() {
-		$cache_key = $this->get_cache_key();
+		$base_key = $this->get_cache_key();
 
-		if ( null !== $cache_key ) {
-			$cached = get_transient( $cache_key );
-			if ( false !== $cached ) {
-				return $cached;
-			}
+		if ( null === $base_key ) {
+			return $this->collect();
+		}
+
+		$cache_key = $this->build_versioned_cache_key( $base_key );
+		$cached    = get_transient( $cache_key );
+
+		if ( false !== $cached ) {
+			return $cached;
 		}
 
 		$data = $this->collect();
 
-		if ( null !== $cache_key ) {
-			/**
-			 * Filter the transient cache TTL for WP System Report collectors.
-			 *
-			 * @param int    $ttl       Cache TTL in seconds. Default 3600 (1 hour).
-			 * @param string $cache_key The transient cache key.
-			 */
-			$ttl = apply_filters( 'wp_system_report_cache_ttl', HOUR_IN_SECONDS, $cache_key );
-			set_transient( $cache_key, $data, $ttl );
-		}
+		/**
+		 * Filter the transient cache TTL for WP System Report collectors.
+		 *
+		 * @param int    $ttl       Cache TTL in seconds. Default 3600 (1 hour).
+		 * @param string $cache_key The base (non-versioned) transient cache key.
+		 */
+		$ttl = apply_filters( 'wp_system_report_cache_ttl', HOUR_IN_SECONDS, $base_key );
+		set_transient( $cache_key, $data, $ttl );
 
 		return $data;
+	}
+
+	/**
+	 * Build a versioned transient key from the base cache key.
+	 *
+	 * Appends the plugin version so that transients are automatically
+	 * invalidated when the plugin is updated. Old transients expire
+	 * naturally via their TTL.
+	 *
+	 * @since 2.0.0
+	 *
+	 * @param string $base_key The base cache key from get_cache_key().
+	 * @return string The versioned cache key.
+	 */
+	private function build_versioned_cache_key( string $base_key ): string {
+		$version = defined( 'WP_SYSTEM_REPORT_VERSION' ) ? WP_SYSTEM_REPORT_VERSION : '0.0.0';
+		return $base_key . '_' . str_replace( '.', '_', $version );
 	}
 
 	/**

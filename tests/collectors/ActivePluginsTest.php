@@ -39,7 +39,7 @@ class ActivePluginsTest extends WP_UnitTestCase {
 		$this->original_active_plugins = (array) get_option( 'active_plugins', array() );
 
 		// Clear any cached data from previous test runs.
-		delete_transient( 'sr_active_plugins' );
+		delete_transient( sr_versioned_cache_key( 'sr_active_plugins' ) );
 	}
 
 	/**
@@ -51,7 +51,7 @@ class ActivePluginsTest extends WP_UnitTestCase {
 	public function tear_down(): void {
 		update_option( 'active_plugins', $this->original_active_plugins );
 		delete_site_transient( 'update_plugins' );
-		delete_transient( 'sr_active_plugins' );
+		delete_transient( sr_versioned_cache_key( 'sr_active_plugins' ) );
 		parent::tear_down();
 	}
 
@@ -135,7 +135,7 @@ class ActivePluginsTest extends WP_UnitTestCase {
 		$plugin_path = key( $all_plugins );
 		update_option( 'active_plugins', array( $plugin_path ) );
 
-		delete_transient( 'sr_active_plugins' );
+		delete_transient( sr_versioned_cache_key( 'sr_active_plugins' ) );
 		$fields = $this->collector->collect();
 
 		// There must be at least one field.
@@ -183,7 +183,7 @@ class ActivePluginsTest extends WP_UnitTestCase {
 		$plugin_path = key( $all_plugins );
 		update_option( 'active_plugins', array( $plugin_path ) );
 
-		delete_transient( 'sr_active_plugins' );
+		delete_transient( sr_versioned_cache_key( 'sr_active_plugins' ) );
 		$fields = $this->collector->collect();
 
 		$this->assertNotEmpty( $fields );
@@ -221,7 +221,7 @@ class ActivePluginsTest extends WP_UnitTestCase {
 		// Deactivate all plugins.
 		update_option( 'active_plugins', array() );
 
-		delete_transient( 'sr_active_plugins' );
+		delete_transient( sr_versioned_cache_key( 'sr_active_plugins' ) );
 		$fields = $this->collector->collect();
 
 		$this->assertCount(
@@ -271,7 +271,7 @@ class ActivePluginsTest extends WP_UnitTestCase {
 		// Activate all installed plugins.
 		update_option( 'active_plugins', array_keys( $all_plugins ) );
 
-		delete_transient( 'sr_active_plugins' );
+		delete_transient( sr_versioned_cache_key( 'sr_active_plugins' ) );
 		$fields = $this->collector->collect();
 
 		// Filter out any placeholder field.
@@ -356,7 +356,7 @@ class ActivePluginsTest extends WP_UnitTestCase {
 		);
 		set_site_transient( 'update_plugins', $updates );
 
-		delete_transient( 'sr_active_plugins' );
+		delete_transient( sr_versioned_cache_key( 'sr_active_plugins' ) );
 		$fields = $this->collector->collect();
 
 		$this->assertNotEmpty( $fields );
@@ -393,16 +393,16 @@ class ActivePluginsTest extends WP_UnitTestCase {
 	 */
 	public function test_caching_works(): void {
 		// Ensure no stale cache exists before the test.
-		delete_transient( 'sr_active_plugins' );
+		delete_transient( sr_versioned_cache_key( 'sr_active_plugins' ) );
 		$this->assertFalse(
-			get_transient( 'sr_active_plugins' ),
+			get_transient( sr_versioned_cache_key( 'sr_active_plugins' ) ),
 			'Transient "sr_active_plugins" should not exist before the first get_cached_data() call.'
 		);
 
 		// First call: should populate the transient.
 		$first_result = $this->collector->get_cached_data();
 
-		$cached = get_transient( 'sr_active_plugins' );
+		$cached = get_transient( sr_versioned_cache_key( 'sr_active_plugins' ) );
 		$this->assertNotFalse(
 			$cached,
 			'Transient "sr_active_plugins" should be set after get_cached_data().'
@@ -419,7 +419,7 @@ class ActivePluginsTest extends WP_UnitTestCase {
 		);
 
 		// Clean up.
-		delete_transient( 'sr_active_plugins' );
+		delete_transient( sr_versioned_cache_key( 'sr_active_plugins' ) );
 	}
 
 	/**
@@ -435,7 +435,7 @@ class ActivePluginsTest extends WP_UnitTestCase {
 			new Field( 'Sentinel Plugin', '999' ),
 		);
 
-		set_transient( 'sr_active_plugins', $sentinel, HOUR_IN_SECONDS );
+		set_transient( sr_versioned_cache_key( 'sr_active_plugins' ), $sentinel, HOUR_IN_SECONDS );
 
 		$result = $this->collector->get_cached_data();
 
