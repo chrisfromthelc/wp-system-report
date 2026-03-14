@@ -597,6 +597,19 @@
 	z-index: 100050;
 }
 
+/*
+ * Interactivity API visibility override.
+ *
+ * IAPI toggles the HTML hidden attribute via data-wp-bind--hidden,
+ * but the CSS "display: none" above still wins when hidden is removed.
+ * This rule makes the modal visible once the hidden attribute is gone.
+ * The vanilla JS path is unaffected because it uses inline styles
+ * (style.display = "block") which always override class rules.
+ */
+.sr-confirm-modal:not([hidden]) {
+	display: block;
+}
+
 .sr-confirm-modal-backdrop {
 	position: absolute;
 	top: 0;
