@@ -78,6 +78,38 @@ const { state, actions } = store( 'wp-system-report', {
 		},
 
 		/**
+		 * Pre-compute display properties on a fixer object.
+		 *
+		 * The Interactivity API evaluator only supports simple property
+		 * paths and negation — ternary, logical OR/AND, and comparison
+		 * operators are not supported.  All derived display values must
+		 * therefore be pre-computed as plain properties.
+		 *
+		 * @param {Object} fixer Fixer data from the REST API.
+		 */
+		prepareFixer( fixer ) {
+			const riskLabels = {
+				low: state.i18n.riskLow,
+				medium: state.i18n.riskMedium,
+				high: state.i18n.riskHigh,
+			};
+
+			fixer.risk_label =
+				riskLabels[ fixer.risk_level ] || fixer.risk_level;
+			fixer.isRiskLow = fixer.risk_level === 'low';
+			fixer.isRiskMedium = fixer.risk_level === 'medium';
+			fixer.isRiskHigh = fixer.risk_level === 'high';
+			fixer.statusLabel = fixer.can_fix
+				? state.i18n.issuesDetected
+				: state.i18n.noIssues;
+			fixer.buttonLabel = state.i18n.runFix;
+			fixer.isRunning = false;
+			fixer.isDisabled = ! fixer.can_fix;
+			fixer.btnDisabled = false;
+			fixer.result = null;
+		},
+
+		/**
 		 * Load all fixers from the REST API.
 		 */
 		*loadFixes() {
@@ -106,16 +138,8 @@ const { state, actions } = store( 'wp-system-report', {
 				if ( fixers.length === 0 ) {
 					state.fixes.hasFixers = false;
 				} else {
-					// Map risk_level to localized labels.
-					const riskLabels = {
-						low: state.i18n.riskLow,
-						medium: state.i18n.riskMedium,
-						high: state.i18n.riskHigh,
-					};
 					fixers.forEach( ( fixer ) => {
-						fixer.risk_label =
-							riskLabels[ fixer.risk_level ] ||
-							fixer.risk_level;
+						actions.prepareFixer( fixer );
 					} );
 
 					state.fixes.hasFixers = true;
@@ -276,6 +300,8 @@ const { state, actions } = store( 'wp-system-report', {
 			// Mark the fixer as running.
 			actions.updateFixerState( fixId, {
 				isRunning: true,
+				buttonLabel: state.i18n.running,
+				isDisabled: true,
 				result: null,
 			} );
 
@@ -322,10 +348,14 @@ const { state, actions } = store( 'wp-system-report', {
 
 				actions.updateFixerState( fixId, {
 					isRunning: false,
+					buttonLabel: state.i18n.runFix,
+					isDisabled: succeeded,
 					btnDisabled: succeeded,
 					result: {
 						visible: true,
-						noticeClass: 'notice ' + noticeClass + ' inline sr-result-notice',
+						isSuccess: noticeClass === 'notice-success',
+						isError: noticeClass === 'notice-error',
+						isInfo: noticeClass === 'notice-info',
 						statusLabel: statusLabel + ':',
 						message: result.message || '',
 						hasBefore: !! result.before,
@@ -347,10 +377,14 @@ const { state, actions } = store( 'wp-system-report', {
 			} catch ( error ) {
 				actions.updateFixerState( fixId, {
 					isRunning: false,
+					buttonLabel: state.i18n.runFix,
+					isDisabled: false,
 					btnDisabled: false,
 					result: {
 						visible: true,
-						noticeClass: 'notice notice-error inline sr-result-notice',
+						isSuccess: false,
+						isError: true,
+						isInfo: false,
 						statusLabel: state.i18n.failed + ':',
 						message:
 							error.message ||
@@ -393,7 +427,12 @@ const { state, actions } = store( 'wp-system-report', {
 		 * @param {boolean} canFix New can_fix value.
 		 */
 		updateFixerStatus( fixId, canFix ) {
-			actions.updateFixerState( fixId, { can_fix: canFix } );
+			actions.updateFixerState( fixId, {
+				can_fix: canFix,
+				statusLabel: canFix
+					? state.i18n.issuesDetected
+					: state.i18n.noIssues,
+			} );
 		},
 	},
 

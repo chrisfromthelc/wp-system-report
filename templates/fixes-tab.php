@@ -77,9 +77,9 @@ defined( 'ABSPATH' ) || exit;
 							<div class="sr-fixer-card-header">
 								<h3 class="sr-fixer-card-title" data-wp-text="context.item.label"></h3>
 								<span class="sr-badge sr-risk-badge"
-									data-wp-class--sr-risk-low="context.item.risk_level === 'low'"
-									data-wp-class--sr-risk-medium="context.item.risk_level === 'medium'"
-									data-wp-class--sr-risk-high="context.item.risk_level === 'high'"
+									data-wp-class--sr-risk-low="context.item.isRiskLow"
+									data-wp-class--sr-risk-medium="context.item.isRiskMedium"
+									data-wp-class--sr-risk-high="context.item.isRiskHigh"
 									data-wp-text="context.item.risk_label"
 								></span>
 							</div>
@@ -95,23 +95,25 @@ defined( 'ABSPATH' ) || exit;
 										data-wp-class--dashicons-warning="context.item.can_fix"
 										data-wp-class--dashicons-yes-alt="!context.item.can_fix"
 									></span>
-									<span
-										data-wp-text="context.item.can_fix ? state.i18n.issuesDetected : state.i18n.noIssues"
-									></span>
+									<span data-wp-text="context.item.statusLabel"></span>
 								</span>
 								<button type="button"
 									class="button button-primary sr-run-fix-btn"
 									data-wp-on--click="actions.handleRunFix"
 									data-wp-bind--data-fix-id="context.item.id"
-									data-wp-bind--disabled="!context.item.can_fix || context.item.isRunning || context.item.btnDisabled"
-									data-wp-text="context.item.isRunning ? state.i18n.running : state.i18n.runFix"
+									data-wp-bind--disabled="context.item.isDisabled"
+									data-wp-text="context.item.buttonLabel"
 								></button>
 							</div>
 							<!-- Result area -->
 							<div class="sr-fixer-result"
-								data-wp-bind--hidden="!context.item.result || !context.item.result.visible"
+								data-wp-bind--hidden="!context.item.result"
 							>
-								<div data-wp-class="context.item.result.noticeClass">
+								<div class="notice inline sr-result-notice"
+									data-wp-class--notice-success="context.item.result.isSuccess"
+									data-wp-class--notice-error="context.item.result.isError"
+									data-wp-class--notice-info="context.item.result.isInfo"
+								>
 									<p>
 										<strong data-wp-text="context.item.result.statusLabel"></strong>
 										<span data-wp-text="context.item.result.message"></span>
