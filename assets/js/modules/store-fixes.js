@@ -99,10 +99,9 @@ const { state, actions } = store( 'wp-system-report', {
 				}
 
 				const envelope = yield response.json();
-				const fixers =
-					envelope.data && envelope.data.fixes
-						? envelope.data.fixes
-						: [];
+				const fixers = Array.isArray( envelope.data )
+					? envelope.data
+					: [];
 
 				if ( fixers.length === 0 ) {
 					state.fixes.hasFixers = false;

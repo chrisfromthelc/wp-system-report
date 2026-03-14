@@ -461,7 +461,7 @@
 					loadingEl.style.display = 'none';
 				}
 
-				var fixers = ( envelope.data && envelope.data.fixes ) ? envelope.data.fixes : [];
+				var fixers = Array.isArray( envelope.data ) ? envelope.data : [];
 
 				if ( fixers.length === 0 ) {
 					if ( emptyEl ) {
