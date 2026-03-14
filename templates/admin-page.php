@@ -157,8 +157,7 @@ $sr_iapi = \SystemReport\Features::has_interactivity();
 							</td>
 							<td class="<?php echo esc_attr( $sr_status_class ); ?>">
 								<?php
-								$sr_value  = $sr_field['value'];
-								$sr_fix_id = ! empty( $sr_field['fix_id'] ) ? $sr_field['fix_id'] : '';
+								$sr_value = $sr_field['value'];
 
 								if ( 'good' === $sr_field['status'] ) {
 									echo '<mark class="yes"><span class="dashicons dashicons-yes"></span> ' . esc_html( $sr_value ) . '</mark>';
@@ -169,17 +168,7 @@ $sr_iapi = \SystemReport\Features::has_interactivity();
 								} else {
 									echo esc_html( $sr_value );
 								}
-
-								if ( '' !== $sr_fix_id && \SystemReport\Features::has_fixers() ) :
-									$sr_fixes_url = admin_url( 'tools.php?page=wp-system-report&tab=fixes' );
-									?>
-									<a class="sr-inline-fix-link"
-										href="<?php echo esc_url( $sr_fixes_url ); ?>"
-										title="<?php esc_attr_e( 'Go to Fixes tab to repair this issue', 'wp-system-report' ); ?>"
-									>
-										<span class="dashicons dashicons-admin-tools"></span><?php esc_html_e( 'Fix', 'wp-system-report' ); ?>
-									</a>
-								<?php endif; ?>
+								?>
 							</td>
 						</tr>
 					<?php endforeach; ?>
