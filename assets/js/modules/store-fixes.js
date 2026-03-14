@@ -291,6 +291,7 @@ const { state, actions } = store( 'wp-system-report', {
 							'X-WP-Nonce': state.config.restNonce,
 						},
 						credentials: 'same-origin',
+						body: JSON.stringify( { confirmed: true } ),
 					}
 				);
 

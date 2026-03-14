@@ -323,6 +323,7 @@
 		apiFetch( config.fixesUrl + '/' + fixId, {
 			method: 'POST',
 			headers: { 'Content-Type': 'application/json' },
+			body: JSON.stringify( { confirmed: true } ),
 		} )
 			.then( function ( response ) {
 				if ( ! response.ok ) {

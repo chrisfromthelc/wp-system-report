@@ -380,6 +380,8 @@ class Admin_Page {
 					'failed'         => __( 'Failed', 'wp-system-report' ),
 					'nothingToFix'   => __( 'No issues detected', 'wp-system-report' ),
 					'executeFailed'  => __( 'Failed to execute fix.', 'wp-system-report' ),
+					'issuesDetected' => __( 'Issues detected', 'wp-system-report' ),
+					'noIssues'       => __( 'All clear', 'wp-system-report' ),
 					'riskLow'        => __( 'Low Risk', 'wp-system-report' ),
 					'riskMedium'     => __( 'Medium Risk', 'wp-system-report' ),
 					'riskHigh'       => __( 'High Risk', 'wp-system-report' ),
