@@ -72,7 +72,7 @@ defined( 'ABSPATH' ) || exit;
 				<div class="sr-fixes-category">
 					<h2 class="sr-fixes-category-heading" data-wp-text="context.item.label"></h2>
 					<template data-wp-each="context.item.fixers">
-						<div class="sr-fixer-card card" data-wp-bind--data-fix-id="context.item.id">
+						<div class="sr-fixer-card card">
 							<!-- Header row: label + risk badge -->
 							<div class="sr-fixer-card-header">
 								<h3 class="sr-fixer-card-title" data-wp-text="context.item.label"></h3>
@@ -100,7 +100,6 @@ defined( 'ABSPATH' ) || exit;
 								<button type="button"
 									class="button button-primary sr-run-fix-btn"
 									data-wp-on--click="actions.handleRunFix"
-									data-wp-bind--data-fix-id="context.item.id"
 									data-wp-bind--disabled="context.item.isDisabled"
 									data-wp-text="context.item.buttonLabel"
 								></button>

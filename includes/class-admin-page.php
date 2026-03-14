@@ -391,18 +391,17 @@ class Admin_Page {
 				)
 			);
 			$state['fixes']              = array(
-				'isLoading'           => true,
-				'loaded'              => false,
-				'hasError'            => false,
-				'errorMessage'        => '',
-				'hasFixers'           => false,
-				'categories'          => array(),
-				'modalOpen'           => false,
-				'modalTitle'          => '',
-				'modalMessage'        => '',
-				'modalDescription'    => '',
-				'pendingFixId'        => null,
-				'lastFocusedSelector' => null,
+				'isLoading'        => true,
+				'loaded'           => false,
+				'hasError'         => false,
+				'errorMessage'     => '',
+				'hasFixers'        => false,
+				'categories'       => array(),
+				'modalOpen'        => false,
+				'modalTitle'       => '',
+				'modalMessage'     => '',
+				'modalDescription' => '',
+				'pendingFixId'     => null,
 			);
 		}
 

@@ -4,7 +4,16 @@
  * @package SystemReport
  */
 
-import { store, getElement } from '@wordpress/interactivity';
+import { store, getContext } from '@wordpress/interactivity';
+
+/**
+ * Stores a reference to the DOM element that opened the confirmation
+ * modal, so focus can be restored when the modal closes.  This lives
+ * outside the reactive store because DOM references are not serialisable.
+ *
+ * @type {HTMLElement|null}
+ */
+let lastFocusedElement = null;
 
 const { state, actions } = store( 'wp-system-report', {
 	state: {
@@ -159,24 +168,22 @@ const { state, actions } = store( 'wp-system-report', {
 		/**
 		 * Handle click on a fixer's Run button.
 		 *
-		 * Uses the context to determine which fixer was clicked.
+		 * Uses getContext() to access the current loop item from
+		 * the data-wp-each template scope, rather than reading
+		 * DOM attributes which may not be reliably set.
 		 */
 		handleRunFix() {
-			const { ref } = getElement();
-			const fixId = ref.getAttribute( 'data-fix-id' );
-			if ( ! fixId ) {
-				return;
-			}
+			const ctx = getContext();
+			const fixer = ctx.item;
 
-			const fixer = actions.findFixer( fixId );
-			if ( ! fixer ) {
+			if ( ! fixer || ! fixer.id ) {
 				return;
 			}
 
 			if ( fixer.requires_confirmation ) {
 				actions.showConfirmModal( fixer );
 			} else {
-				actions.executeFix( fixId );
+				actions.executeFix( fixer.id );
 			}
 		},
 
@@ -210,9 +217,7 @@ const { state, actions } = store( 'wp-system-report', {
 			state.fixes.modalMessage = state.i18n.confirmMessage;
 			state.fixes.modalDescription = fixer.description;
 			state.fixes.modalOpen = true;
-			state.fixes.lastFocusedSelector = document.activeElement
-				? '[data-fix-id="' + fixer.id + '"].sr-run-fix-btn'
-				: null;
+			lastFocusedElement = document.activeElement || null;
 
 			// Focus the confirm button after the modal renders.
 			requestAnimationFrame( () => {
@@ -227,23 +232,20 @@ const { state, actions } = store( 'wp-system-report', {
 		 * Hide the confirmation modal and restore focus.
 		 */
 		hideConfirmModal() {
-			const selectorToRestore = state.fixes.lastFocusedSelector;
+			const elToRestore = lastFocusedElement;
 
 			state.fixes.pendingFixId = null;
 			state.fixes.modalOpen = false;
 			state.fixes.modalTitle = '';
 			state.fixes.modalMessage = '';
 			state.fixes.modalDescription = '';
+			lastFocusedElement = null;
 
-			if ( selectorToRestore ) {
+			if ( elToRestore && typeof elToRestore.focus === 'function' ) {
 				requestAnimationFrame( () => {
-					const el = document.querySelector( selectorToRestore );
-					if ( el && typeof el.focus === 'function' ) {
-						el.focus();
-					}
+					elToRestore.focus();
 				} );
 			}
-			state.fixes.lastFocusedSelector = null;
 		},
 
 		/**
@@ -260,7 +262,10 @@ const { state, actions } = store( 'wp-system-report', {
 		 * Handle modal keyboard events (Escape to close, Tab trap).
 		 */
 		handleModalKeydown( event ) {
-			const { ref } = getElement();
+			const modal = document.getElementById( 'sr-confirm-modal' );
+			if ( ! modal ) {
+				return;
+			}
 
 			if ( event.key === 'Escape' ) {
 				event.preventDefault();
@@ -269,7 +274,7 @@ const { state, actions } = store( 'wp-system-report', {
 			}
 
 			if ( event.key === 'Tab' ) {
-				const focusable = ref.querySelectorAll(
+				const focusable = modal.querySelectorAll(
 					'button:not([disabled]), [href], input:not([disabled]), ' +
 					'select:not([disabled]), textarea:not([disabled]), ' +
 					'[tabindex]:not([tabindex="-1"])'
@@ -305,8 +310,6 @@ const { state, actions } = store( 'wp-system-report', {
 				result: null,
 			} );
 
-			let succeeded = false;
-
 			try {
 				const response = yield fetch(
 					state.config.fixesUrl + '/' + fixId,
@@ -331,22 +334,24 @@ const { state, actions } = store( 'wp-system-report', {
 				const envelope = yield response.json();
 				const data = envelope.data || {};
 				const result = data.result || {};
-				succeeded = true;
+				let succeeded = true;
 
 				// Build result display data.
 				let noticeClass = 'notice-success';
-				let statusLabel = state.i18n.success;
+				let resultStatusLabel = state.i18n.success;
 
 				if ( ! result.success ) {
 					noticeClass = 'notice-error';
-					statusLabel = state.i18n.failed;
+					resultStatusLabel = state.i18n.failed;
 					succeeded = false;
 				} else if ( ! data.applied ) {
 					noticeClass = 'notice-info';
-					statusLabel = state.i18n.nothingToFix;
+					resultStatusLabel = state.i18n.nothingToFix;
 				}
 
-				actions.updateFixerState( fixId, {
+				// Combine result and status update into a single patch
+				// to avoid double object replacement in the reactive store.
+				const patch = {
 					isRunning: false,
 					buttonLabel: state.i18n.runFix,
 					isDisabled: succeeded,
@@ -356,7 +361,7 @@ const { state, actions } = store( 'wp-system-report', {
 						isSuccess: noticeClass === 'notice-success',
 						isError: noticeClass === 'notice-error',
 						isInfo: noticeClass === 'notice-info',
-						statusLabel: statusLabel + ':',
+						statusLabel: resultStatusLabel + ':',
 						message: result.message || '',
 						hasBefore: !! result.before,
 						hasAfter: !! result.after,
@@ -368,12 +373,15 @@ const { state, actions } = store( 'wp-system-report', {
 							? JSON.stringify( result.after, null, 2 )
 							: '',
 					},
-				} );
+				};
 
-				// Update status to "good" on success.
+				// Include status update in the same patch on success.
 				if ( succeeded ) {
-					actions.updateFixerStatus( fixId, false );
+					patch.can_fix = false;
+					patch.statusLabel = state.i18n.noIssues;
 				}
+
+				actions.updateFixerState( fixId, patch );
 			} catch ( error ) {
 				actions.updateFixerState( fixId, {
 					isRunning: false,
@@ -402,21 +410,21 @@ const { state, actions } = store( 'wp-system-report', {
 		/**
 		 * Update a fixer's runtime state (running, result, etc.).
 		 *
+		 * Mutates properties directly on the proxied fixer object
+		 * rather than replacing it, to preserve the Interactivity
+		 * API's reactive proxy and ensure data-wp-each item
+		 * bindings update correctly.
+		 *
 		 * @param {string} fixId Fixer ID.
 		 * @param {Object} patch State properties to merge.
 		 */
 		updateFixerState( fixId, patch ) {
-			const categories = state.fixes.categories || [];
-			for ( const group of categories ) {
-				for ( let i = 0; i < group.fixers.length; i++ ) {
-					if ( group.fixers[ i ].id === fixId ) {
-						group.fixers[ i ] = {
-							...group.fixers[ i ],
-							...patch,
-						};
-						return;
-					}
-				}
+			const fixer = actions.findFixer( fixId );
+			if ( ! fixer ) {
+				return;
+			}
+			for ( const key in patch ) {
+				fixer[ key ] = patch[ key ];
 			}
 		},
 
