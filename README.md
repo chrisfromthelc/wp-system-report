@@ -12,6 +12,7 @@ A comprehensive WordPress system status report plugin with AI-optimized export. 
 - **REST API** - Full JSON API at `wp-system-report/v1/report` and `wp-system-report/v1/error-log` with format parameter support
 - **Extensible** - Filter hooks for adding custom collectors, modifying fields, and extending issue detection
 - **Zero Dependencies** - Works standalone without WooCommerce or any other plugin (uses `wp-cli/wp-config-transformer` for wp-config.php editing)
+- **MCP Integration** - Registers abilities with the [WordPress MCP Adapter](https://github.com/WordPress/mcp-adapter) via the Abilities API (WP 6.9+), enabling AI agents to query site health, read error logs, and toggle debug logging
 - **Cached** - Transient caching for expensive collectors with automatic invalidation
 - **Auto-Updates** - Checks GitHub Releases for new versions and serves updates through the WordPress dashboard
 
@@ -86,6 +87,30 @@ POST /wp-json/wp-system-report/v1/error-log/toggle         # Enable/disable debu
 curl -H "Authorization: Basic BASE64_CREDENTIALS" \
   "https://example.com/wp-json/wp-system-report/v1/report?format=ai"
 ```
+
+### MCP Integration (Abilities API)
+
+When the [WordPress MCP Adapter](https://github.com/WordPress/mcp-adapter) is active on WordPress 6.9+, WP System Report registers six abilities that AI agents can invoke:
+
+| Ability | Description | Input |
+|---------|-------------|-------|
+| `wp-system-report/get-issues` | Detected warnings and critical issues only | _(none)_ |
+| `wp-system-report/get-report` | Full system report in markdown or JSON | `format`: `"markdown"` (default) or `"json"` |
+| `wp-system-report/get-section` | Single report section by collector ID | `section`: e.g. `"database"`, `"security"` |
+| `wp-system-report/get-error-log` | Last N lines of the PHP error log | `lines`: 1-10000 (default 100) |
+| `wp-system-report/get-debug-status` | Current WP_DEBUG/WP_DEBUG_LOG state | _(none)_ |
+| `wp-system-report/toggle-debug` | Enable/disable debug logging | `enable`: `true` or `false` |
+
+All abilities require the `manage_options` capability. The five read-only abilities are annotated as `readonly` in the Abilities API metadata.
+
+**Example agent workflow:**
+
+1. Call `get-issues` to identify problems
+2. Call `get-section` with the relevant section ID for deeper context
+3. Call `get-error-log` to check for related PHP errors
+4. Formulate a remediation plan based on the collected data
+
+If the MCP Adapter is not installed or WordPress < 6.9, the integration is a no-op.
 
 ### AI Export Format
 
@@ -232,6 +257,8 @@ wp-system-report/
     class-settings.php              # Plugin settings (error_log_lines)
     class-error-log-reader.php      # Error log file reader
     class-debug-toggle.php          # wp-config.php debug constant toggle
+    class-issue-detector.php        # Reusable issue detection logic
+    class-abilities-provider.php    # MCP Abilities API integration
     class-github-updater.php        # GitHub release update checker
     collectors/
       interface-collector.php       # Collector contract
