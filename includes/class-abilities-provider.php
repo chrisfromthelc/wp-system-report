@@ -69,7 +69,8 @@ class Abilities_Provider {
 		wp_register_ability_category(
 			'wp-system-report',
 			array(
-				'label' => __( 'System Report', 'wp-system-report' ),
+				'label'       => __( 'System Report', 'wp-system-report' ),
+				'description' => __( 'Query site health, read error logs, and toggle debug logging.', 'wp-system-report' ),
 			)
 		);
 	}
