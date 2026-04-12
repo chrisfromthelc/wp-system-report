@@ -237,6 +237,18 @@ class AbilitiesProviderTest extends WP_UnitTestCase {
 	}
 
 	/**
+	 * Test get-report with invalid format normalizes to markdown.
+	 */
+	public function test_get_report_invalid_format_normalizes_to_markdown(): void {
+		wp_set_current_user( $this->admin_id );
+
+		$result = $this->provider->handle_get_report( array( 'format' => 'invalid_format' ) );
+
+		$this->assertSame( 'markdown', $result['format'] );
+		$this->assertIsString( $result['report'] );
+	}
+
+	/**
 	 * Test get-report with json format returns array.
 	 */
 	public function test_get_report_json_format_returns_array(): void {

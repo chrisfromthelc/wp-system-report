@@ -179,7 +179,11 @@ class Abilities_Provider {
 					'type'       => 'object',
 					'properties' => array(
 						'report'       => array(
-							'description' => __( 'Full system report. Markdown string or structured object depending on format.', 'wp-system-report' ),
+							'description' => __( 'Full system report. Markdown string when format=markdown, structured object when format=json.', 'wp-system-report' ),
+							'oneOf'       => array(
+								array( 'type' => 'string' ),
+								array( 'type' => 'object' ),
+							),
 						),
 						'format'       => array( 'type' => 'string' ),
 						'generated_at' => array( 'type' => 'string' ),
@@ -447,7 +451,8 @@ class Abilities_Provider {
 	 * @return array Report data.
 	 */
 	public function handle_get_report( array $input ): array {
-		$format      = isset( $input['format'] ) ? $input['format'] : 'markdown';
+		$format = isset( $input['format'] ) && 'json' === $input['format'] ? 'json' : 'markdown';
+
 		$report_data = $this->report_generator->generate();
 
 		if ( 'json' === $format ) {
