@@ -53,8 +53,6 @@ class Plugin {
 
 	/**
 	 * Abilities API provider instance.
-	 *
-	 * @var Abilities_Provider
 	 */
 	private Abilities_Provider $abilities_provider;
 

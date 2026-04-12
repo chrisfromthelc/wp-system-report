@@ -157,7 +157,7 @@ class AbilitiesProviderTest extends WP_UnitTestCase {
 		foreach ( $result['issues'] as $issue ) {
 			if ( 'critical' === $issue['severity'] ) {
 				++$actual_critical;
-			} else {
+			} elseif ( 'warning' === $issue['severity'] ) {
 				++$actual_warning;
 			}
 		}
@@ -179,7 +179,7 @@ class AbilitiesProviderTest extends WP_UnitTestCase {
 		$toggle   = new Debug_Toggle();
 		$provider = new Abilities_Provider( $clean_generator, $reader, $toggle );
 
-		$result = $this->provider->handle_get_issues( array() );
+		$result = $provider->handle_get_issues( array() );
 
 		$this->assertIsArray( $result['issues'] );
 		// Note: heuristic checks may still produce issues depending on PHP version.
@@ -526,26 +526,6 @@ class AbilitiesProviderTest extends WP_UnitTestCase {
 		$this->assertFalse( $this->provider->check_manage_options() );
 	}
 
-	// ---------------------------------------------------------------
-	// Helper: fire Abilities API init hooks
-	// ---------------------------------------------------------------
-
-	/**
-	 * Fire the Abilities API init hooks to register the category and abilities.
-	 *
-	 * This simulates what WordPress does during init when the Abilities API
-	 * is loaded. We need to fire both hooks in order so that the category
-	 * exists before abilities reference it.
-	 */
-	private function fire_abilities_init(): void {
-		// Hook the provider callbacks so they run inside doing_action() context.
-		add_action( 'wp_abilities_api_categories_init', array( $this->provider, 'register_category' ), 999 );
-		add_action( 'wp_abilities_api_init', array( $this->provider, 'register_abilities' ), 999 );
-
-		// Fire category registration first, then abilities.
-		do_action( 'wp_abilities_api_categories_init' );
-		do_action( 'wp_abilities_api_init' );
-	}
 }
 
 // ---------------------------------------------------------------

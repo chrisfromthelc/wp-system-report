@@ -69,11 +69,19 @@ class Issue_Detector {
 	 * @param array $field Field data.
 	 * @return string Issue description.
 	 */
-	private function build_issue_description( $field ): string {
-		$desc = 'Current value: ' . $field['value'] . '.';
+	private function build_issue_description( array $field ): string {
+		$desc = sprintf(
+			/* translators: %s: current field value */
+			__( 'Current value: %s.', 'wp-system-report' ),
+			$field['value']
+		);
 
 		if ( ! empty( $field['recommended'] ) ) {
-			$desc .= ' Recommended: ' . $field['recommended'] . '.';
+			$desc .= ' ' . sprintf(
+				/* translators: %s: recommended value */
+				__( 'Recommended: %s.', 'wp-system-report' ),
+				$field['recommended']
+			);
 		}
 
 		if ( ! empty( $field['description'] ) ) {
@@ -97,8 +105,12 @@ class Issue_Detector {
 		if ( version_compare( $php_version, '8.1', '<' ) ) {
 			$issues[] = array(
 				'severity'    => 'critical',
-				'title'       => 'PHP version ' . $php_version . ' is end-of-life',
-				'description' => 'This PHP version no longer receives security updates. Upgrade to PHP 8.1 or newer.',
+				'title'       => sprintf(
+					/* translators: %s: PHP version number */
+					__( 'PHP version %s is end-of-life', 'wp-system-report' ),
+					$php_version
+				),
+				'description' => __( 'This PHP version no longer receives security updates. Upgrade to PHP 8.1 or newer.', 'wp-system-report' ),
 			);
 		}
 
@@ -108,8 +120,12 @@ class Issue_Detector {
 			if ( count( $active_plugins ) > 15 ) {
 				$issues[] = array(
 					'severity'    => 'warning',
-					'title'       => 'No external object cache with ' . count( $active_plugins ) . ' active plugins',
-					'description' => 'Sites with many active plugins benefit significantly from an object cache (Redis, Memcached).',
+					'title'       => sprintf(
+						/* translators: %d: number of active plugins */
+						__( 'No external object cache with %d active plugins', 'wp-system-report' ),
+						count( $active_plugins )
+					),
+					'description' => __( 'Sites with many active plugins benefit significantly from an object cache (Redis, Memcached).', 'wp-system-report' ),
 				);
 			}
 		}
@@ -119,7 +135,7 @@ class Issue_Detector {
 
 		// Check for non-InnoDB tables from existing report data (Database section).
 		$database_section = $this->find_section_by_id( $report_data, 'database' );
-		if ( $database_section ) {
+		if ( $database_section && ! empty( $database_section['fields'] ) && is_array( $database_section['fields'] ) ) {
 			$non_innodb_count = 0;
 			foreach ( $database_section['fields'] as $field ) {
 				if ( false !== strpos( $field['value'], 'Engine:' ) && false === strpos( $field['value'], 'InnoDB' ) ) {
@@ -129,8 +145,12 @@ class Issue_Detector {
 			if ( $non_innodb_count > 0 ) {
 				$issues[] = array(
 					'severity'    => 'warning',
-					'title'       => $non_innodb_count . ' database table(s) not using InnoDB engine',
-					'description' => 'InnoDB is the recommended storage engine for WordPress. Non-InnoDB tables may have performance or reliability issues.',
+					'title'       => sprintf(
+						/* translators: %d: number of non-InnoDB tables */
+						__( '%d database table(s) not using InnoDB engine', 'wp-system-report' ),
+						$non_innodb_count
+					),
+					'description' => __( 'InnoDB is the recommended storage engine for WordPress. Non-InnoDB tables may have performance or reliability issues.', 'wp-system-report' ),
 				);
 			}
 		}

@@ -21,22 +21,16 @@ class Abilities_Provider {
 
 	/**
 	 * Report generator instance.
-	 *
-	 * @var Report_Generator
 	 */
 	private Report_Generator $report_generator;
 
 	/**
 	 * Error log reader instance.
-	 *
-	 * @var Error_Log_Reader
 	 */
 	private Error_Log_Reader $error_log_reader;
 
 	/**
 	 * Debug toggle instance.
-	 *
-	 * @var Debug_Toggle
 	 */
 	private Debug_Toggle $debug_toggle;
 
@@ -218,6 +212,10 @@ class Abilities_Provider {
 								'fields'      => array( 'type' => 'array' ),
 							),
 						),
+						'error'              => array(
+							'type'        => 'string',
+							'description' => __( 'Error message when the requested section is not found.', 'wp-system-report' ),
+						),
 						'available_sections' => array(
 							'type'        => 'array',
 							'items'       => array( 'type' => 'string' ),
@@ -269,6 +267,10 @@ class Abilities_Provider {
 						'count'        => array( 'type' => 'integer' ),
 						'file'         => array( 'type' => 'object' ),
 						'debug_status' => array( 'type' => 'object' ),
+						'error'        => array(
+							'type'        => 'string',
+							'description' => __( 'Error message when the log file cannot be read.', 'wp-system-report' ),
+						),
 					),
 				),
 				'meta'                => array(
@@ -301,7 +303,10 @@ class Abilities_Provider {
 					'type'       => 'object',
 					'properties' => array(
 						'wp_debug'         => array( 'type' => array( 'boolean', 'null' ) ),
-						'wp_debug_log'     => array(),
+						'wp_debug_log'     => array(
+							'type'        => array( 'boolean', 'string', 'null' ),
+							'description' => __( 'True/false for enabled/disabled, or a string file path.', 'wp-system-report' ),
+						),
 						'wp_debug_display' => array( 'type' => array( 'boolean', 'null' ) ),
 						'can_modify'       => array( 'type' => 'boolean' ),
 						'log_file'         => array( 'type' => 'object' ),
@@ -376,7 +381,7 @@ class Abilities_Provider {
 		foreach ( $issues as $issue ) {
 			if ( 'critical' === $issue['severity'] ) {
 				++$critical_count;
-			} else {
+			} elseif ( 'warning' === $issue['severity'] ) {
 				++$warning_count;
 			}
 		}
