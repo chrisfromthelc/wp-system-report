@@ -66,6 +66,10 @@ class Abilities_Provider {
 	 * Register the ability category.
 	 */
 	public function register_category(): void {
+		if ( function_exists( 'wp_has_ability_category' ) && wp_has_ability_category( 'wp-system-report' ) ) {
+			return;
+		}
+
 		wp_register_ability_category(
 			'wp-system-report',
 			array(
@@ -77,8 +81,15 @@ class Abilities_Provider {
 
 	/**
 	 * Register all abilities.
+	 *
+	 * Bails early if the category failed to register or abilities
+	 * are already registered (prevents duplicate registration notices).
 	 */
 	public function register_abilities(): void {
+		if ( function_exists( 'wp_has_ability' ) && wp_has_ability( 'wp-system-report/get-issues' ) ) {
+			return;
+		}
+
 		$this->register_get_issues();
 		$this->register_get_report();
 		$this->register_get_section();
