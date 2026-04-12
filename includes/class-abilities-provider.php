@@ -102,7 +102,7 @@ class Abilities_Provider {
 				'label'               => __( 'Get System Issues', 'wp-system-report' ),
 				'description'         => __( 'Returns detected warnings and critical issues from the system report. Use this to quickly identify what needs attention.', 'wp-system-report' ),
 				'category'            => 'wp-system-report',
-				'callback'            => array( $this, 'handle_get_issues' ),
+				'execute_callback'    => array( $this, 'handle_get_issues' ),
 				'permission_callback' => array( $this, 'check_manage_options' ),
 				'input_schema'        => array(
 					'type'       => 'object',
@@ -133,7 +133,9 @@ class Abilities_Provider {
 				),
 				'meta'                => array(
 					'show_in_rest' => true,
-					'readonly'     => true,
+					'annotations'  => array(
+						'readonly' => true,
+					),
 				),
 			)
 		);
@@ -149,7 +151,7 @@ class Abilities_Provider {
 				'label'               => __( 'Get Full System Report', 'wp-system-report' ),
 				'description'         => __( 'Returns the complete system report. Use format=markdown for AI-optimized output or format=json for structured data.', 'wp-system-report' ),
 				'category'            => 'wp-system-report',
-				'callback'            => array( $this, 'handle_get_report' ),
+				'execute_callback'    => array( $this, 'handle_get_report' ),
 				'permission_callback' => array( $this, 'check_manage_options' ),
 				'input_schema'        => array(
 					'type'       => 'object',
@@ -174,7 +176,9 @@ class Abilities_Provider {
 				),
 				'meta'                => array(
 					'show_in_rest' => true,
-					'readonly'     => true,
+					'annotations'  => array(
+						'readonly' => true,
+					),
 				),
 			)
 		);
@@ -190,7 +194,7 @@ class Abilities_Provider {
 				'label'               => __( 'Get Report Section', 'wp-system-report' ),
 				'description'         => __( 'Returns a single section of the system report by collector ID (e.g. "database", "security", "active_plugins").', 'wp-system-report' ),
 				'category'            => 'wp-system-report',
-				'callback'            => array( $this, 'handle_get_section' ),
+				'execute_callback'    => array( $this, 'handle_get_section' ),
 				'permission_callback' => array( $this, 'check_manage_options' ),
 				'input_schema'        => array(
 					'type'       => 'object',
@@ -223,7 +227,9 @@ class Abilities_Provider {
 				),
 				'meta'                => array(
 					'show_in_rest' => true,
-					'readonly'     => true,
+					'annotations'  => array(
+						'readonly' => true,
+					),
 				),
 			)
 		);
@@ -239,7 +245,7 @@ class Abilities_Provider {
 				'label'               => __( 'Get Error Log', 'wp-system-report' ),
 				'description'         => __( 'Reads the last N lines of the PHP error log. Sensitive data is automatically redacted.', 'wp-system-report' ),
 				'category'            => 'wp-system-report',
-				'callback'            => array( $this, 'handle_get_error_log' ),
+				'execute_callback'    => array( $this, 'handle_get_error_log' ),
 				'permission_callback' => array( $this, 'check_manage_options' ),
 				'input_schema'        => array(
 					'type'       => 'object',
@@ -267,7 +273,9 @@ class Abilities_Provider {
 				),
 				'meta'                => array(
 					'show_in_rest' => true,
-					'readonly'     => true,
+					'annotations'  => array(
+						'readonly' => true,
+					),
 				),
 			)
 		);
@@ -283,7 +291,7 @@ class Abilities_Provider {
 				'label'               => __( 'Get Debug Status', 'wp-system-report' ),
 				'description'         => __( 'Returns the current WP_DEBUG, WP_DEBUG_LOG, and WP_DEBUG_DISPLAY state, and whether debug toggling is possible.', 'wp-system-report' ),
 				'category'            => 'wp-system-report',
-				'callback'            => array( $this, 'handle_get_debug_status' ),
+				'execute_callback'    => array( $this, 'handle_get_debug_status' ),
 				'permission_callback' => array( $this, 'check_manage_options' ),
 				'input_schema'        => array(
 					'type'       => 'object',
@@ -301,7 +309,9 @@ class Abilities_Provider {
 				),
 				'meta'                => array(
 					'show_in_rest' => true,
-					'readonly'     => true,
+					'annotations'  => array(
+						'readonly' => true,
+					),
 				),
 			)
 		);
@@ -317,7 +327,7 @@ class Abilities_Provider {
 				'label'               => __( 'Toggle Debug Logging', 'wp-system-report' ),
 				'description'         => __( 'Enables or disables WP_DEBUG and WP_DEBUG_LOG by modifying wp-config.php. Use with caution on production sites.', 'wp-system-report' ),
 				'category'            => 'wp-system-report',
-				'callback'            => array( $this, 'handle_toggle_debug' ),
+				'execute_callback'    => array( $this, 'handle_toggle_debug' ),
 				'permission_callback' => array( $this, 'check_manage_options' ),
 				'input_schema'        => array(
 					'type'       => 'object',
