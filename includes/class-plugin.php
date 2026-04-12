@@ -52,6 +52,13 @@ class Plugin {
 	private \SystemReport\Error_Log_Controller $error_log_controller;
 
 	/**
+	 * Abilities API provider instance.
+	 *
+	 * @var Abilities_Provider
+	 */
+	private Abilities_Provider $abilities_provider;
+
+	/**
 	 * GitHub updater instance.
 	 *
 	 * Stored to prevent garbage collection; hooks are registered in the constructor.
@@ -94,6 +101,7 @@ class Plugin {
 		$this->error_log_reader     = new Error_Log_Reader();
 		$this->debug_toggle         = new Debug_Toggle();
 		$this->error_log_controller = new Error_Log_Controller( $this->error_log_reader, $this->debug_toggle );
+		$this->abilities_provider   = new Abilities_Provider( $this->report_generator, $this->error_log_reader, $this->debug_toggle );
 		$this->github_updater       = new GitHub_Updater( WP_SYSTEM_REPORT_FILE );
 
 		$this->register_default_collectors();
@@ -138,6 +146,9 @@ class Plugin {
 		add_action( 'rest_api_init', array( $this->rest_controller, 'register_routes' ) );
 		add_action( 'rest_api_init', array( $this->error_log_controller, 'register_routes' ) );
 		add_action( 'admin_enqueue_scripts', array( $this->admin_page, 'enqueue_assets' ) );
+
+		// Abilities API (MCP adapter integration).
+		$this->abilities_provider->register_hooks();
 
 		// Cache invalidation hooks.
 		add_action( 'switch_theme', array( $this, 'clear_theme_cache' ) );
