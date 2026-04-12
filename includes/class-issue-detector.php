@@ -138,6 +138,12 @@ class Issue_Detector {
 		if ( $database_section && ! empty( $database_section['fields'] ) && is_array( $database_section['fields'] ) ) {
 			$non_innodb_count = 0;
 			foreach ( $database_section['fields'] as $field ) {
+				if ( empty( $field['value'] ) ) {
+					continue;
+				}
+				if ( ! is_string( $field['value'] ) ) {
+					continue;
+				}
 				if ( false !== strpos( $field['value'], 'Engine:' ) && false === strpos( $field['value'], 'InnoDB' ) ) {
 					++$non_innodb_count;
 				}

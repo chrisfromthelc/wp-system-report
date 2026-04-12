@@ -129,7 +129,12 @@ class Abilities_Provider {
 				'meta'                => array(
 					'show_in_rest' => true,
 					'annotations'  => array(
-						'readonly' => true,
+						'readonly'    => true,
+						'destructive' => false,
+						'idempotent'  => true,
+					),
+					'mcp'          => array(
+						'public' => true,
 					),
 				),
 			)
@@ -172,7 +177,12 @@ class Abilities_Provider {
 				'meta'                => array(
 					'show_in_rest' => true,
 					'annotations'  => array(
-						'readonly' => true,
+						'readonly'    => true,
+						'destructive' => false,
+						'idempotent'  => true,
+					),
+					'mcp'          => array(
+						'public' => true,
 					),
 				),
 			)
@@ -227,7 +237,12 @@ class Abilities_Provider {
 				'meta'                => array(
 					'show_in_rest' => true,
 					'annotations'  => array(
-						'readonly' => true,
+						'readonly'    => true,
+						'destructive' => false,
+						'idempotent'  => true,
+					),
+					'mcp'          => array(
+						'public' => true,
 					),
 				),
 			)
@@ -277,7 +292,12 @@ class Abilities_Provider {
 				'meta'                => array(
 					'show_in_rest' => true,
 					'annotations'  => array(
-						'readonly' => true,
+						'readonly'    => true,
+						'destructive' => false,
+						'idempotent'  => true,
+					),
+					'mcp'          => array(
+						'public' => true,
 					),
 				),
 			)
@@ -316,7 +336,12 @@ class Abilities_Provider {
 				'meta'                => array(
 					'show_in_rest' => true,
 					'annotations'  => array(
-						'readonly' => true,
+						'readonly'    => true,
+						'destructive' => false,
+						'idempotent'  => true,
+					),
+					'mcp'          => array(
+						'public' => true,
 					),
 				),
 			)
@@ -356,6 +381,14 @@ class Abilities_Provider {
 				),
 				'meta'                => array(
 					'show_in_rest' => true,
+					'annotations'  => array(
+						'readonly'    => false,
+						'destructive' => false,
+						'idempotent'  => true,
+					),
+					'mcp'          => array(
+						'public' => true,
+					),
 				),
 			)
 		);

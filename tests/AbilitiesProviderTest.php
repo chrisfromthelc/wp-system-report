@@ -167,6 +167,40 @@ class AbilitiesProviderTest extends WP_UnitTestCase {
 	}
 
 	/**
+	 * Test get-issues excludes unknown severities from counts.
+	 *
+	 * The wp_system_report_ai_issues filter could introduce issues
+	 * with non-standard severities. These must not inflate the counts.
+	 */
+	public function test_get_issues_excludes_unknown_severity_from_counts(): void {
+		wp_set_current_user( $this->admin_id );
+
+		// Inject an issue with a non-standard severity via filter.
+		add_filter(
+			'wp_system_report_ai_issues',
+			function ( $issues ) {
+				$issues[] = array(
+					'severity'    => 'notice',
+					'title'       => 'Custom Notice',
+					'description' => 'This is a notice, not critical or warning.',
+				);
+				return $issues;
+			}
+		);
+
+		$result = $this->provider->handle_get_issues( array() );
+
+		// The notice should be in the issues array but NOT counted.
+		$titles = array_column( $result['issues'], 'title' );
+		$this->assertContains( 'Custom Notice', $titles );
+		$this->assertSame(
+			$result['critical_count'] + $result['warning_count'],
+			count( $result['issues'] ) - 1,
+			'Unknown severity should not be counted in critical or warning totals'
+		);
+	}
+
+	/**
 	 * Test get-issues with a clean report returns expected structure.
 	 */
 	public function test_get_issues_with_clean_report(): void {

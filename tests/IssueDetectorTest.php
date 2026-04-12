@@ -408,6 +408,71 @@ class IssueDetectorTest extends WP_UnitTestCase {
 	}
 
 	/**
+	 * Test InnoDB heuristic handles database section without fields key.
+	 */
+	public function test_heuristic_innodb_skips_section_without_fields(): void {
+		$report = array(
+			'database' => array(
+				'id'          => 'database',
+				'label'       => 'Database',
+				'description' => '',
+				// No 'fields' key at all.
+			),
+		);
+
+		$issues = $this->detector->detect( $report );
+
+		$innodb_issues = array_filter(
+			$issues,
+			function ( $issue ) {
+				return false !== strpos( $issue['title'], 'InnoDB' );
+			}
+		);
+
+		$this->assertEmpty( $innodb_issues, 'Should not crash or produce InnoDB issues when fields key is missing' );
+	}
+
+	/**
+	 * Test InnoDB heuristic handles fields with non-string value.
+	 */
+	public function test_heuristic_innodb_skips_non_string_field_value(): void {
+		$report = array(
+			'database' => array(
+				'id'          => 'database',
+				'label'       => 'Database',
+				'description' => '',
+				'fields'      => array(
+					array(
+						'label'   => 'Broken Field',
+						'value'   => array( 'not', 'a', 'string' ),
+						'debug'   => '',
+						'private' => false,
+						'status'  => 'info',
+					),
+					array(
+						'label'   => 'Empty Value Field',
+						'value'   => '',
+						'debug'   => '',
+						'private' => false,
+						'status'  => 'info',
+					),
+				),
+			),
+		);
+
+		$issues = $this->detector->detect( $report );
+
+		$innodb_issues = array_filter(
+			$issues,
+			function ( $issue ) {
+				return false !== strpos( $issue['title'], 'InnoDB' );
+			}
+		);
+
+		$this->assertEmpty( $innodb_issues, 'Should skip fields with non-string or empty values without errors' );
+	}
+
+	/**
 	 * Test multiple issues from the same section are all detected.
 	 */
 	public function test_multiple_issues_from_same_section(): void {
