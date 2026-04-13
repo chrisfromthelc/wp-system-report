@@ -572,6 +572,156 @@ class AbilitiesProviderTest extends WP_UnitTestCase {
 		$this->assertFalse( $this->provider->check_manage_options() );
 	}
 
+	// ---------------------------------------------------------------
+	// Callback: get-agent-context
+	// ---------------------------------------------------------------
+
+	/**
+	 * Test get-agent-context returns all required keys.
+	 */
+	public function test_get_agent_context_returns_required_keys(): void {
+		$result = $this->provider->handle_get_agent_context( array() );
+
+		$this->assertArrayHasKey( 'environment', $result );
+		$this->assertArrayHasKey( 'rules', $result );
+		$this->assertArrayHasKey( 'thresholds', $result );
+		$this->assertArrayHasKey( 'php_lifecycle', $result );
+		$this->assertArrayHasKey( 'ability_hints', $result );
+		$this->assertArrayHasKey( 'plugin_version', $result );
+		$this->assertArrayHasKey( 'generated_at', $result );
+	}
+
+	/**
+	 * Test get-agent-context environment has type key.
+	 */
+	public function test_get_agent_context_environment_has_type(): void {
+		$result = $this->provider->handle_get_agent_context( array() );
+
+		$this->assertArrayHasKey( 'environment_type', $result['environment'] );
+		$this->assertIsString( $result['environment']['environment_type'] );
+	}
+
+	/**
+	 * Test get-agent-context rules has never_recommend.
+	 */
+	public function test_get_agent_context_rules_has_never_recommend(): void {
+		$result = $this->provider->handle_get_agent_context( array() );
+
+		$this->assertArrayHasKey( 'never_recommend', $result['rules'] );
+		$this->assertNotEmpty( $result['rules']['never_recommend'] );
+	}
+
+	/**
+	 * Test get-agent-context generated_at is ISO 8601.
+	 */
+	public function test_get_agent_context_generated_at_is_iso8601(): void {
+		$result = $this->provider->handle_get_agent_context( array() );
+
+		$this->assertMatchesRegularExpression(
+			'/\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}Z/',
+			$result['generated_at']
+		);
+	}
+
+	// ---------------------------------------------------------------
+	// Response enrichment (_environment)
+	// ---------------------------------------------------------------
+
+	/**
+	 * Test get-issues response includes _environment.
+	 */
+	public function test_get_issues_response_includes_environment(): void {
+		wp_set_current_user( $this->admin_id );
+		$result = $this->provider->handle_get_issues( array() );
+
+		$this->assertArrayHasKey( '_environment', $result );
+		$this->assertIsArray( $result['_environment'] );
+	}
+
+	/**
+	 * Test get-report response includes _environment.
+	 */
+	public function test_get_report_response_includes_environment(): void {
+		$result = $this->provider->handle_get_report( array() );
+
+		$this->assertArrayHasKey( '_environment', $result );
+	}
+
+	/**
+	 * Test get-section success response includes _environment.
+	 */
+	public function test_get_section_success_response_includes_environment(): void {
+		$result = $this->provider->handle_get_section( array( 'section' => 'test_collector' ) );
+
+		$this->assertArrayHasKey( '_environment', $result );
+	}
+
+	/**
+	 * Test get-section error response includes _environment.
+	 */
+	public function test_get_section_error_response_includes_environment(): void {
+		$result = $this->provider->handle_get_section( array( 'section' => 'nonexistent' ) );
+
+		$this->assertArrayHasKey( '_environment', $result );
+		$this->assertArrayHasKey( 'error', $result );
+	}
+
+	/**
+	 * Test get-error-log response includes _environment.
+	 */
+	public function test_get_error_log_response_includes_environment(): void {
+		$result = $this->provider->handle_get_error_log( array() );
+
+		$this->assertArrayHasKey( '_environment', $result );
+	}
+
+	/**
+	 * Test get-debug-status response includes _environment.
+	 */
+	public function test_get_debug_status_response_includes_environment(): void {
+		$result = $this->provider->handle_get_debug_status( array() );
+
+		$this->assertArrayHasKey( '_environment', $result );
+	}
+
+	/**
+	 * Test toggle-debug response includes _environment.
+	 */
+	public function test_toggle_debug_response_includes_environment(): void {
+		$reader = $this->createMock( Error_Log_Reader::class );
+		$toggle = $this->createMock( Debug_Toggle::class );
+		$toggle->method( 'can_modify' )->willReturn( true );
+		$toggle->method( 'enable_debug' )->willReturn( true );
+		$toggle->method( 'get_state' )->willReturn(
+			array(
+				'wp_debug'         => true,
+				'wp_debug_log'     => true,
+				'wp_debug_display' => false,
+				'can_modify'       => true,
+			)
+		);
+
+		$provider = new Abilities_Provider( $this->report_generator, $reader, $toggle );
+		$result   = $provider->handle_toggle_debug( array( 'enable' => true ) );
+
+		$this->assertArrayHasKey( '_environment', $result );
+	}
+
+	/**
+	 * Test enriched _environment has the expected structure.
+	 */
+	public function test_enriched_environment_has_expected_keys(): void {
+		$result = $this->provider->handle_get_issues( array() );
+		$env    = $result['_environment'];
+
+		$this->assertArrayHasKey( 'environment_type', $env );
+		$this->assertArrayHasKey( 'is_production', $env );
+		$this->assertArrayHasKey( 'is_local', $env );
+		$this->assertArrayHasKey( 'hosting_provider', $env );
+		$this->assertArrayHasKey( 'php_version', $env );
+		$this->assertArrayHasKey( 'wp_version', $env );
+	}
+
 }
 
 // ---------------------------------------------------------------
