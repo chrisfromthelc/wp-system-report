@@ -50,3 +50,9 @@ phpstan-baseline.neon
 # Debug
 debug.log
 error_log
+
+# Agent tooling
+.beads/
+.claude/
+.mcp.json
+AGENTS.md

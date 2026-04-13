@@ -16,6 +16,20 @@ defined( 'ABSPATH' ) || exit;
 <div class="wrap wp-system-report-wrap">
 	<h1><?php esc_html_e( 'WP System Report', 'wp-system-report' ); ?></h1>
 
+	<?php if ( ! is_plugin_active( 'mcp-adapter/mcp-adapter.php' ) ) : ?>
+		<div class="notice notice-info is-dismissible">
+			<p>
+				<?php
+				printf(
+					/* translators: %s: link to MCP Adapter plugin */
+					esc_html__( 'Want AI agents to analyze your system report? Install the %s to enable MCP integration.', 'wp-system-report' ),
+					'<a href="https://github.com/WordPress/mcp-adapter" target="_blank" rel="noopener noreferrer">' . esc_html__( 'WordPress MCP Adapter', 'wp-system-report' ) . '</a>'
+				);
+				?>
+			</p>
+		</div>
+	<?php endif; ?>
+
 	<nav class="nav-tab-wrapper wp-clearfix">
 		<a href="<?php echo esc_url( admin_url( 'tools.php?page=wp-system-report' ) ); ?>"
 			class="nav-tab <?php echo 'report' === $sr_current_tab ? 'nav-tab-active' : ''; ?>">

@@ -3,14 +3,14 @@
  * Plugin Name: WP System Report
  * Plugin URI:  https://github.com/chrisfromthelc/wp-system-report
  * Description: Comprehensive WordPress system status report with AI-optimized export.
- * Version:     1.1.0
+ * Version:     1.2.0
  * Author:      Christopher Smith
  * Author URI:  https://github.com/chrisfromthelc
  * License:     GPL-2.0-or-later
  * License URI: https://www.gnu.org/licenses/gpl-2.0.html
  * Text Domain: wp-system-report
  * Requires at least: 6.2
- * Tested up to: 6.9.1
+ * Tested up to: 6.9.4
  * Requires PHP: 7.4
  * Update URI:  https://github.com/chrisfromthelc/wp-system-report
  *
@@ -19,7 +19,7 @@
 
 defined( 'ABSPATH' ) || exit;
 
-define( 'WP_SYSTEM_REPORT_VERSION', '1.1.0' );
+define( 'WP_SYSTEM_REPORT_VERSION', '1.2.0' );
 define( 'WP_SYSTEM_REPORT_FILE', __FILE__ );
 define( 'WP_SYSTEM_REPORT_DIR', plugin_dir_path( __FILE__ ) );
 define( 'WP_SYSTEM_REPORT_URL', plugin_dir_url( __FILE__ ) );
