@@ -464,7 +464,7 @@ class Agent_Guidance {
 			}
 
 			return $hpos_enabled ? 'hpos_active' : 'legacy_posts';
-		} catch ( \Exception $e ) {
+		} catch ( \Throwable $e ) {
 			return 'unknown';
 		}
 	}
