@@ -14,8 +14,8 @@ defined( 'ABSPATH' ) || exit;
 /**
  * Registers system report abilities with the WordPress Abilities API.
  *
- * Exposes six abilities for AI agents to query site health, read error logs,
- * and toggle debug logging via the MCP adapter.
+ * Exposes seven abilities for AI agents to query site health, read error logs,
+ * toggle debug logging, and retrieve agent guidance via the MCP adapter.
  */
 class Abilities_Provider {
 
@@ -90,12 +90,75 @@ class Abilities_Provider {
 			return;
 		}
 
+		$this->register_get_agent_context();
 		$this->register_get_issues();
 		$this->register_get_report();
 		$this->register_get_section();
 		$this->register_get_error_log();
 		$this->register_get_debug_status();
 		$this->register_toggle_debug();
+	}
+
+	/**
+	 * Register the get-agent-context ability.
+	 */
+	private function register_get_agent_context(): void {
+		wp_register_ability(
+			'wp-system-report/get-agent-context',
+			array(
+				'label'               => __( 'Get Agent Context', 'wp-system-report' ),
+				'description'         => __( 'Returns environment-aware guidance, rules, and thresholds for AI agents. Call this FIRST before using other wp-system-report abilities to ensure recommendations are safe and environment-appropriate.', 'wp-system-report' ),
+				'category'            => 'wp-system-report',
+				'execute_callback'    => array( $this, 'handle_get_agent_context' ),
+				'permission_callback' => array( $this, 'check_manage_options' ),
+				'input_schema'        => array(
+					'type'       => 'object',
+					'properties' => new \stdClass(),
+				),
+				'output_schema'       => array(
+					'type'       => 'object',
+					'properties' => array(
+						'environment'    => array(
+							'type'        => 'object',
+							'description' => __( 'Detected environment context for the site.', 'wp-system-report' ),
+						),
+						'rules'          => array(
+							'type'        => 'object',
+							'description' => __( 'Safety rules, never-recommend list, and environment overrides.', 'wp-system-report' ),
+						),
+						'thresholds'     => array(
+							'type'        => 'object',
+							'description' => __( 'Performance and configuration thresholds.', 'wp-system-report' ),
+						),
+						'php_lifecycle'  => array(
+							'type'        => 'array',
+							'description' => __( 'PHP version lifecycle data with EOL dates.', 'wp-system-report' ),
+						),
+						'ability_hints'  => array(
+							'type'        => 'object',
+							'description' => __( 'Contextual guidance hints keyed by ability ID.', 'wp-system-report' ),
+						),
+						'woocommerce'    => array(
+							'type'        => 'object',
+							'description' => __( 'WooCommerce-specific guidance. Only present when WooCommerce is active.', 'wp-system-report' ),
+						),
+						'plugin_version' => array( 'type' => 'string' ),
+						'generated_at'   => array( 'type' => 'string' ),
+					),
+				),
+				'meta'                => array(
+					'show_in_rest' => true,
+					'annotations'  => array(
+						'readonly'    => true,
+						'destructive' => false,
+						'idempotent'  => true,
+					),
+					'mcp'          => array(
+						'public' => true,
+					),
+				),
+			)
+		);
 	}
 
 	/**
@@ -106,7 +169,7 @@ class Abilities_Provider {
 			'wp-system-report/get-issues',
 			array(
 				'label'               => __( 'Get System Issues', 'wp-system-report' ),
-				'description'         => __( 'Returns detected warnings and critical issues from the system report. Use this to quickly identify what needs attention.', 'wp-system-report' ),
+				'description'         => __( 'Returns detected warnings and critical issues from the system report. Call get-agent-context first for environment-aware severity assessment.', 'wp-system-report' ),
 				'category'            => 'wp-system-report',
 				'execute_callback'    => array( $this, 'handle_get_issues' ),
 				'permission_callback' => array( $this, 'check_manage_options' ),
@@ -135,6 +198,10 @@ class Abilities_Provider {
 						'warning_count'  => array( 'type' => 'integer' ),
 						'site_url'       => array( 'type' => 'string' ),
 						'generated_at'   => array( 'type' => 'string' ),
+						'_environment'   => array(
+							'type'        => 'object',
+							'description' => __( 'Detected environment context for the site.', 'wp-system-report' ),
+						),
 					),
 				),
 				'meta'                => array(
@@ -160,7 +227,7 @@ class Abilities_Provider {
 			'wp-system-report/get-report',
 			array(
 				'label'               => __( 'Get Full System Report', 'wp-system-report' ),
-				'description'         => __( 'Returns the complete system report. Use format=markdown for AI-optimized output or format=json for structured data.', 'wp-system-report' ),
+				'description'         => __( 'Returns the complete system report. Call get-agent-context first for environment-aware analysis. Use format=markdown for AI-optimized output or format=json for structured data.', 'wp-system-report' ),
 				'category'            => 'wp-system-report',
 				'execute_callback'    => array( $this, 'handle_get_report' ),
 				'permission_callback' => array( $this, 'check_manage_options' ),
@@ -187,6 +254,10 @@ class Abilities_Provider {
 						),
 						'format'       => array( 'type' => 'string' ),
 						'generated_at' => array( 'type' => 'string' ),
+						'_environment' => array(
+							'type'        => 'object',
+							'description' => __( 'Detected environment context for the site.', 'wp-system-report' ),
+						),
 					),
 				),
 				'meta'                => array(
@@ -212,7 +283,7 @@ class Abilities_Provider {
 			'wp-system-report/get-section',
 			array(
 				'label'               => __( 'Get Report Section', 'wp-system-report' ),
-				'description'         => __( 'Returns a single section of the system report by collector ID (e.g. "database", "security", "active_plugins").', 'wp-system-report' ),
+				'description'         => __( 'Returns a single section of the system report by collector ID (e.g. "database", "security", "active_plugins"). Call get-agent-context first for environment-aware analysis.', 'wp-system-report' ),
 				'category'            => 'wp-system-report',
 				'execute_callback'    => array( $this, 'handle_get_section' ),
 				'permission_callback' => array( $this, 'check_manage_options' ),
@@ -247,6 +318,10 @@ class Abilities_Provider {
 							'items'       => array( 'type' => 'string' ),
 							'description' => __( 'List of valid section IDs. Returned when the requested section is not found.', 'wp-system-report' ),
 						),
+						'_environment'       => array(
+							'type'        => 'object',
+							'description' => __( 'Detected environment context for the site.', 'wp-system-report' ),
+						),
 					),
 				),
 				'meta'                => array(
@@ -272,7 +347,7 @@ class Abilities_Provider {
 			'wp-system-report/get-error-log',
 			array(
 				'label'               => __( 'Get Error Log', 'wp-system-report' ),
-				'description'         => __( 'Reads the last N lines of the PHP error log. Sensitive data is automatically redacted.', 'wp-system-report' ),
+				'description'         => __( 'Reads the last N lines of the PHP error log. Sensitive data is automatically redacted. Call get-agent-context first for environment-aware analysis.', 'wp-system-report' ),
 				'category'            => 'wp-system-report',
 				'execute_callback'    => array( $this, 'handle_get_error_log' ),
 				'permission_callback' => array( $this, 'check_manage_options' ),
@@ -302,6 +377,10 @@ class Abilities_Provider {
 							'type'        => 'string',
 							'description' => __( 'Error message when the log file cannot be read.', 'wp-system-report' ),
 						),
+						'_environment' => array(
+							'type'        => 'object',
+							'description' => __( 'Detected environment context for the site.', 'wp-system-report' ),
+						),
 					),
 				),
 				'meta'                => array(
@@ -327,7 +406,7 @@ class Abilities_Provider {
 			'wp-system-report/get-debug-status',
 			array(
 				'label'               => __( 'Get Debug Status', 'wp-system-report' ),
-				'description'         => __( 'Returns the current WP_DEBUG, WP_DEBUG_LOG, and WP_DEBUG_DISPLAY state, and whether debug toggling is possible.', 'wp-system-report' ),
+				'description'         => __( 'Returns the current WP_DEBUG, WP_DEBUG_LOG, and WP_DEBUG_DISPLAY state, and whether debug toggling is possible. Call get-agent-context first for environment-aware analysis.', 'wp-system-report' ),
 				'category'            => 'wp-system-report',
 				'execute_callback'    => array( $this, 'handle_get_debug_status' ),
 				'permission_callback' => array( $this, 'check_manage_options' ),
@@ -346,6 +425,10 @@ class Abilities_Provider {
 						'wp_debug_display' => array( 'type' => array( 'boolean', 'null' ) ),
 						'can_modify'       => array( 'type' => 'boolean' ),
 						'log_file'         => array( 'type' => 'object' ),
+						'_environment'     => array(
+							'type'        => 'object',
+							'description' => __( 'Detected environment context for the site.', 'wp-system-report' ),
+						),
 					),
 				),
 				'meta'                => array(
@@ -371,7 +454,7 @@ class Abilities_Provider {
 			'wp-system-report/toggle-debug',
 			array(
 				'label'               => __( 'Toggle Debug Logging', 'wp-system-report' ),
-				'description'         => __( 'Enables or disables WP_DEBUG and WP_DEBUG_LOG by modifying wp-config.php. Use with caution on production sites.', 'wp-system-report' ),
+				'description'         => __( 'Enables or disables WP_DEBUG and WP_DEBUG_LOG by modifying wp-config.php. Call get-agent-context first to check environment. Always confirm with user before calling on production.', 'wp-system-report' ),
 				'category'            => 'wp-system-report',
 				'execute_callback'    => array( $this, 'handle_toggle_debug' ),
 				'permission_callback' => array( $this, 'check_manage_options' ),
@@ -388,10 +471,14 @@ class Abilities_Provider {
 				'output_schema'       => array(
 					'type'       => 'object',
 					'properties' => array(
-						'success' => array( 'type' => 'boolean' ),
-						'enabled' => array( 'type' => 'boolean' ),
-						'state'   => array( 'type' => 'object' ),
-						'error'   => array( 'type' => 'string' ),
+						'success'      => array( 'type' => 'boolean' ),
+						'enabled'      => array( 'type' => 'boolean' ),
+						'state'        => array( 'type' => 'object' ),
+						'error'        => array( 'type' => 'string' ),
+						'_environment' => array(
+							'type'        => 'object',
+							'description' => __( 'Detected environment context for the site.', 'wp-system-report' ),
+						),
 					),
 				),
 				'meta'                => array(
@@ -435,12 +522,14 @@ class Abilities_Provider {
 			}
 		}
 
-		return array(
-			'issues'         => $issues,
-			'critical_count' => $critical_count,
-			'warning_count'  => $warning_count,
-			'site_url'       => get_option( 'home' ),
-			'generated_at'   => gmdate( 'Y-m-d\TH:i:s\Z' ),
+		return $this->enrich_response(
+			array(
+				'issues'         => $issues,
+				'critical_count' => $critical_count,
+				'warning_count'  => $warning_count,
+				'site_url'       => get_option( 'home' ),
+				'generated_at'   => gmdate( 'Y-m-d\TH:i:s\Z' ),
+			)
 		);
 	}
 
@@ -462,10 +551,12 @@ class Abilities_Provider {
 			$report    = $formatter->format( $report_data );
 		}
 
-		return array(
-			'report'       => $report,
-			'format'       => $format,
-			'generated_at' => gmdate( 'Y-m-d\TH:i:s\Z' ),
+		return $this->enrich_response(
+			array(
+				'report'       => $report,
+				'format'       => $format,
+				'generated_at' => gmdate( 'Y-m-d\TH:i:s\Z' ),
+			)
 		);
 	}
 
@@ -483,18 +574,22 @@ class Abilities_Provider {
 			$collectors         = $this->report_generator->get_collectors();
 			$available_sections = array_keys( $collectors );
 
-			return array(
-				'error'              => sprintf(
-					/* translators: %s: requested section ID */
-					__( 'Section "%s" not found.', 'wp-system-report' ),
-					$section_id
-				),
-				'available_sections' => $available_sections,
+			return $this->enrich_response(
+				array(
+					'error'              => sprintf(
+						/* translators: %s: requested section ID */
+						__( 'Section "%s" not found.', 'wp-system-report' ),
+						$section_id
+					),
+					'available_sections' => $available_sections,
+				)
 			);
 		}
 
-		return array(
-			'section' => $section,
+		return $this->enrich_response(
+			array(
+				'section' => $section,
+			)
 		);
 	}
 
@@ -511,32 +606,38 @@ class Abilities_Provider {
 		$path = $this->error_log_reader->resolve_log_path();
 
 		if ( null === $path ) {
-			return array(
-				'error'        => __( 'No error log file found.', 'wp-system-report' ),
-				'lines'        => array(),
-				'count'        => 0,
-				'file'         => $this->error_log_reader->get_file_info(),
-				'debug_status' => $this->debug_toggle->get_state(),
+			return $this->enrich_response(
+				array(
+					'error'        => __( 'No error log file found.', 'wp-system-report' ),
+					'lines'        => array(),
+					'count'        => 0,
+					'file'         => $this->error_log_reader->get_file_info(),
+					'debug_status' => $this->debug_toggle->get_state(),
+				)
 			);
 		}
 
 		if ( ! $this->error_log_reader->is_path_safe( $path ) ) {
-			return array(
-				'error'        => __( 'The error log path is outside the allowed directory boundary.', 'wp-system-report' ),
-				'lines'        => array(),
-				'count'        => 0,
-				'file'         => $this->error_log_reader->get_file_info(),
-				'debug_status' => $this->debug_toggle->get_state(),
+			return $this->enrich_response(
+				array(
+					'error'        => __( 'The error log path is outside the allowed directory boundary.', 'wp-system-report' ),
+					'lines'        => array(),
+					'count'        => 0,
+					'file'         => $this->error_log_reader->get_file_info(),
+					'debug_status' => $this->debug_toggle->get_state(),
+				)
 			);
 		}
 
 		$log_lines = $this->error_log_reader->read_last_lines( $path, $num_lines );
 
-		return array(
-			'lines'        => $log_lines,
-			'count'        => count( $log_lines ),
-			'file'         => $this->error_log_reader->get_file_info(),
-			'debug_status' => $this->debug_toggle->get_state(),
+		return $this->enrich_response(
+			array(
+				'lines'        => $log_lines,
+				'count'        => count( $log_lines ),
+				'file'         => $this->error_log_reader->get_file_info(),
+				'debug_status' => $this->debug_toggle->get_state(),
+			)
 		);
 	}
 
@@ -550,12 +651,14 @@ class Abilities_Provider {
 	public function handle_get_debug_status( array $input ): array {
 		$state = $this->debug_toggle->get_state();
 
-		return array(
-			'wp_debug'         => $state['wp_debug'],
-			'wp_debug_log'     => $state['wp_debug_log'],
-			'wp_debug_display' => $state['wp_debug_display'],
-			'can_modify'       => $state['can_modify'],
-			'log_file'         => $this->error_log_reader->get_file_info(),
+		return $this->enrich_response(
+			array(
+				'wp_debug'         => $state['wp_debug'],
+				'wp_debug_log'     => $state['wp_debug_log'],
+				'wp_debug_display' => $state['wp_debug_display'],
+				'can_modify'       => $state['can_modify'],
+				'log_file'         => $this->error_log_reader->get_file_info(),
+			)
 		);
 	}
 
@@ -569,30 +672,61 @@ class Abilities_Provider {
 		$enable = ! empty( $input['enable'] );
 
 		if ( ! $this->debug_toggle->can_modify() ) {
-			return array(
-				'success' => false,
-				'enabled' => $enable,
-				'state'   => $this->debug_toggle->get_state(),
-				'error'   => __( 'wp-config.php is not writable or file modifications are disabled.', 'wp-system-report' ),
+			return $this->enrich_response(
+				array(
+					'success' => false,
+					'enabled' => $enable,
+					'state'   => $this->debug_toggle->get_state(),
+					'error'   => __( 'wp-config.php is not writable or file modifications are disabled.', 'wp-system-report' ),
+				)
 			);
 		}
 
 		$result = $enable ? $this->debug_toggle->enable_debug() : $this->debug_toggle->disable_debug();
 
 		if ( true !== $result ) {
-			return array(
-				'success' => false,
-				'enabled' => $enable,
-				'state'   => $this->debug_toggle->get_state(),
-				'error'   => $result,
+			return $this->enrich_response(
+				array(
+					'success' => false,
+					'enabled' => $enable,
+					'state'   => $this->debug_toggle->get_state(),
+					'error'   => $result,
+				)
 			);
 		}
 
-		return array(
-			'success' => true,
-			'enabled' => $enable,
-			'state'   => $this->debug_toggle->get_state(),
+		return $this->enrich_response(
+			array(
+				'success' => true,
+				'enabled' => $enable,
+				'state'   => $this->debug_toggle->get_state(),
+			)
 		);
+	}
+
+	/**
+	 * Handle the get-agent-context ability.
+	 *
+	 * @param array $input Ability input (unused).
+	 * @return array Full agent guidance context.
+	 */
+	// phpcs:ignore Generic.CodeAnalysis.UnusedFunctionParameter.Found -- Required by ability callback signature.
+	public function handle_get_agent_context( array $input ): array {
+		return Agent_Guidance::get_full_context();
+	}
+
+	/**
+	 * Enrich an ability response with environment context.
+	 *
+	 * Appends the _environment key to every response so agents always
+	 * have site context available, even without calling get-agent-context.
+	 *
+	 * @param array $response The ability handler's response array.
+	 * @return array Enriched response.
+	 */
+	private function enrich_response( array $response ): array {
+		$response['_environment'] = Agent_Guidance::get_environment_context();
+		return $response;
 	}
 
 	/**
