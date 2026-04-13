@@ -135,7 +135,7 @@ class AbilitiesProviderTest extends WP_UnitTestCase {
 	public function test_get_issues_returns_array_with_required_keys(): void {
 		wp_set_current_user( $this->admin_id );
 
-		$result = $this->provider->handle_get_issues( array() );
+		$result = $this->provider->handle_get_issues();
 
 		$this->assertArrayHasKey( 'issues', $result );
 		$this->assertArrayHasKey( 'critical_count', $result );
@@ -150,7 +150,7 @@ class AbilitiesProviderTest extends WP_UnitTestCase {
 	public function test_get_issues_counts_match_array_length(): void {
 		wp_set_current_user( $this->admin_id );
 
-		$result = $this->provider->handle_get_issues( array() );
+		$result = $this->provider->handle_get_issues();
 
 		$actual_critical = 0;
 		$actual_warning  = 0;
@@ -188,7 +188,7 @@ class AbilitiesProviderTest extends WP_UnitTestCase {
 			}
 		);
 
-		$result = $this->provider->handle_get_issues( array() );
+		$result = $this->provider->handle_get_issues();
 
 		// The notice should be in the issues array but NOT counted.
 		$titles = array_column( $result['issues'], 'title' );
@@ -213,7 +213,7 @@ class AbilitiesProviderTest extends WP_UnitTestCase {
 		$toggle   = new Debug_Toggle();
 		$provider = new Abilities_Provider( $clean_generator, $reader, $toggle );
 
-		$result = $provider->handle_get_issues( array() );
+		$result = $provider->handle_get_issues();
 
 		$this->assertIsArray( $result['issues'] );
 		// Note: heuristic checks may still produce issues depending on PHP version.
@@ -432,7 +432,7 @@ class AbilitiesProviderTest extends WP_UnitTestCase {
 	 * Test get-debug-status returns expected keys.
 	 */
 	public function test_get_debug_status_returns_expected_keys(): void {
-		$result = $this->provider->handle_get_debug_status( array() );
+		$result = $this->provider->handle_get_debug_status();
 
 		$this->assertArrayHasKey( 'wp_debug', $result );
 		$this->assertArrayHasKey( 'wp_debug_log', $result );
@@ -580,7 +580,7 @@ class AbilitiesProviderTest extends WP_UnitTestCase {
 	 * Test get-agent-context returns all required keys.
 	 */
 	public function test_get_agent_context_returns_required_keys(): void {
-		$result = $this->provider->handle_get_agent_context( array() );
+		$result = $this->provider->handle_get_agent_context();
 
 		$this->assertArrayHasKey( 'environment', $result );
 		$this->assertArrayHasKey( 'rules', $result );
@@ -595,7 +595,7 @@ class AbilitiesProviderTest extends WP_UnitTestCase {
 	 * Test get-agent-context environment has type key.
 	 */
 	public function test_get_agent_context_environment_has_type(): void {
-		$result = $this->provider->handle_get_agent_context( array() );
+		$result = $this->provider->handle_get_agent_context();
 
 		$this->assertArrayHasKey( 'environment_type', $result['environment'] );
 		$this->assertIsString( $result['environment']['environment_type'] );
@@ -605,7 +605,7 @@ class AbilitiesProviderTest extends WP_UnitTestCase {
 	 * Test get-agent-context rules has never_recommend.
 	 */
 	public function test_get_agent_context_rules_has_never_recommend(): void {
-		$result = $this->provider->handle_get_agent_context( array() );
+		$result = $this->provider->handle_get_agent_context();
 
 		$this->assertArrayHasKey( 'never_recommend', $result['rules'] );
 		$this->assertNotEmpty( $result['rules']['never_recommend'] );
@@ -615,7 +615,7 @@ class AbilitiesProviderTest extends WP_UnitTestCase {
 	 * Test get-agent-context generated_at is ISO 8601.
 	 */
 	public function test_get_agent_context_generated_at_is_iso8601(): void {
-		$result = $this->provider->handle_get_agent_context( array() );
+		$result = $this->provider->handle_get_agent_context();
 
 		$this->assertMatchesRegularExpression(
 			'/\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}Z/',
@@ -632,7 +632,7 @@ class AbilitiesProviderTest extends WP_UnitTestCase {
 	 */
 	public function test_get_issues_response_includes_environment(): void {
 		wp_set_current_user( $this->admin_id );
-		$result = $this->provider->handle_get_issues( array() );
+		$result = $this->provider->handle_get_issues();
 
 		$this->assertArrayHasKey( '_environment', $result );
 		$this->assertIsArray( $result['_environment'] );
@@ -679,7 +679,7 @@ class AbilitiesProviderTest extends WP_UnitTestCase {
 	 * Test get-debug-status response includes _environment.
 	 */
 	public function test_get_debug_status_response_includes_environment(): void {
-		$result = $this->provider->handle_get_debug_status( array() );
+		$result = $this->provider->handle_get_debug_status();
 
 		$this->assertArrayHasKey( '_environment', $result );
 	}
@@ -711,7 +711,7 @@ class AbilitiesProviderTest extends WP_UnitTestCase {
 	 * Test enriched _environment has the expected structure.
 	 */
 	public function test_enriched_environment_has_expected_keys(): void {
-		$result = $this->provider->handle_get_issues( array() );
+		$result = $this->provider->handle_get_issues();
 		$env    = $result['_environment'];
 
 		$this->assertArrayHasKey( 'environment_type', $env );

@@ -111,10 +111,7 @@ class Abilities_Provider {
 				'category'            => 'wp-system-report',
 				'execute_callback'    => array( $this, 'handle_get_agent_context' ),
 				'permission_callback' => array( $this, 'check_manage_options' ),
-				'input_schema'        => array(
-					'type'       => 'object',
-					'properties' => new \stdClass(),
-				),
+				'input_schema'        => array(),
 				'output_schema'       => array(
 					'type'       => 'object',
 					'properties' => array(
@@ -173,10 +170,7 @@ class Abilities_Provider {
 				'category'            => 'wp-system-report',
 				'execute_callback'    => array( $this, 'handle_get_issues' ),
 				'permission_callback' => array( $this, 'check_manage_options' ),
-				'input_schema'        => array(
-					'type'       => 'object',
-					'properties' => new \stdClass(),
-				),
+				'input_schema'        => array(),
 				'output_schema'       => array(
 					'type'       => 'object',
 					'properties' => array(
@@ -410,10 +404,7 @@ class Abilities_Provider {
 				'category'            => 'wp-system-report',
 				'execute_callback'    => array( $this, 'handle_get_debug_status' ),
 				'permission_callback' => array( $this, 'check_manage_options' ),
-				'input_schema'        => array(
-					'type'       => 'object',
-					'properties' => new \stdClass(),
-				),
+				'input_schema'        => array(),
 				'output_schema'       => array(
 					'type'       => 'object',
 					'properties' => array(
@@ -499,11 +490,9 @@ class Abilities_Provider {
 	/**
 	 * Handle the get-issues ability.
 	 *
-	 * @param array $input Ability input (unused).
 	 * @return array Issues data.
 	 */
-	// phpcs:ignore Generic.CodeAnalysis.UnusedFunctionParameter.Found -- Required by ability callback signature.
-	public function handle_get_issues( array $input ): array {
+	public function handle_get_issues(): array {
 		$report_data = $this->report_generator->generate();
 		$detector    = new Issue_Detector();
 		$issues      = $detector->detect( $report_data );
@@ -644,11 +633,9 @@ class Abilities_Provider {
 	/**
 	 * Handle the get-debug-status ability.
 	 *
-	 * @param array $input Ability input (unused).
 	 * @return array Debug status data.
 	 */
-	// phpcs:ignore Generic.CodeAnalysis.UnusedFunctionParameter.Found -- Required by ability callback signature.
-	public function handle_get_debug_status( array $input ): array {
+	public function handle_get_debug_status(): array {
 		$state = $this->debug_toggle->get_state();
 
 		return $this->enrich_response(
@@ -707,11 +694,9 @@ class Abilities_Provider {
 	/**
 	 * Handle the get-agent-context ability.
 	 *
-	 * @param array $input Ability input (unused).
 	 * @return array Full agent guidance context.
 	 */
-	// phpcs:ignore Generic.CodeAnalysis.UnusedFunctionParameter.Found -- Required by ability callback signature.
-	public function handle_get_agent_context( array $input ): array {
+	public function handle_get_agent_context(): array {
 		return Agent_Guidance::get_full_context();
 	}
 
