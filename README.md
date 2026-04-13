@@ -90,10 +90,11 @@ curl -H "Authorization: Basic BASE64_CREDENTIALS" \
 
 ### MCP Integration (Abilities API)
 
-When the [WordPress MCP Adapter](https://github.com/WordPress/mcp-adapter) is active on WordPress 6.9+, WP System Report registers six abilities that AI agents can invoke:
+When the [WordPress MCP Adapter](https://github.com/WordPress/mcp-adapter) is active on WordPress 6.9+, WP System Report registers seven abilities that AI agents can invoke:
 
 | Ability | Description | Input |
 |---------|-------------|-------|
+| `wp-system-report/get-agent-context` | Environment-aware guidance, rules, and thresholds | _(none)_ |
 | `wp-system-report/get-issues` | Detected warnings and critical issues only | _(none)_ |
 | `wp-system-report/get-report` | Full system report in markdown or JSON | `format`: `"markdown"` (default) or `"json"` |
 | `wp-system-report/get-section` | Single report section by collector ID | `section`: e.g. `"database"`, `"security"` |
@@ -101,14 +102,17 @@ When the [WordPress MCP Adapter](https://github.com/WordPress/mcp-adapter) is ac
 | `wp-system-report/get-debug-status` | Current WP_DEBUG/WP_DEBUG_LOG state | _(none)_ |
 | `wp-system-report/toggle-debug` | Enable/disable debug logging | `enable`: `true` or `false` |
 
-All abilities require the `manage_options` capability. The five read-only abilities are annotated as `readonly` in the Abilities API metadata.
+All abilities require the `manage_options` capability. Read-only abilities are annotated as `readonly` in the Abilities API metadata. Every response includes an `_environment` object with the detected environment type, hosting provider, and site flags.
+
+**Agent guidance:** The `get-agent-context` ability returns structured rules, thresholds, and a "never recommend" list that prevents agents from making dangerous suggestions (like recommending `chmod 777` or flagging HTTPS as critical on a local dev site). When WooCommerce is detected, it also includes HPOS status, Action Scheduler thresholds, and caching exclusion rules.
 
 **Example agent workflow:**
 
-1. Call `get-issues` to identify problems
-2. Call `get-section` with the relevant section ID for deeper context
-3. Call `get-error-log` to check for related PHP errors
-4. Formulate a remediation plan based on the collected data
+1. Call `get-agent-context` to understand the environment (local vs production, hosting provider, rules)
+2. Call `get-issues` to identify problems — calibrate severity using the environment rules
+3. Call `get-section` with the relevant section ID for deeper context
+4. Call `get-error-log` to check for related PHP errors
+5. Formulate a remediation plan based on the collected data and guidance rules
 
 If the MCP Adapter is not installed or WordPress < 6.9, the integration is a no-op.
 
@@ -258,7 +262,8 @@ wp-system-report/
     class-error-log-reader.php      # Error log file reader
     class-debug-toggle.php          # wp-config.php debug constant toggle
     class-issue-detector.php        # Reusable issue detection logic
-    class-abilities-provider.php    # MCP Abilities API integration
+    class-agent-guidance.php        # Environment-aware guidance for AI agents
+    class-abilities-provider.php    # MCP Abilities API integration (7 abilities)
     class-github-updater.php        # GitHub release update checker
     collectors/
       interface-collector.php       # Collector contract
