@@ -170,6 +170,21 @@ Without agent guidance, the same agent might have said: *"CRITICAL: Your site is
 
 If the MCP Adapter is not installed or WordPress < 6.9, the integration is a no-op.
 
+#### Claude Code Skill
+
+A ready-made [Claude Code skill file](https://www.chriswsmith.info/shared/wp-system-report.md) is available that gives Claude pre-documented knowledge of all WP System Report abilities. With this skill installed, Claude can monitor multiple WordPress sites, generate executive health summaries, triage issues by environment, and walk you through fixes — without needing to discover tools or read documentation first.
+
+![MCP executive summary showing multi-site health dashboard with version comparison and prioritized recommendations](assets/images/mcp-executive-summary.png)
+
+To use it, add the skill URL to your Claude Code configuration:
+
+```bash
+# Add to your Claude Code settings
+claude skill add https://www.chriswsmith.info/shared/wp-system-report.md
+```
+
+Or download the file and place it in your `~/.claude/skills/` directory. The skill works with any WordPress site connected via the MCP Adapter — ask Claude to "give me an executive summary system report from my WordPress sites" and it handles the rest.
+
 ### AI Export Format
 
 The AI export produces structured markdown designed for LLM consumption:
