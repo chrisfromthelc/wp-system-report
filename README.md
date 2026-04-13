@@ -12,6 +12,7 @@ A comprehensive WordPress system status report plugin with AI-optimized export. 
 - **REST API** - Full JSON API at `wp-system-report/v1/report` and `wp-system-report/v1/error-log` with format parameter support
 - **Extensible** - Filter hooks for adding custom collectors, modifying fields, and extending issue detection
 - **Zero Dependencies** - Works standalone without WooCommerce or any other plugin (uses `wp-cli/wp-config-transformer` for wp-config.php editing)
+- **MCP Integration with Agent Guidance** - Registers 7 abilities with the [WordPress MCP Adapter](https://github.com/WordPress/mcp-adapter) via the Abilities API (WP 6.9+). AI agents can query site health, read error logs, and toggle debug — with built-in environment-aware guidance that ensures safe, context-appropriate recommendations compiled from official WordPress, PHP, WooCommerce, and security research sources
 - **Cached** - Transient caching for expensive collectors with automatic invalidation
 - **Auto-Updates** - Checks GitHub Releases for new versions and serves updates through the WordPress dashboard
 
@@ -86,6 +87,88 @@ POST /wp-json/wp-system-report/v1/error-log/toggle         # Enable/disable debu
 curl -H "Authorization: Basic BASE64_CREDENTIALS" \
   "https://example.com/wp-json/wp-system-report/v1/report?format=ai"
 ```
+
+### MCP Integration and AI Agent Guidance
+
+When the [WordPress MCP Adapter](https://github.com/WordPress/mcp-adapter) is active on WordPress 6.9+, WP System Report registers seven abilities that AI agents (Claude, ChatGPT, Copilot, etc.) can invoke through the [Model Context Protocol](https://modelcontextprotocol.io/). This turns your system report into an interactive diagnostic tool — agents can query your site, understand the environment, and provide safe, context-aware recommendations.
+
+#### Available Abilities
+
+| Ability | Description | Input |
+|---------|-------------|-------|
+| `get-agent-context` | Environment-aware guidance, rules, and thresholds | _(none)_ |
+| `get-issues` | Detected warnings and critical issues | _(none)_ |
+| `get-report` | Full system report in markdown or JSON | `format`: `"markdown"` / `"json"` |
+| `get-section` | Single report section by collector ID | `section`: e.g. `"database"`, `"security"` |
+| `get-error-log` | Last N lines of the PHP error log | `lines`: 1-10000 (default 100) |
+| `get-debug-status` | Current WP_DEBUG/WP_DEBUG_LOG state | _(none)_ |
+| `toggle-debug` | Enable/disable debug logging | `enable`: `true` / `false` |
+
+All abilities require `manage_options` capability. Every response includes an `_environment` object with the detected environment type, hosting provider, and site context.
+
+#### Intelligent Agent Guidance
+
+The standout feature is **`get-agent-context`** — a dedicated ability that provides AI agents with structured, environment-aware guidance so they make safe, accurate recommendations instead of hallucinating or giving generic advice.
+
+**What it provides:**
+
+- **Environment detection** — Automatically identifies local, development, staging, and production environments via `WP_ENVIRONMENT_TYPE`, hostname inference (`.local`, `.test`, `localhost`), and managed hosting detection (WP Engine, Kinsta, Pantheon, Flywheel, GoDaddy, Pressable)
+- **Safety rules** — A "never recommend" list that prevents dangerous suggestions like `chmod 777`, disabling SSL, editing core files, or running destructive database queries without confirmation
+- **Environment-specific severity** — The same issue carries different weight depending on context. No HTTPS on `localhost`? Informational. No HTTPS on production? Critical. `WP_DEBUG` enabled locally? Expected. On production? Critical. The agent knows the difference
+- **Validated thresholds** — Specific numeric thresholds for PHP memory, autoloaded options, execution time, cron events, and database size — so agents assess values against real benchmarks, not guesses
+- **PHP version lifecycle** — Complete EOL dates and support status for PHP 7.4 through 8.5, with classifications (critical/warning/info/ok) agents can use directly
+- **WooCommerce-aware** — When WooCommerce is detected, includes HPOS migration status, Action Scheduler health thresholds, session table limits, `max_input_vars` requirements, cart fragment optimization guidance, and caching exclusion rules
+
+**Why this matters:**
+
+Without guidance, an AI agent analyzing a system report might tell you "CRITICAL: Your site is not using HTTPS!" on a Local dev environment, or recommend installing a caching plugin on WP Engine (which provides built-in caching and bans certain caching plugins). The agent guidance prevents these mistakes by giving agents the same context an experienced WordPress developer would have.
+
+#### Guidance Sources
+
+The agent guidance data is compiled from official and trusted third-party sources:
+
+- [WordPress.org requirements and hosting handbook](https://developer.wordpress.org/)
+- [PHP.net release lifecycle and EOL data](https://www.php.net/supported-versions.php)
+- [WooCommerce server requirements](https://woocommerce.com/document/server-requirements/)
+- [Patchstack vulnerability intelligence](https://patchstack.com/) (WordPress ecosystem vulnerability statistics)
+- [Wordfence security research](https://www.wordfence.com/) (plugin security analysis, WAF guidance)
+- WordPress core source code (Site Health thresholds, cron timing, autoloaded options limits)
+- Managed hosting provider documentation ([WP Engine](https://wpengine.com/support/), [Kinsta](https://kinsta.com/docs/), [Pantheon](https://docs.pantheon.io/), [WordPress VIP](https://docs.wpvip.com/))
+- [OWASP security headers](https://owasp.org/www-project-secure-headers/) and [MDN web security](https://developer.mozilla.org/en-US/docs/Web/Security) references
+
+#### Example Agent Workflow
+
+```
+Agent: "What issues does this WordPress site have, and how should I fix them?"
+
+1. get-agent-context
+   → Learns this is a "local" environment on Flywheel
+   → Loads safety rules, thresholds, and severity overrides
+   → Sees WooCommerce is not active
+
+2. get-issues
+   → Finds "HTTPS not enabled" flagged as critical
+   → Checks _environment: is_local = true
+   → Knows from environment_overrides: HTTPS on local = informational, not critical
+
+3. get-section (section: "active_plugins")
+   → Sees 8 active plugins, all up to date
+   → Compares against thresholds: well within normal range
+
+4. get-error-log
+   → Finds 3 PHP deprecation notices
+   → Groups by pattern, identifies the responsible plugin
+
+5. Agent responds:
+   "Your local dev site looks healthy. No critical issues — the HTTPS
+   notice is expected for local development. I found 3 PHP deprecation
+   notices from Plugin X that you may want to report to the developer.
+   All plugins are up to date."
+```
+
+Without agent guidance, the same agent might have said: *"CRITICAL: Your site is insecure! Enable HTTPS immediately! You should also install a WAF plugin and change your file permissions!"* — all wrong for a local dev site.
+
+If the MCP Adapter is not installed or WordPress < 6.9, the integration is a no-op.
 
 ### AI Export Format
 
@@ -232,6 +315,9 @@ wp-system-report/
     class-settings.php              # Plugin settings (error_log_lines)
     class-error-log-reader.php      # Error log file reader
     class-debug-toggle.php          # wp-config.php debug constant toggle
+    class-issue-detector.php        # Reusable issue detection logic
+    class-agent-guidance.php        # Environment-aware guidance for AI agents
+    class-abilities-provider.php    # MCP Abilities API integration (7 abilities)
     class-github-updater.php        # GitHub release update checker
     collectors/
       interface-collector.php       # Collector contract
