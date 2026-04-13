@@ -18,7 +18,7 @@ A comprehensive WordPress system status report plugin with AI-optimized export. 
 
 ## Requirements
 
-- WordPress 6.2+ (tested up to 6.9.1)
+- WordPress 6.2+ (tested up to 6.9.4)
 - PHP 7.4+
 
 ## Installation
